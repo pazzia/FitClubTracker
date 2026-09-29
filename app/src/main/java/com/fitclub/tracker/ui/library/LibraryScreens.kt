@@ -282,7 +282,7 @@ fun ExerciseDetailScreen(
     onOpenExercise: (String) -> Unit,
     onAddToProgram: () -> Unit
 ) {
-    val vm = appViewModel { LibraryViewModel(it.exercises) }
+    val vm = appViewModel { LibraryViewModel(it) }
     val all by vm.exercises.collectAsStateWithLifecycle()
     val sexState by vm.sex.collectAsStateWithLifecycle()
     var sex by rememberSaveable { mutableStateOf(sexState) }
