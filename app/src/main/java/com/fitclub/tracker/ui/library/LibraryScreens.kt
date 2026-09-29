@@ -53,6 +53,7 @@ import com.fitclub.tracker.data.model.Levels
 import com.fitclub.tracker.data.model.MuscleGroup
 import com.fitclub.tracker.data.model.Sex
 import com.fitclub.tracker.data.repo.ExerciseRepository
+import com.fitclub.tracker.AppContainer
 import com.fitclub.tracker.ui.components.BackRow
 import com.fitclub.tracker.ui.components.FcCard
 import com.fitclub.tracker.ui.components.MuscleFigure
@@ -65,14 +66,14 @@ import com.fitclub.tracker.ui.theme.Fc
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-class LibraryViewModel(repo: ExerciseRepository) : ViewModel() {
+class LibraryViewModel(c: AppContainer) : ViewModel() {
     val exercises: StateFlow<List<ExerciseEntity>> =
-        repo.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        c.exercises.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Пол модели. На этапе 3 будет браться из личного кабинета. */
-    val sex = MutableStateFlow(Sex.MALE)
+    val sex = c.profile.settings.map { it.sex }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
 }
 
 private val HeroBrush = Brush.linearGradient(listOf(Color(0xFF2B2F38), Color(0xFF15171C)))
@@ -88,7 +89,7 @@ private fun exercisesLabel(n: Int) = "$n ${plural(n, "упражнение", "у
 
 @Composable
 fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Unit) {
-    val vm = appViewModel { LibraryViewModel(it.exercises) }
+    val vm = appViewModel { LibraryViewModel(it) }
     val all by vm.exercises.collectAsStateWithLifecycle()
     val sex by vm.sex.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
@@ -184,7 +185,7 @@ private fun ExerciseRow(e: ExerciseEntity, showGroup: Boolean = false, onClick: 
 
 @Composable
 fun LibraryGroupScreen(group: MuscleGroup, onBack: () -> Unit, onExercise: (String) -> Unit) {
-    val vm = appViewModel { LibraryViewModel(it.exercises) }
+    val vm = appViewModel { LibraryViewModel(it) }
     val all by vm.exercises.collectAsStateWithLifecycle()
     val sex by vm.sex.collectAsStateWithLifecycle()
     var type by rememberSaveable { mutableStateOf<ExerciseType?>(null) }

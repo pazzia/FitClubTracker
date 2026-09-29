@@ -54,6 +54,11 @@ import com.fitclub.tracker.ui.library.ExerciseDetailScreen
 import com.fitclub.tracker.ui.library.LibraryGroupScreen
 import com.fitclub.tracker.ui.library.LibraryHomeScreen
 import com.fitclub.tracker.ui.placeholder.ComingSoonScreen
+import com.fitclub.tracker.ui.dashboard.TodayScreen
+import com.fitclub.tracker.ui.dashboard.CalendarScreen
+import com.fitclub.tracker.ui.dashboard.ProgressScreen
+import com.fitclub.tracker.ui.dashboard.ProfileScreen
+import com.fitclub.tracker.ui.workout.WorkoutScreen
 import com.fitclub.tracker.ui.programs.ProgramEditorScreen
 import com.fitclub.tracker.ui.programs.ProgramsScreen
 import com.fitclub.tracker.ui.theme.Fc
@@ -73,9 +78,12 @@ object Routes {
     const val GROUP = "library/{group}"
     const val EXERCISE = "exercise/{id}"
     const val PROGRESS = "progress"
+    const val PROFILE = "profile"
+    const val WORKOUT = "workout/{day}"
     fun program(id: Long) = "program/$id"
     fun group(g: MuscleGroup) = "library/${g.name}"
     fun exercise(id: String) = "exercise/$id"
+    fun workout(day: Int) = "workout/$day"
 }
 
 private data class Tab(val route: String, val title: String, val icon: ImageVector, val prefixes: List<String>)
@@ -95,10 +103,18 @@ fun AppRoot() {
         containerColor = Fc.Bg,
         bottomBar = { BottomBar(nav) }
     ) { padding ->
-        NavHost(nav, startDestination = Routes.LIBRARY, modifier = Modifier.fillMaxSize().padding(padding)) {
-            composable(Routes.TODAY) { ComingSoonScreen("Сегодня", "Экран дня и активная тренировка — этап 2.") }
-            composable(Routes.CALENDAR) { ComingSoonScreen("Календарь", "Календарь тренировок — этап 2.") }
-            composable(Routes.PROGRESS) { ComingSoonScreen("Прогресс", "Отчёты и личный кабинет с замерами — этап 3.") }
+        NavHost(nav, startDestination = Routes.TODAY, modifier = Modifier.fillMaxSize().padding(padding)) {
+            composable(Routes.TODAY) { TodayScreen(onStart = { nav.navigate(Routes.workout(it)) }, onPrograms = { nav.navigate(Routes.PROGRAMS) }, onProfile = { nav.navigate(Routes.PROFILE) }) }
+            composable(Routes.CALENDAR) { CalendarScreen(onStart = { nav.navigate(Routes.workout(it)) }) }
+            composable(Routes.PROGRESS) { ProgressScreen(onProfile = { nav.navigate(Routes.PROFILE) }) }
+            composable(Routes.PROFILE) { ProfileScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.WORKOUT, arguments = listOf(navArgument("day") { type = NavType.IntType })) { entry ->
+                WorkoutScreen(
+                    dayIndex = entry.arguments?.getInt("day") ?: 0,
+                    onClose = { nav.popBackStack() },
+                    onTechnique = { nav.navigate(Routes.exercise(it)) }
+                )
+            }
             composable(Routes.LIBRARY) {
                 LibraryHomeScreen(
                     onGroup = { nav.navigate(Routes.group(it)) },
@@ -131,6 +147,7 @@ fun AppRoot() {
 private fun BottomBar(nav: NavHostController) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: ""
+    if (route.startsWith("workout") || route == Routes.PROFILE) return
     Column(Modifier.background(Fc.Nav).navigationBarsPadding()) {
         HorizontalDivider(color = Fc.Line, thickness = 1.dp)
         Row(Modifier.fillMaxWidth().height(72.dp), horizontalArrangement = Arrangement.SpaceEvenly) {

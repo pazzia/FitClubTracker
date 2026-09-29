@@ -88,6 +88,34 @@ interface ProgramDao {
 
     @Query("UPDATE programs SET isActive = (id = :id)")
     suspend fun setActive(id: Long)
+
+    @Transaction
+    @Query("SELECT * FROM programs WHERE isActive = 1 LIMIT 1")
+    fun observeActive(): Flow<ProgramWithDays?>
+}
+
+@Dao
+interface MeasurementDao {
+    @Query("SELECT * FROM body_measurements ORDER BY epochDay")
+    fun observeAll(): Flow<List<BodyMeasurementEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(item: BodyMeasurementEntity)
+}
+
+@Dao
+interface WorkoutDao {
+    @Query("SELECT * FROM workout_sessions ORDER BY startedAt DESC")
+    fun observeSessions(): Flow<List<WorkoutSessionEntity>>
+
+    @Query("SELECT * FROM set_logs ORDER BY sessionId DESC, setIndex")
+    fun observeSets(): Flow<List<SetLogEntity>>
+
+    @Insert
+    suspend fun insertSession(item: WorkoutSessionEntity): Long
+
+    @Insert
+    suspend fun insertSets(items: List<SetLogEntity>)
 }
 
 @Database(
@@ -95,16 +123,20 @@ interface ProgramDao {
         ExerciseEntity::class, ProgramEntity::class, ProgramDayEntity::class, ProgramExerciseEntity::class,
         BodyMeasurementEntity::class, WorkoutSessionEntity::class, SetLogEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun exerciseDao(): ExerciseDao
     abstract fun programDao(): ProgramDao
+    abstract fun measurementDao(): MeasurementDao
+    abstract fun workoutDao(): WorkoutDao
 
     companion object {
         fun build(context: Context): AppDatabase =
-            Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db").build()
+            Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db")
+                .fallbackToDestructiveMigration()
+                .build()
     }
 }

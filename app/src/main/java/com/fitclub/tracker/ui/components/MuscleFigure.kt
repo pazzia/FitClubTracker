@@ -2,7 +2,10 @@ package com.fitclub.tracker.ui.components
 
 import android.graphics.BlurMaskFilter
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -24,11 +27,14 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.fitclub.tracker.data.model.BodyView
 import com.fitclub.tracker.data.model.Muscle
 import com.fitclub.tracker.data.model.Sex
+import com.fitclub.tracker.R
 import kotlin.math.max
 
 private class ParsedPart(val muscle: Muscle, val angle: Float, val path: Path) {
@@ -68,39 +74,29 @@ fun MuscleFigure(
     val figure = remember(sex) { ParsedFigure(if (sex == Sex.FEMALE) BodyShapes.female else BodyShapes.male) }
     val targetSet = target.toSet()
     val auxSet = aux.toSet() - targetSet
-    Canvas(
+    Box(
         modifier
-            .aspectRatio(200f / 440f)
+            .aspectRatio(if (sex == Sex.FEMALE) 0.51f else 0.62f)
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
     ) {
-        val k = size.width / 200f
-        scale(k, k, pivot = Offset.Zero) {
-            drawOval(
-                Brush.radialGradient(listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent), center = Offset(100f, 428f), radius = 52f),
-                topLeft = Offset(48f, 420f), size = Size(104f, 16f)
-            )
-            drawPath(
-                figure.silhouette,
-                Brush.horizontalGradient(
-                    0f to Color(0xFF595C65), 0.28f to Color(0xFFA7AAB2), 0.5f to Color(0xFFCDCFD5),
-                    0.72f to Color(0xFFA0A3AB), 1f to Color(0xFF52555D), startX = 34f, endX = 166f
-                )
-            )
-            drawPath(figure.silhouette, Color(0xFF474A52), style = Stroke(0.8f))
-
+        val asset = when {
+            sex == Sex.FEMALE && view == BodyView.FRONT -> R.drawable.body_female_front
+            sex == Sex.FEMALE -> R.drawable.body_female_back
+            view == BodyView.FRONT -> R.drawable.body_male_front
+            else -> R.drawable.body_male_back
+        }
+        Image(painterResource(asset), contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+        Canvas(Modifier.fillMaxSize()) {
+            val kx = size.width / 200f
+            val ky = size.height / 440f
+            withTransform({ scale(kx, ky, pivot = Offset.Zero) }) {
             val parts = if (view == BodyView.FRONT) figure.front else figure.back
             val veins = if (view == BodyView.FRONT) figure.veinsFront else figure.veinsBack
             drawSide(parts, veins, targetSet, auxSet, detailed)
             withTransform({ scale(-1f, 1f, pivot = Offset(100f, 0f)) }) {
                 drawSide(parts, veins, targetSet, auxSet, detailed)
             }
-            if (view == BodyView.FRONT) {
-                drawPath(figure.trunks, Brush.verticalGradient(listOf(Color(0xFF2E3038), Color(0xFF0E0F13)), startY = 188f, endY = 226f))
             }
-            drawOval(
-                Brush.radialGradient(listOf(Color.White.copy(alpha = 0.55f), Color.Transparent), center = Offset(91f, 22f), radius = 16f),
-                topLeft = Offset(85f, 13f), size = Size(20f, 30f)
-            )
         }
     }
 }
@@ -111,6 +107,7 @@ private fun DrawScope.drawSide(
     parts.forEach { part ->
         val isTarget = part.muscle in target
         val isAux = !isTarget && part.muscle in aux
+        if (!isTarget && !isAux) return@forEach
         if (isTarget || isAux) {
             drawIntoCanvas { canvas ->
                 val paint = android.graphics.Paint().apply {
@@ -122,7 +119,7 @@ private fun DrawScope.drawSide(
             }
         }
         val b = part.bounds
-        val colors = when { isTarget -> TARGET; isAux -> AUX; else -> NEUTRAL }
+        val colors = if (isTarget) TARGET else AUX
         drawPath(
             part.path,
             Brush.radialGradient(
@@ -133,9 +130,6 @@ private fun DrawScope.drawSide(
         )
         drawPath(part.path, Color(0xFF6F727B), style = Stroke(0.8f))
         if (detailed) drawFibers(part)
-    }
-    if (detailed) {
-        drawPath(veins, Color(0xFF7F8AA3).copy(alpha = 0.45f), style = Stroke(width = 0.7f, cap = StrokeCap.Round))
     }
 }
 

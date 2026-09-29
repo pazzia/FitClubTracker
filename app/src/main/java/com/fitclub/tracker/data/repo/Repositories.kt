@@ -7,11 +7,15 @@ import com.fitclub.tracker.data.db.ProgramDayEntity
 import com.fitclub.tracker.data.db.ProgramEntity
 import com.fitclub.tracker.data.db.ProgramExerciseEntity
 import com.fitclub.tracker.data.db.ProgramWithDays
+import com.fitclub.tracker.data.db.BodyMeasurementEntity
+import com.fitclub.tracker.data.db.SetLogEntity
+import com.fitclub.tracker.data.db.WorkoutSessionEntity
 import com.fitclub.tracker.data.model.Goal
 import com.fitclub.tracker.data.model.RepRange
 import com.fitclub.tracker.data.seed.ExerciseSeed
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 
 /** Программа в удобном для редактирования виде. */
 data class ProgramDraft(
@@ -72,6 +76,7 @@ class ProgramRepository(private val db: AppDatabase) {
     private val dao = db.programDao()
 
     fun observeAll(): Flow<List<ProgramDraft>> = dao.observeAll().map { list -> list.map { it.toDraft() } }
+    fun observeActive(): Flow<ProgramDraft?> = dao.observeActive().map { it?.toDraft() }
 
     suspend fun get(id: Long): ProgramDraft? = dao.get(id)?.toDraft()
 
@@ -101,6 +106,54 @@ class ProgramRepository(private val db: AppDatabase) {
         if (dao.count() > 0) return
         SamplePrograms.all.forEach { save(it) }
     }
+}
+
+data class WorkoutLog(
+    val session: WorkoutSessionEntity,
+    val sets: List<SetLogEntity>
+) {
+    val volumeKg: Float get() = sets.filter { it.done }.sumOf { (it.weightKg * it.reps).toDouble() }.toFloat()
+    val completedSets: Int get() = sets.count { it.done }
+    val durationMin: Int get() = (((session.finishedAt ?: session.startedAt) - session.startedAt) / 60_000L).toInt().coerceAtLeast(1)
+}
+
+data class CompletedSet(val exerciseId: String, val setIndex: Int, val weightKg: Float, val reps: Int)
+
+class FitnessRepository(private val db: AppDatabase) {
+    fun observeMeasurements(): Flow<List<BodyMeasurementEntity>> = db.measurementDao().observeAll()
+
+    fun observeWorkouts(): Flow<List<WorkoutLog>> = combine(
+        db.workoutDao().observeSessions(), db.workoutDao().observeSets()
+    ) { sessions, sets ->
+        sessions.map { session -> WorkoutLog(session, sets.filter { it.sessionId == session.id }) }
+    }
+
+    suspend fun addMeasurement(weight: Float?, waist: Float?, fat: Float?, chest: Float?, arm: Float?) {
+        db.measurementDao().insert(
+            BodyMeasurementEntity(
+                epochDay = java.time.LocalDate.now().toEpochDay(), weightKg = weight, waistCm = waist,
+                fatPercent = fat, chestCm = chest, armCm = arm
+            )
+        )
+    }
+
+    suspend fun finishWorkout(programId: Long?, day: Int?, startedAt: Long, sets: List<CompletedSet>): Long =
+        db.withTransaction {
+            val now = System.currentTimeMillis()
+            val id = db.workoutDao().insertSession(
+                WorkoutSessionEntity(
+                    programId = programId, dayPosition = day, epochDay = java.time.LocalDate.now().toEpochDay(),
+                    startedAt = startedAt, finishedAt = now
+                )
+            )
+            db.workoutDao().insertSets(sets.map {
+                SetLogEntity(
+                    sessionId = id, exerciseId = it.exerciseId, setIndex = it.setIndex,
+                    weightKg = it.weightKg, reps = it.reps, done = true
+                )
+            })
+            id
+        }
 }
 
 /** Примеры программ для первого запуска. «Летний рельеф» специально составлен с ошибками под цель. */

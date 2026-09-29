@@ -1,0 +1,40 @@
+package com.fitclub.tracker.data.repo
+
+import android.content.Context
+import com.fitclub.tracker.data.model.Sex
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+data class ProfileSettings(
+    val name: String = "Алекс Ким",
+    val sex: Sex = Sex.MALE,
+    val level: Int = 2,
+    val unitsKg: Boolean = true,
+    val reminders: Boolean = true,
+    val theme: String = "Volt Night",
+    val accent: Long = 0xFFD4FF3A
+)
+
+class ProfileRepository(context: Context) {
+    private val prefs = context.getSharedPreferences("profile", Context.MODE_PRIVATE)
+    private val _settings = MutableStateFlow(load())
+    val settings: StateFlow<ProfileSettings> = _settings.asStateFlow()
+
+    private fun load() = ProfileSettings(
+        name = prefs.getString("name", "Алекс Ким") ?: "Алекс Ким",
+        sex = runCatching { Sex.valueOf(prefs.getString("sex", Sex.MALE.name)!!) }.getOrDefault(Sex.MALE),
+        level = prefs.getInt("level", 2), unitsKg = prefs.getBoolean("kg", true),
+        reminders = prefs.getBoolean("reminders", true),
+        theme = prefs.getString("theme", "Volt Night") ?: "Volt Night",
+        accent = prefs.getLong("accent", 0xFFD4FF3A)
+    )
+
+    fun update(value: ProfileSettings) {
+        _settings.value = value
+        prefs.edit().putString("name", value.name).putString("sex", value.sex.name)
+            .putInt("level", value.level).putBoolean("kg", value.unitsKg)
+            .putBoolean("reminders", value.reminders).putString("theme", value.theme)
+            .putLong("accent", value.accent).apply()
+    }
+}
