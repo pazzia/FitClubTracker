@@ -30,8 +30,9 @@ jobs:
 
       - name: Set up Android 34 SDK
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       # В репозитории нет gradle-wrapper.jar, поэтому Gradle ставится этим шагом.
       - name: Set up Gradle 8.9
