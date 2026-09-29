@@ -20,19 +20,18 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android 34 SDK
-        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+      - name: Set up Android 34 SDK
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       # В репозитории нет gradle-wrapper.jar, поэтому Gradle ставится этим шагом.
       - name: Set up Gradle 8.9
