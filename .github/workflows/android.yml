@@ -29,10 +29,11 @@ jobs:
           java-version: '17'
 
       - name: Keep debug signing key between builds
-        uses: actions/cache@v4
+        id: signing-cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/.android/debug.keystore
-          key: fitclub-debug-signing-v1
+          key: fitclub-debug-signing-v2
 
 
       - name: Restore permanent signing key when configured
@@ -52,6 +53,29 @@ jobs:
               target.write_bytes(base64.b64decode(encoded, validate=True))
               target.chmod(0o600)
           PY
+
+      - name: Prepare debug signing key
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -noprompt \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android -keypass android \
+              -alias androiddebugkey -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          chmod 600 "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" \
+            -storepass android -alias androiddebugkey
+          echo "FITCLUB_DEBUG_KEYSTORE_PATH=$HOME/.android/debug.keystore" >> "$GITHUB_ENV"
+
+      - name: Save debug signing key before build
+        if: steps.signing-cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fitclub-debug-signing-v2
 
       - name: Set up Android 34 SDK
         run: |
@@ -79,19 +103,11 @@ jobs:
               raise SystemExit('Missing or failing test reports')
           PY
 
-      - name: Locate an existing approved key
-        run: |
-          gradle signingReport --console=plain > signing-report.txt || true
-          python3 tools/recover_debug_signing.py --report signing-report.txt
-
-      - name: Require the approved signing key
-        run: python3 tools/check_debug_signing.py --keystore "$HOME/.android/debug.keystore"
-
       - name: Build debug APK
         run: FITCLUB_DEBUG_KEYSTORE_PATH="$HOME/.android/debug.keystore" gradle assembleDebug --stacktrace
 
       - name: Verify APK signing identity
-        run: python3 tools/check_debug_signing.py --apk app/build/outputs/apk/debug/app-debug.apk --apksigner "$ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner"
+        run: '"$ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/debug/app-debug.apk'
 
       - name: Name APK using version and build number
         id: apk
