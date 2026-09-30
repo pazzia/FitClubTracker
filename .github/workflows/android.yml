@@ -46,11 +46,39 @@ jobs:
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace
 
+      - name: Name APK using version and build number
+        id: apk
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import shutil
+          from pathlib import Path
+
+          apk_dir = Path("app/build/outputs/apk/debug")
+          metadata = json.loads((apk_dir / "output-metadata.json").read_text())
+          elements = metadata["elements"]
+          if len(elements) != 1:
+              raise RuntimeError("Expected a single debug APK")
+          element = elements[0]
+          version = re.sub(r"[^A-Za-z0-9._-]", "-", element["versionName"])
+          name = f"FitClub-v{version}-build{os.environ['GITHUB_RUN_NUMBER']}-debug"
+          target = Path("dist") / f"{name}.apk"
+          target.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copy2(apk_dir / element["outputFile"], target)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"name={name}\n")
+              output.write(f"path={target.as_posix()}\n")
+          print(f"APK: {target.name}")
+          PY
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: fitclub-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: ${{ steps.apk.outputs.name }}
+          path: ${{ steps.apk.outputs.path }}
           if-no-files-found: error
           retention-days: 14
 
