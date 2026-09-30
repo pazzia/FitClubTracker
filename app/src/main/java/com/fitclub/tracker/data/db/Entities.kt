@@ -118,7 +118,8 @@ data class WorkoutSessionEntity(
     val dayPosition: Int?,
     val epochDay: Long,
     val startedAt: Long,
-    val finishedAt: Long?
+    val finishedAt: Long?,
+    val scheduleId: Long? = null
 )
 
 @Entity(
@@ -137,4 +138,37 @@ data class SetLogEntity(
     val weightKg: Float,
     val reps: Int,
     val done: Boolean
+)
+
+/** Снимок тренировки на конкретную дату: изменения программы не меняют этот план. */
+@Entity(tableName = "scheduled_workouts", indices = [Index(value = ["epochDay"], unique = true)])
+data class ScheduledWorkoutEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val epochDay: Long,
+    val title: String,
+    val startMinute: Int,
+    val programId: Long?,
+    val dayPosition: Int?
+)
+
+@Entity(
+    tableName = "scheduled_exercises",
+    foreignKeys = [ForeignKey(entity = ScheduledWorkoutEntity::class,
+        parentColumns = ["id"], childColumns = ["scheduleId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("scheduleId")]
+)
+data class ScheduledExerciseEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val scheduleId: Long,
+    val exerciseId: String,
+    val position: Int,
+    val sets: Int,
+    val reps: RepRange,
+    val restSec: Int
+)
+
+data class ScheduledWorkoutWithItems(
+    @Embedded val workout: ScheduledWorkoutEntity,
+    @Relation(parentColumn = "id", entityColumn = "scheduleId")
+    val items: List<ScheduledExerciseEntity>
 )

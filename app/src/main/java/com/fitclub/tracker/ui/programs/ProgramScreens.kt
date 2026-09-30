@@ -122,7 +122,7 @@ class ProgramsViewModel(c: AppContainer) : ViewModel() {
 }
 
 @Composable
-fun ProgramsScreen(onOpen: (Long) -> Unit) {
+fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false) {
     val vm = appViewModel { ProgramsViewModel(it) }
     val programs by vm.programs.collectAsStateWithLifecycle()
     val catalog by vm.catalog.collectAsStateWithLifecycle()
@@ -130,7 +130,7 @@ fun ProgramsScreen(onOpen: (Long) -> Unit) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                ScreenTitle("Программы")
+                ScreenTitle(if (choosingExercise) "Выберите программу" else "Программы")
                 Text(
                     "${programs.size} ${plural(programs.size, "программа", "программы", "программ")} · создавайте сколько угодно",
                     style = MaterialTheme.typography.bodyMedium, color = Fc.Muted
@@ -163,7 +163,7 @@ fun ProgramsScreen(onOpen: (Long) -> Unit) {
 
 // ---------- Редактор программы ----------
 
-class ProgramEditorViewModel(private val c: AppContainer, private val programId: Long) : ViewModel() {
+class ProgramEditorViewModel(private val c: AppContainer, private val programId: Long, private val addExercise: String = "") : ViewModel() {
     private val _draft = MutableStateFlow<ProgramDraft?>(null)
     val draft: StateFlow<ProgramDraft?> = _draft.asStateFlow()
     val catalog: StateFlow<Map<String, ExerciseEntity>> =
@@ -172,7 +172,11 @@ class ProgramEditorViewModel(private val c: AppContainer, private val programId:
 
     init {
         viewModelScope.launch {
-            _draft.value = if (programId == 0L) ProgramDraft() else c.programs.get(programId) ?: ProgramDraft()
+            val loaded = if (programId == 0L) ProgramDraft() else c.programs.get(programId) ?: ProgramDraft()
+            _draft.value = if (addExercise.isNotBlank() && loaded.days.firstOrNull()?.items?.none { it.exerciseId == addExercise } != false)
+                loaded.copy(days = (loaded.days.ifEmpty { listOf(DayDraft()) }).mapIndexed { index, day ->
+                    if (index == 0) day.copy(items = day.items + ItemDraft(addExercise, 3, loaded.goal.defaultReps, loaded.goal.defaultRest)) else day
+                }) else loaded
         }
     }
 
@@ -215,8 +219,8 @@ class ProgramEditorViewModel(private val c: AppContainer, private val programId:
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProgramEditorScreen(programId: Long, onClose: () -> Unit) {
-    val vm = appViewModel(key = "program-$programId") { ProgramEditorViewModel(it, programId) }
+fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: String = "") {
+    val vm = appViewModel(key = "program-$programId-$addExercise") { ProgramEditorViewModel(it, programId, addExercise) }
     val draftOrNull by vm.draft.collectAsStateWithLifecycle()
     val catalog by vm.catalog.collectAsStateWithLifecycle()
     val d = draftOrNull ?: return
@@ -468,7 +472,7 @@ private fun FitDetails(fit: FitResult) {
 }
 
 @Composable
-private fun ItemCard(
+internal fun ItemCard(
     name: String, meta: String, item: ItemDraft, goal: Goal,
     onChange: ((ItemDraft) -> ItemDraft) -> Unit, onRemove: () -> Unit
 ) {
@@ -544,7 +548,7 @@ private fun Dropdown(title: String, value: String, ok: Boolean, options: List<Pa
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ExercisePicker(
+internal fun ExercisePicker(
     catalog: List<ExerciseEntity>, already: Set<String>, subtitle: String,
     onBack: () -> Unit, onPick: (String) -> Unit
 ) {

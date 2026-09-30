@@ -6,6 +6,7 @@ import com.fitclub.tracker.data.repo.ExerciseRepository
 import com.fitclub.tracker.data.repo.ProgramRepository
 import com.fitclub.tracker.data.repo.FitnessRepository
 import com.fitclub.tracker.data.repo.ProfileRepository
+import com.fitclub.tracker.data.repo.ScheduleRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,6 +19,7 @@ class AppContainer(app: Application) {
     val programs = ProgramRepository(db)
     val fitness = FitnessRepository(db)
     val profile = ProfileRepository(app)
+    val schedule = ScheduleRepository(db)
 }
 
 class FitApp : Application() {

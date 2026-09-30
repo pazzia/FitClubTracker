@@ -25,6 +25,8 @@ import com.fitclub.tracker.AppContainer
 import com.fitclub.tracker.data.db.ExerciseEntity
 import com.fitclub.tracker.data.repo.CompletedSet
 import com.fitclub.tracker.data.repo.ProgramDraft
+import com.fitclub.tracker.data.repo.ScheduledDraft
+import com.fitclub.tracker.data.repo.DayDraft
 import com.fitclub.tracker.ui.components.*
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.theme.Fc
@@ -33,32 +35,52 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-data class WorkoutSource(val program: ProgramDraft? = null, val catalog: Map<String, ExerciseEntity> = emptyMap())
+data class WorkoutSource(val plan: ScheduledDraft? = null, val catalog: Map<String, ExerciseEntity> = emptyMap(), val unitsKg: Boolean = true, val sex: com.fitclub.tracker.data.model.Sex = com.fitclub.tracker.data.model.Sex.MALE)
 data class SetEntry(var weight: String = "", var reps: String = "", var done: Boolean = false)
 
-class WorkoutViewModel(private val c: AppContainer) : ViewModel() {
-    val source = combine(c.programs.observeActive(), c.exercises.observeAll()) { p, e -> WorkoutSource(p, e.associateBy { it.id }) }
+class WorkoutViewModel(private val c: AppContainer, scheduleId: Long) : ViewModel() {
+    val source = combine(c.schedule.observe(scheduleId), c.exercises.observeAll(), c.profile.settings) { p, e, settings -> WorkoutSource(p, e.associateBy { it.id }, settings.unitsKg, settings.sex) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutSource())
-    fun finish(programId: Long?, day: Int, startedAt: Long, sets: List<CompletedSet>, done: () -> Unit) = viewModelScope.launch {
-        c.fitness.finishWorkout(programId, day, startedAt, sets); done()
+    val startedAt = System.currentTimeMillis()
+    var elapsed by mutableLongStateOf(0L)
+    var exerciseIndex by mutableIntStateOf(0)
+    var rest by mutableIntStateOf(0)
+    private var restUntil = 0L
+    val logs = mutableStateMapOf<String, SnapshotStateList<SetEntry>>()
+    var finishing by mutableStateOf(false)
+    var error by mutableStateOf<String?>(null)
+    init { viewModelScope.launch { while (true) {
+        val now = System.currentTimeMillis()
+        elapsed = (now - startedAt) / 1000
+        rest = ((restUntil - now) / 1000).toInt().coerceAtLeast(0)
+        delay(1000)
+    } } }
+    fun startRest(seconds: Int) { restUntil = System.currentTimeMillis() + seconds * 1000L; rest = seconds }
+    fun stopRest() { restUntil = 0; rest = 0 }
+    fun finish(plan: ScheduledDraft, sets: List<CompletedSet>, done: () -> Unit) {
+        if (finishing || sets.isEmpty()) return
+        finishing = true
+        viewModelScope.launch {
+            runCatching { c.fitness.finishWorkout(plan.programId, plan.dayPosition, startedAt, sets, plan.id, plan.epochDay) }
+                .onSuccess { done() }.onFailure { error = "Не удалось сохранить тренировку: ${it.message}" }
+            finishing = false
+        }
     }
 }
 
 @Composable
-fun WorkoutScreen(dayIndex: Int, onClose: () -> Unit, onTechnique: (String) -> Unit) {
-    val vm = appViewModel { WorkoutViewModel(it) }
+fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -> Unit) {
+    val vm = appViewModel(key = "workout-$scheduleId") { WorkoutViewModel(it, scheduleId) }
     val source by vm.source.collectAsStateWithLifecycle()
-    val p = source.program
-    val day = p?.days?.getOrNull(dayIndex.coerceAtLeast(0))
-    val startedAt = remember { System.currentTimeMillis() }
-    var elapsed by remember { mutableLongStateOf(0L) }
-    var exerciseIndex by remember { mutableIntStateOf(0) }
-    var rest by remember { mutableIntStateOf(0) }
+    val plan = source.plan
+    val p = plan?.let { ProgramDraft(id = it.programId ?: 0, name = it.title, days = listOf(DayDraft(it.items))) }
+    val day = p?.days?.firstOrNull()
+    val elapsed = vm.elapsed
+    var exerciseIndex by vm::exerciseIndex
+    val rest = vm.rest
     var confirmClose by remember { mutableStateOf(false) }
-    val logs = remember { mutableStateMapOf<String, SnapshotStateList<SetEntry>>() }
+    val logs = vm.logs
 
-    LaunchedEffect(Unit) { while (true) { elapsed = (System.currentTimeMillis() - startedAt) / 1000; delay(1000) } }
-    LaunchedEffect(rest) { if (rest > 0) { delay(1000); rest -= 1 } }
     BackHandler { confirmClose = true }
 
     if (confirmClose) AlertDialog(
@@ -69,7 +91,7 @@ fun WorkoutScreen(dayIndex: Int, onClose: () -> Unit, onTechnique: (String) -> U
         dismissButton = { TextButton(onClick = { confirmClose = false }) { Text("Продолжить") } }
     )
 
-    if (p == null || day == null || day.items.isEmpty()) {
+    if (p == null || plan == null || day == null || day.items.isEmpty()) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("В этом дне пока нет упражнений", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
@@ -81,32 +103,38 @@ fun WorkoutScreen(dayIndex: Int, onClose: () -> Unit, onTechnique: (String) -> U
     val item = day.items[exerciseIndex.coerceIn(0, day.items.lastIndex)]
     val exercise = source.catalog[item.exerciseId]
     val rows = logs.getOrPut(item.exerciseId) {
-        mutableStateListOf<SetEntry>().apply { repeat(item.sets) { add(SetEntry(weight = suggestedWeight(item.exerciseId))) } }
+        mutableStateListOf<SetEntry>().apply { repeat(item.sets) { add(SetEntry(weight = suggestedWeight(item.exerciseId), reps = if (item.reps == com.fitclub.tracker.data.model.RepRange.TIME) "45" else "8")) } }
     }
     val allDone = day.items.flatMap { i -> logs[i.exerciseId].orEmpty() }.filter { it.done }
 
     Column(Modifier.fillMaxSize().background(Fc.Bg)) {
         Row(Modifier.fillMaxWidth().background(Fc.Nav).padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) { Text("${p.name} · день ${'A' + dayIndex}", style = MaterialTheme.typography.titleSmall, color = Fc.Text); Text(time(elapsed), color = Fc.Lime, style = MaterialTheme.typography.labelMedium) }
+            Column(Modifier.weight(1f)) { Text("${p.name}", style = MaterialTheme.typography.titleSmall, color = Fc.Text); Text(time(elapsed), color = Fc.Lime, style = MaterialTheme.typography.labelMedium) }
             TextButton(onClick = {
-                val completed = logs.flatMap { (id, list) -> list.mapIndexedNotNull { idx, r -> if (r.done) CompletedSet(id, idx, r.weight.replace(',', '.').toFloatOrNull() ?: 0f, r.reps.toIntOrNull() ?: 0) else null } }
-                vm.finish(p.id, dayIndex, startedAt, completed, onClose)
-            }, enabled = allDone.isNotEmpty()) { Text("Завершить", color = if (allDone.isNotEmpty()) Fc.Lime else Fc.Muted) }
+                val completed = logs.flatMap { (id, list) -> list.mapIndexedNotNull { idx, r -> if (r.done) CompletedSet(id, idx, (r.weight.replace(',', '.').toFloatOrNull() ?: 0f) / if (source.unitsKg) 1f else 2.2046226f, r.reps.toIntOrNull() ?: 0) else null } }
+                vm.finish(plan, completed, onClose)
+            }, enabled = allDone.isNotEmpty() && !vm.finishing) { Text("Завершить", color = if (allDone.isNotEmpty()) Fc.Lime else Fc.Muted) }
         }
         LinearProgressIndicator(progress = { (exerciseIndex + 1f) / day.items.size }, modifier = Modifier.fillMaxWidth(), color = Fc.Lime, trackColor = Fc.Surface2)
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item { Text("УПРАЖНЕНИЕ ${exerciseIndex + 1} ИЗ ${day.items.size}", style = MaterialTheme.typography.labelMedium, color = Fc.Muted); Text(exercise?.name ?: item.exerciseId, style = MaterialTheme.typography.displaySmall, color = Fc.Text) }
+            if (exercise != null) item { GroupImage(source.sex, exercise.group, Modifier.fillMaxWidth().height(145.dp)) }
             item { TextButton(onClick = { onTechnique(item.exerciseId) }, contentPadding = PaddingValues(0.dp)) { Text("Техника выполнения →", color = Fc.Lime) } }
             item {
                 FcCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("№", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.width(34.dp)); Text("кг", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)); Text("повт.", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)); Spacer(Modifier.width(46.dp))
+                        Text("№", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.width(34.dp)); Text(if (source.unitsKg) "кг" else "фунты", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)); Text(if (item.reps == com.fitclub.tracker.data.model.RepRange.TIME) "сек." else "повт.", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)); Spacer(Modifier.width(46.dp))
                     }
                     rows.forEachIndexed { index, row ->
                         SetRow(index, row, onDone = { checked ->
-                            rows[index] = row.copy(done = checked)
-                            if (checked) rest = item.restSec
-                        }, onRemove = { if (rows.size > 1) rows.removeAt(index) }) { w, r -> rows[index] = row.copy(weight = w, reps = r) }
+                            val weight = row.weight.replace(',', '.').toFloatOrNull()
+                            val reps = row.reps.toIntOrNull()
+                            if (!checked || (weight != null && weight.isFinite() && weight >= 0 && reps != null && reps > 0)) {
+                                rows[index] = row.copy(done = checked); vm.error = null
+                                if (checked) vm.startRest(item.restSec)
+                            } else vm.error = "Укажите вес не меньше 0 и количество больше 0"
+
+                        }, onRemove = { if (rows.size > 1) rows.removeAt(index) }) { w, r -> rows[index] = row.copy(weight = w, reps = r, done = false) }
                     }
                     TextButton(onClick = { rows.add(SetEntry(weight = rows.lastOrNull()?.weight ?: suggestedWeight(item.exerciseId))) }, modifier = Modifier.fillMaxWidth()) { Text("+ Добавить подход", color = Fc.Lime) }
                 }
@@ -116,7 +144,7 @@ fun WorkoutScreen(dayIndex: Int, onClose: () -> Unit, onTechnique: (String) -> U
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(58.dp).background(Fc.LimeSoft, CircleShape), contentAlignment = Alignment.Center) { Text(time(rest.toLong()), color = Fc.Lime, fontWeight = FontWeight.ExtraBold) }
                         Column(Modifier.padding(start = 12.dp).weight(1f)) { Text("Отдых", style = MaterialTheme.typography.titleMedium, color = Fc.Text); Text("готовы к следующему подходу", color = Fc.Muted) }
-                        TextButton(onClick = { rest = 0 }) { Text("Пропустить", color = Fc.Lime) }
+                        TextButton(onClick = { vm.stopRest() }) { Text("Пропустить", color = Fc.Lime) }
                     }
                 }
             }
@@ -129,12 +157,13 @@ fun WorkoutScreen(dayIndex: Int, onClose: () -> Unit, onTechnique: (String) -> U
                 }
             }
         }
+        if (vm.error != null) Text(vm.error.orEmpty(), color = Fc.Pink, modifier = Modifier.padding(16.dp))
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(onClick = { if (exerciseIndex > 0) exerciseIndex-- }, enabled = exerciseIndex > 0, modifier = Modifier.weight(1f)) { Text("Назад") }
             Button(onClick = { if (exerciseIndex < day.items.lastIndex) exerciseIndex++ else {
-                val completed = logs.flatMap { (id, list) -> list.mapIndexedNotNull { idx, r -> if (r.done) CompletedSet(id, idx, r.weight.replace(',', '.').toFloatOrNull() ?: 0f, r.reps.toIntOrNull() ?: 0) else null } }
-                vm.finish(p.id, dayIndex, startedAt, completed, onClose)
-            } }, colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime), modifier = Modifier.weight(1f)) { Text(if (exerciseIndex == day.items.lastIndex) "Завершить" else "Далее", color = Fc.Bg) }
+                val completed = logs.flatMap { (id, list) -> list.mapIndexedNotNull { idx, r -> if (r.done) CompletedSet(id, idx, (r.weight.replace(',', '.').toFloatOrNull() ?: 0f) / if (source.unitsKg) 1f else 2.2046226f, r.reps.toIntOrNull() ?: 0) else null } }
+                vm.finish(plan, completed, onClose)
+            } }, enabled = !vm.finishing && (exerciseIndex < day.items.lastIndex || allDone.isNotEmpty()), colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime), modifier = Modifier.weight(1f)) { Text(if (exerciseIndex == day.items.lastIndex) "Завершить" else "Далее", color = Fc.Bg) }
         }
     }
 }
@@ -152,4 +181,4 @@ fun WorkoutScreen(dayIndex: Int, onClose: () -> Unit, onTechnique: (String) -> U
 
 @Composable private fun fieldColors() = OutlinedTextFieldDefaults.colors(focusedTextColor = Fc.Text, unfocusedTextColor = Fc.Text, focusedBorderColor = Fc.Lime, unfocusedBorderColor = Fc.Line, cursorColor = Fc.Lime)
 private fun time(sec: Long) = "%02d:%02d".format(Locale.US, sec / 60, sec % 60)
-private fun suggestedWeight(id: String) = when (id) { "squat" -> "70"; "bench" -> "57,5"; "bbrow" -> "50"; "rdl" -> "65"; "deadlift" -> "90"; else -> "20" }
+private fun suggestedWeight(id: String) = if (id in listOf("plank", "pushup", "pullup", "hangraise")) "0" else ""

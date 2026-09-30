@@ -18,7 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.FitnessCenter
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ListAlt
 import androidx.compose.material.icons.outlined.ShowChart
 import androidx.compose.material3.HorizontalDivider
@@ -54,8 +54,8 @@ import com.fitclub.tracker.ui.library.ExerciseDetailScreen
 import com.fitclub.tracker.ui.library.LibraryGroupScreen
 import com.fitclub.tracker.ui.library.LibraryHomeScreen
 import com.fitclub.tracker.ui.placeholder.ComingSoonScreen
-import com.fitclub.tracker.ui.dashboard.TodayScreen
-import com.fitclub.tracker.ui.dashboard.CalendarScreen
+import com.fitclub.tracker.ui.dashboard.CalendarHomeScreen
+import com.fitclub.tracker.ui.dashboard.TrainingPlannerScreen
 import com.fitclub.tracker.ui.dashboard.ProgressScreen
 import com.fitclub.tracker.ui.dashboard.ProfileScreen
 import com.fitclub.tracker.ui.workout.WorkoutScreen
@@ -73,27 +73,29 @@ object Routes {
     const val TODAY = "today"
     const val CALENDAR = "calendar"
     const val PROGRAMS = "programs"
-    const val PROGRAM = "program/{id}"
+    const val PROGRAM = "program/{id}?add={add}"
     const val LIBRARY = "library"
     const val GROUP = "library/{group}"
     const val EXERCISE = "exercise/{id}"
     const val PROGRESS = "progress"
     const val PROFILE = "profile"
-    const val WORKOUT = "workout/{day}"
-    fun program(id: Long) = "program/$id"
+    const val WORKOUT = "workout/{schedule}"
+    const val PLANNER = "plan/{epochDay}"
+    fun program(id: Long, add: String = "") = "program/$id?add=$add"
     fun group(g: MuscleGroup) = "library/${g.name}"
     fun exercise(id: String) = "exercise/$id"
-    fun workout(day: Int) = "workout/$day"
+    fun workout(schedule: Long) = "workout/$schedule"
+    fun plan(epochDay: Long) = "plan/$epochDay"
 }
 
 private data class Tab(val route: String, val title: String, val icon: ImageVector, val prefixes: List<String>)
 
 private val tabs = listOf(
-    Tab(Routes.TODAY, "Сегодня", Icons.Outlined.Home, listOf("today")),
     Tab(Routes.CALENDAR, "Календарь", Icons.Outlined.CalendarMonth, listOf("calendar")),
     Tab(Routes.PROGRAMS, "Программы", Icons.Outlined.ListAlt, listOf("programs", "program/")),
     Tab(Routes.LIBRARY, "Справочник", Icons.Outlined.FitnessCenter, listOf("library", "exercise/")),
-    Tab(Routes.PROGRESS, "Прогресс", Icons.Outlined.ShowChart, listOf("progress"))
+    Tab(Routes.PROGRESS, "Прогресс", Icons.Outlined.ShowChart, listOf("progress")),
+    Tab(Routes.PROFILE, "Профиль", Icons.Outlined.Person, listOf("profile"))
 )
 
 @Composable
@@ -103,14 +105,20 @@ fun AppRoot() {
         containerColor = Fc.Bg,
         bottomBar = { BottomBar(nav) }
     ) { padding ->
-        NavHost(nav, startDestination = Routes.TODAY, modifier = Modifier.fillMaxSize().padding(padding)) {
-            composable(Routes.TODAY) { TodayScreen(onStart = { nav.navigate(Routes.workout(it)) }, onPrograms = { nav.navigate(Routes.PROGRAMS) }, onProfile = { nav.navigate(Routes.PROFILE) }) }
-            composable(Routes.CALENDAR) { CalendarScreen(onStart = { nav.navigate(Routes.workout(it)) }) }
+        NavHost(nav, startDestination = Routes.CALENDAR, modifier = Modifier.fillMaxSize().padding(padding)) {
+            composable(Routes.CALENDAR) {
+                CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.navigate(Routes.PROFILE) })
+            }
+            composable(Routes.PLANNER, arguments = listOf(navArgument("epochDay") { type = NavType.LongType })) { entry ->
+                TrainingPlannerScreen(epochDay = entry.arguments!!.getLong("epochDay"), onClose = { nav.popBackStack() }, onStart = {
+                    nav.navigate(Routes.workout(it)) { popUpTo(Routes.PLANNER) { inclusive = true } }
+                })
+            }
             composable(Routes.PROGRESS) { ProgressScreen(onProfile = { nav.navigate(Routes.PROFILE) }) }
             composable(Routes.PROFILE) { ProfileScreen(onBack = { nav.popBackStack() }) }
-            composable(Routes.WORKOUT, arguments = listOf(navArgument("day") { type = NavType.IntType })) { entry ->
+            composable(Routes.WORKOUT, arguments = listOf(navArgument("schedule") { type = NavType.LongType })) { entry ->
                 WorkoutScreen(
-                    dayIndex = entry.arguments?.getInt("day") ?: 0,
+                    scheduleId = entry.arguments?.getLong("schedule") ?: 0L,
                     onClose = { nav.popBackStack() },
                     onTechnique = { nav.navigate(Routes.exercise(it)) }
                 )
@@ -130,14 +138,15 @@ fun AppRoot() {
                     exerciseId = entry.arguments?.getString("id") ?: "",
                     onBack = { nav.popBackStack() },
                     onOpenExercise = { nav.navigate(Routes.exercise(it)) },
-                    onAddToProgram = { nav.navigate(Routes.PROGRAMS) }
+                    onAddToProgram = { nav.navigate("programs?add=${entry.arguments?.getString("id").orEmpty()}") }
                 )
             }
-            composable(Routes.PROGRAMS) {
-                ProgramsScreen(onOpen = { nav.navigate(Routes.program(it)) })
+            composable("programs?add={add}", arguments = listOf(navArgument("add") { type = NavType.StringType; defaultValue = "" })) { entry ->
+                val add = entry.arguments?.getString("add").orEmpty()
+                ProgramsScreen(onOpen = { nav.navigate(Routes.program(it, add)) }, choosingExercise = add.isNotBlank())
             }
-            composable(Routes.PROGRAM, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
-                ProgramEditorScreen(programId = entry.arguments?.getLong("id") ?: 0L, onClose = { nav.popBackStack() })
+            composable(Routes.PROGRAM, arguments = listOf(navArgument("id") { type = NavType.LongType }, navArgument("add") { type = NavType.StringType; defaultValue = "" })) { entry ->
+                ProgramEditorScreen(programId = entry.arguments?.getLong("id") ?: 0L, onClose = { nav.popBackStack() }, addExercise = entry.arguments?.getString("add").orEmpty())
             }
         }
     }
@@ -147,7 +156,7 @@ fun AppRoot() {
 private fun BottomBar(nav: NavHostController) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: ""
-    if (route.startsWith("workout") || route == Routes.PROFILE) return
+    if (route.startsWith("workout") || route.startsWith("plan/") || runCatching { nav.getBackStackEntry(Routes.WORKOUT) }.getOrNull() != null) return
     Column(Modifier.background(Fc.Nav).navigationBarsPadding()) {
         HorizontalDivider(color = Fc.Line, thickness = 1.dp)
         Row(Modifier.fillMaxWidth().height(72.dp), horizontalArrangement = Arrangement.SpaceEvenly) {

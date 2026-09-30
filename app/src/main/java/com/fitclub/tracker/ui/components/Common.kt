@@ -45,7 +45,7 @@ import com.fitclub.tracker.ui.theme.Fc
 
 @Composable
 fun ScreenTitle(text: String, modifier: Modifier = Modifier) {
-    Text(text.uppercase(), style = MaterialTheme.typography.displaySmall, color = Fc.Text, modifier = modifier)
+    Text(text, style = MaterialTheme.typography.displaySmall, color = Fc.Text, modifier = modifier)
 }
 
 @Composable
@@ -66,18 +66,18 @@ fun BackRow(label: String, onClick: () -> Unit) {
 @Composable
 fun FcCard(
     modifier: Modifier = Modifier,
-    border: Color = Color(0xFF26262F),
+    border: Color = Fc.Line,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(20.dp)
     Column(
         modifier
             .clip(shape)
             .background(Fc.Surface)
             .border(1.dp, border, shape)
             .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
-            .padding(14.dp),
+            .padding(17.dp),
         content = content
     )
 }

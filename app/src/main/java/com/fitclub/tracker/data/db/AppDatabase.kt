@@ -12,6 +12,8 @@ import androidx.room.Transaction
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Update
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.fitclub.tracker.data.model.Muscle
 import kotlinx.coroutines.flow.Flow
 
@@ -118,12 +120,43 @@ interface WorkoutDao {
     suspend fun insertSets(items: List<SetLogEntity>)
 }
 
+@Dao
+interface ScheduleDao {
+    @Transaction
+    @Query("SELECT * FROM scheduled_workouts ORDER BY epochDay")
+    fun observeAll(): Flow<List<ScheduledWorkoutWithItems>>
+
+    @Transaction
+    @Query("SELECT * FROM scheduled_workouts WHERE id = :id")
+    fun observe(id: Long): Flow<ScheduledWorkoutWithItems?>
+
+    @Transaction
+    @Query("SELECT * FROM scheduled_workouts WHERE epochDay = :epochDay")
+    suspend fun getForDate(epochDay: Long): ScheduledWorkoutWithItems?
+
+    @Insert
+    suspend fun insert(workout: ScheduledWorkoutEntity): Long
+
+    @Update
+    suspend fun update(workout: ScheduledWorkoutEntity)
+
+    @Query("DELETE FROM scheduled_workouts WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Query("DELETE FROM scheduled_exercises WHERE scheduleId = :id")
+    suspend fun deleteItems(id: Long)
+
+    @Insert
+    suspend fun insertItems(items: List<ScheduledExerciseEntity>)
+}
+
 @Database(
     entities = [
         ExerciseEntity::class, ProgramEntity::class, ProgramDayEntity::class, ProgramExerciseEntity::class,
-        BodyMeasurementEntity::class, WorkoutSessionEntity::class, SetLogEntity::class
+        BodyMeasurementEntity::class, WorkoutSessionEntity::class, SetLogEntity::class,
+        ScheduledWorkoutEntity::class, ScheduledExerciseEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -132,11 +165,24 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun programDao(): ProgramDao
     abstract fun measurementDao(): MeasurementDao
     abstract fun workoutDao(): WorkoutDao
+    abstract fun scheduleDao(): ScheduleDao
 
     companion object {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) = Unit
+        }
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE workout_sessions ADD COLUMN scheduleId INTEGER")
+                db.execSQL("CREATE TABLE IF NOT EXISTS scheduled_workouts (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, epochDay INTEGER NOT NULL, title TEXT NOT NULL, startMinute INTEGER NOT NULL, programId INTEGER, dayPosition INTEGER)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_scheduled_workouts_epochDay ON scheduled_workouts (epochDay)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS scheduled_exercises (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, scheduleId INTEGER NOT NULL, exerciseId TEXT NOT NULL, position INTEGER NOT NULL, sets INTEGER NOT NULL, reps TEXT NOT NULL, restSec INTEGER NOT NULL, FOREIGN KEY(scheduleId) REFERENCES scheduled_workouts(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_scheduled_exercises_scheduleId ON scheduled_exercises (scheduleId)")
+            }
+        }
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db")
-                .fallbackToDestructiveMigration()
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }

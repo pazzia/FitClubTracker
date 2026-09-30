@@ -28,6 +28,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Keep debug signing key between builds
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fitclub-debug-signing-v1
+
       - name: Set up Android 34 SDK
         run: |
           SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"

@@ -95,6 +95,7 @@ class ProgramRepository(private val db: AppDatabase) {
                 ProgramExerciseEntity(dayId = dayId, exerciseId = it.exerciseId, position = pos, sets = it.sets, reps = it.reps, restSec = it.restSec)
             })
         }
+        if (draft.isActive) dao.setActive(id)
         id
     }
 
@@ -137,13 +138,14 @@ class FitnessRepository(private val db: AppDatabase) {
         )
     }
 
-    suspend fun finishWorkout(programId: Long?, day: Int?, startedAt: Long, sets: List<CompletedSet>): Long =
+    suspend fun finishWorkout(programId: Long?, day: Int?, startedAt: Long, sets: List<CompletedSet>,
+        scheduleId: Long? = null, epochDay: Long = java.time.LocalDate.now().toEpochDay()): Long =
         db.withTransaction {
             val now = System.currentTimeMillis()
             val id = db.workoutDao().insertSession(
                 WorkoutSessionEntity(
-                    programId = programId, dayPosition = day, epochDay = java.time.LocalDate.now().toEpochDay(),
-                    startedAt = startedAt, finishedAt = now
+                    programId = programId, dayPosition = day, epochDay = epochDay,
+                    startedAt = startedAt, finishedAt = now, scheduleId = scheduleId
                 )
             )
             db.workoutDao().insertSets(sets.map {

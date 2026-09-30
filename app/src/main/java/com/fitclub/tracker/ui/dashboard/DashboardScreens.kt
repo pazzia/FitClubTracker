@@ -58,140 +58,11 @@ class DashboardViewModel(c: AppContainer) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardState())
 }
 
-@Composable
-fun TodayScreen(onStart: (Int) -> Unit, onPrograms: () -> Unit, onProfile: () -> Unit) {
-    val vm = appViewModel { DashboardViewModel(it) }
-    val s by vm.state.collectAsStateWithLifecycle()
-    val p = s.program
-    val day = if (p == null || p.days.isEmpty()) 0 else s.workouts.size % p.days.size
-    val items = p?.days?.getOrNull(day)?.items.orEmpty()
-    val last = s.workouts.firstOrNull()
-    val weight = s.measurements.lastOrNull()?.weightKg
-    val date = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale("ru")))
-
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    ScreenTitle("Сегодня")
-                    Text(date.replaceFirstChar { it.uppercase() }, color = Fc.Muted, style = MaterialTheme.typography.bodyMedium)
-                }
-                Surface(onClick = onProfile, color = Fc.Surface2, shape = CircleShape, modifier = Modifier.size(44.dp)) {
-                    Icon(Icons.Filled.Person, "Личный кабинет", tint = Fc.Lime, modifier = Modifier.padding(10.dp))
-                }
-            }
-        }
-        item {
-            FcCard(border = Fc.Lime.copy(alpha = .55f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Pill("СЕГОДНЯ · ДЕНЬ ${'A' + day}", Fc.LimeSoft, Fc.Lime)
-                        Text(p?.name ?: "Выберите программу", style = MaterialTheme.typography.headlineSmall, color = Fc.Text)
-                        Text("~55 мин · ${items.size} упр. · ${items.sumOf { it.sets }} подходов", color = Fc.Muted)
-                    }
-                    ProgramCover(p?.icon ?: ProgramIcons.TARGET, Color(p?.colorArgb ?: 0xFFD4FF3A), 58.dp)
-                }
-                Spacer(Modifier.height(12.dp))
-                items.take(4).forEach { item ->
-                    val e = s.exercises[item.exerciseId]
-                    Row(Modifier.padding(vertical = 5.dp)) {
-                        Text(e?.name ?: item.exerciseId, color = Fc.Text, modifier = Modifier.weight(1f))
-                        Text("${item.sets} × ${item.reps.label}", color = Fc.Muted)
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                PrimaryButton(if (p == null) "Выбрать программу" else "Начать тренировку", { if (p == null) onPrograms() else onStart(day) })
-            }
-        }
-        item {
-            FcCard(onClick = onPrograms) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("ПРОГРАММА", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                        Text(p?.name ?: "Нет активной", style = MaterialTheme.typography.titleMedium, color = Fc.Text)
-                        Text("Неделя ${((s.workouts.size / (p?.freqPerWeek ?: 3)) + 1).coerceAtMost(8)} из 8", color = Fc.Muted)
-                    }
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Fc.Muted)
-                }
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                MiniStat("Вес тела", weight?.let { "${fmt(it)} кг" } ?: "—", "добавьте замер", Modifier.weight(1f))
-                MiniStat("Прошлая", last?.let { "${it.volumeKg.roundToInt()} кг" } ?: "—", last?.let { "${it.durationMin} мин" } ?: "нет данных", Modifier.weight(1f))
-            }
-        }
-        if (last != null) item {
-            FcCard {
-                Text("ПОСЛЕДНЯЯ ТРЕНИРОВКА", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                Text("${last.completedSets} подходов · ${last.volumeKg.roundToInt()} кг объёма", style = MaterialTheme.typography.titleMedium, color = Fc.Text)
-                Text("Данные сохранены и уже учтены в прогрессе", color = Fc.Lime, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
 @Composable private fun MiniStat(title: String, value: String, note: String, modifier: Modifier) {
     FcCard(modifier) {
         Text(title, color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
         Text(value, color = Fc.Text, style = MaterialTheme.typography.headlineSmall)
         Text(note, color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-    }
-}
-
-@Composable
-fun CalendarScreen(onStart: (Int) -> Unit) {
-    val vm = appViewModel { DashboardViewModel(it) }
-    val s by vm.state.collectAsStateWithLifecycle()
-    val month = remember { YearMonth.now() }
-    var selected by rememberSaveable { mutableIntStateOf(LocalDate.now().dayOfMonth) }
-    val firstOffset = month.atDay(1).dayOfWeek.value - 1
-    val completed = s.workouts.map { LocalDate.ofEpochDay(it.session.epochDay).dayOfMonth }.toSet()
-    val p = s.program
-    val planned = (1..month.lengthOfMonth()).filter { month.atDay(it).dayOfWeek.value in setOf(2, 4, 6) }.toSet()
-    val selectedDate = month.atDay(selected)
-    val isDone = selected in completed
-    val isPlanned = selected in planned
-
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item { ScreenTitle("Календарь") }
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(month.month.getDisplayName(TextStyle.FULL_STANDALONE, Locale("ru")).uppercase(), style = MaterialTheme.typography.headlineSmall, color = Fc.Text, modifier = Modifier.weight(1f))
-                Text("${completed.size} выполнено", color = Fc.Lime, style = MaterialTheme.typography.labelMedium)
-            }
-        }
-        item {
-            FcCard {
-                Row(Modifier.fillMaxWidth()) { listOf("Пн","Вт","Ср","Чт","Пт","Сб","Вс").forEach { Text(it, color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)) } }
-                Spacer(Modifier.height(6.dp))
-                val cells = List(firstOffset) { 0 } + (1..month.lengthOfMonth()).toList()
-                cells.chunked(7).forEach { week ->
-                    Row(Modifier.fillMaxWidth()) {
-                        (week + List(7 - week.size) { 0 }).forEach { d ->
-                            Box(Modifier.weight(1f).aspectRatio(1f).padding(2.dp).then(if (d > 0) Modifier.clickable(role = Role.Button) { selected = d } else Modifier), contentAlignment = Alignment.Center) {
-                                if (d > 0) {
-                                    val color = when { d == selected -> Fc.Text; d in completed -> Fc.Lime; d in planned -> Fc.Surface2; else -> Color.Transparent }
-                                    Box(Modifier.matchParentSize().background(color, CircleShape))
-                                    Text("$d", color = if (d == selected || d in completed) Fc.Bg else Fc.Text, fontWeight = if (d == selected) FontWeight.ExtraBold else FontWeight.Normal)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            FcCard(border = if (isDone) Fc.Lime.copy(.5f) else Fc.Line) {
-                Text(selectedDate.format(DateTimeFormatter.ofPattern("d MMMM, EEEE", Locale("ru"))).replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium, color = Fc.Text)
-                Text(when { isDone -> "Выполнена"; isPlanned -> "Запланирована"; else -> "День отдыха" }, color = when { isDone -> Fc.Lime; isPlanned -> Fc.Orange; else -> Fc.Muted })
-                if (isPlanned || isDone) Text("${p?.name ?: "Тренировка"} · день ${'A' + (planned.sorted().indexOf(selected).coerceAtLeast(0) % (p?.days?.size ?: 1))}", color = Fc.Muted)
-                if (isPlanned && !isDone) {
-                    Spacer(Modifier.height(10.dp))
-                    PrimaryButton("Начать тренировку", { onStart(planned.sorted().indexOf(selected).coerceAtLeast(0) % (p?.days?.size ?: 1)) })
-                }
-            }
-        }
     }
 }
 
@@ -278,13 +149,23 @@ fun ProfileScreen(onBack: () -> Unit) {
     val latest = measurements.lastOrNull()
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { BackRow("Прогресс", onBack) }
+        item { BackRow("Личный кабинет", onBack) }
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 Box(Modifier.size(68.dp).background(Fc.Lime, CircleShape), contentAlignment = Alignment.Center) { Text("АК", style = MaterialTheme.typography.headlineSmall, color = Fc.Bg) }
                 Column { ScreenTitle(st.name); Text("${if (st.level == 1) "Новичок" else if (st.level == 2) "Продвинутый" else "Профи"} · в клубе с сентября 2026", color = Fc.Muted) }
             }
         }
+        item {
+            FcCard {
+                Text("О СЕБЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
+                OutlinedTextField(st.name, { vm.update(st.copy(name = it)) }, label = { Text("Имя") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Text("Пол", color = Fc.Text, modifier = Modifier.padding(top = 10.dp)); Segmented(Sex.entries, st.sex, { vm.update(st.copy(sex = it)) }, { it.title })
+                Text("Уровень подготовки", color = Fc.Text, modifier = Modifier.padding(top = 12.dp)); Segmented(listOf(1,2,3), st.level, { vm.update(st.copy(level = it)) }, { if (it==1) "Новичок" else if (it==2) "Продв." else "Профи" })
+                Text("Пол меняет модель тела в справочнике и отчётах.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+            }
+        }
+        item { FcCard { Text("Модель тела", style = MaterialTheme.typography.titleSmall, color = Fc.Text); Spacer(Modifier.height(12.dp)); BodyPair(st.sex) } }
         item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MiniStat("Тренировок", "${workouts.size}", "сохранено", Modifier.weight(1f)); MiniStat("Замеров", "${measurements.size}", "параметров", Modifier.weight(1f))
         } }
@@ -310,17 +191,9 @@ fun ProfileScreen(onBack: () -> Unit) {
         }
         item {
             FcCard {
-                Text("О СЕБЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                Text("Пол", color = Fc.Text, modifier = Modifier.padding(top = 10.dp)); Segmented(Sex.entries, st.sex, { vm.update(st.copy(sex = it)) }, { it.title })
-                Text("Уровень подготовки", color = Fc.Text, modifier = Modifier.padding(top = 12.dp)); Segmented(listOf(1,2,3), st.level, { vm.update(st.copy(level = it)) }, { if (it==1) "Новичок" else if (it==2) "Продв." else "Профи" })
-                Text("Пол меняет модель тела в справочнике и отчётах.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
-            }
-        }
-        item {
-            FcCard {
                 Text("ОФОРМЛЕНИЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
                 listOf("Volt Night", "Hot Pulse", "Cobalt Chalk").forEach { name ->
-                    Row(Modifier.fillMaxWidth().clickable { vm.update(st.copy(theme = name)) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().clickable { vm.update(st.copy(theme = name, accent = if (name == "Volt Night") 0xFFD4FF3A else if (name == "Hot Pulse") 0xFFFF3D6E else 0xFF69B7FF)) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(14.dp).background(if (name == "Volt Night") Fc.Lime else if (name == "Hot Pulse") Fc.Pink else Color(0xFF2B3BFF), CircleShape)); Text(name, color = Fc.Text, modifier = Modifier.padding(start = 10.dp).weight(1f)); if (st.theme == name) Icon(Icons.Filled.Check, null, tint = Fc.Lime)
                     }
                 }
@@ -328,7 +201,6 @@ fun ProfileScreen(onBack: () -> Unit) {
         }
         item {
             FcCard {
-                Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Напоминания о тренировке", color = Fc.Text); Text("за 2 часа до начала", color = Fc.Muted) }; Switch(st.reminders, { vm.update(st.copy(reminders = it)) }, colors = SwitchDefaults.colors(checkedThumbColor = Fc.Bg, checkedTrackColor = Fc.Lime)) }
                 Row(verticalAlignment = Alignment.CenterVertically) { Text("Единицы веса", color = Fc.Text, modifier = Modifier.weight(1f)); TextButton(onClick = { vm.update(st.copy(unitsKg = !st.unitsKg)) }) { Text(if (st.unitsKg) "Килограммы" else "Фунты", color = Fc.Lime) } }
             }
         }
