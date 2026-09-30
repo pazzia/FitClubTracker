@@ -34,6 +34,28 @@ jobs:
           path: ~/.android/debug.keystore
           key: fitclub-debug-signing-v1
 
+
+      - name: Restore permanent signing key when configured
+        env:
+          FITCLUB_DEBUG_KEYSTORE_BASE64: ${{ secrets.FITCLUB_DEBUG_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          encoded = os.environ.get("FITCLUB_DEBUG_KEYSTORE_BASE64", "").strip()
+          if encoded:
+              target = Path.home() / ".android" / "debug.keystore"
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(base64.b64decode(encoded, validate=True))
+              target.chmod(0o600)
+          PY
+
+      - name: Require the approved signing key
+        run: python3 tools/check_debug_signing.py --keystore "$HOME/.android/debug.keystore"
+
       - name: Set up Android 34 SDK
         run: |
           SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
@@ -51,6 +73,9 @@ jobs:
 
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace
+
+      - name: Verify APK signing identity
+        run: python3 tools/check_debug_signing.py --apk app/build/outputs/apk/debug/app-debug.apk --apksigner "$ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner"
 
       - name: Name APK using version and build number
         id: apk
