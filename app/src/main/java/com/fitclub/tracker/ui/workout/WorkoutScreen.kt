@@ -119,6 +119,10 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
         LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item { Text("УПРАЖНЕНИЕ ${exerciseIndex + 1} ИЗ ${day.items.size}", style = MaterialTheme.typography.labelMedium, color = Fc.Muted); Text(exercise?.name ?: item.exerciseId, style = MaterialTheme.typography.displaySmall, color = Fc.Text) }
             if (exercise != null) item { GroupImage(source.sex, exercise.group, Modifier.fillMaxWidth().height(145.dp)) }
+            if (item.comment.isNotBlank()) item { FcCard {
+                Text("Комментарий к упражнению", style = MaterialTheme.typography.titleSmall, color = Fc.Lime)
+                Text(item.comment, color = Fc.Text)
+            } }
             item { TextButton(onClick = { onTechnique(item.exerciseId) }, contentPadding = PaddingValues(0.dp)) { Text("Техника выполнения →", color = Fc.Lime) } }
             item {
                 FcCard {

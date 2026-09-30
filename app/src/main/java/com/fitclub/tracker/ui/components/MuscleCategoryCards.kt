@@ -1,0 +1,45 @@
+package com.fitclub.tracker.ui.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
+import com.fitclub.tracker.data.model.MuscleGroup
+import com.fitclub.tracker.data.model.Sex
+import com.fitclub.tracker.ui.theme.Fc
+
+val AnatomyGroupOrder = listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS,
+    MuscleGroup.FOREARMS, MuscleGroup.CORE, MuscleGroup.BACK, MuscleGroup.GLUTES, MuscleGroup.QUADS,
+    MuscleGroup.HAMSTRINGS, MuscleGroup.CALVES)
+
+@Composable
+fun MuscleCategoryRow(groups: List<MuscleGroup>, sex: Sex, counts: Map<MuscleGroup, Int>, onGroup: (MuscleGroup) -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        groups.forEach { group ->
+            Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(Fc.Surface)
+                .border(1.dp, Fc.Line, RoundedCornerShape(16.dp)).clickable(role = Role.Button) { onGroup(group) }) {
+                GroupImage(sex, group, Modifier.fillMaxWidth().height(124.dp))
+                Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(group.title, color = Fc.Text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text("${counts[group] ?: 0} →", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+        if (groups.size == 1) Spacer(Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun QuadricepsLegend() {
+    Text("4 головки: прямая, латеральная широкая, медиальная широкая и промежуточная широкая. Глубокая промежуточная показана в учебном разрезе.",
+        color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+}

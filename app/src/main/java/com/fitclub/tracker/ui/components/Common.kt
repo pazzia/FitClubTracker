@@ -22,6 +22,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import com.fitclub.tracker.data.repo.ProgramPhotos
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -196,13 +202,16 @@ fun StrokeIcon(icon: String, tint: Color, modifier: Modifier = Modifier, strokeW
 }
 
 @Composable
-fun ProgramCover(icon: String, color: Color, size: Dp, modifier: Modifier = Modifier) {
+fun ProgramCover(icon: String, color: Color, size: Dp, modifier: Modifier = Modifier, photo: String? = null) {
+    val context = LocalContext.current
+    val bitmap = remember(photo) { ProgramPhotos.thumbnail(context, photo) }
     Box(
         modifier.size(size).clip(RoundedCornerShape(size * 0.28f)).background(color)
             .semantics { contentDescription = IconPaths.titles[icon] ?: "" },
         contentAlignment = Alignment.Center
     ) {
-        StrokeIcon(icon, Fc.Bg, Modifier.size(size * 0.48f))
+        if (bitmap != null) Image(bitmap.asImageBitmap(), "Своя обложка программы", Modifier.size(size), contentScale = ContentScale.Crop)
+        else StrokeIcon(icon, Fc.Bg, Modifier.size(size * 0.48f))
     }
 }
 

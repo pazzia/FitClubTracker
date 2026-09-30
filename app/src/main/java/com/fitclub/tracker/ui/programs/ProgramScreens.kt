@@ -1,7 +1,6 @@
 package com.fitclub.tracker.ui.programs
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,7 +32,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -47,17 +45,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
+import com.fitclub.tracker.ui.components.ProgramPhotoButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -142,7 +137,7 @@ fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false) {
             val fit = remember(p, catalog) { ProgramScorer.score(p, catalog) }
             FcCard(onClick = { onOpen(p.id) }, border = if (p.isActive) Fc.Lime.copy(alpha = 0.5f) else Color(0xFF26262F)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    ProgramCover(p.icon, Color(p.colorArgb), 60.dp)
+                    ProgramCover(p.icon, Color(p.colorArgb), 60.dp, photo = p.coverPhoto)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(p.name, style = MaterialTheme.typography.titleMedium, color = Fc.Text)
                         Text(
@@ -229,7 +224,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
     var picking by rememberSaveable { mutableStateOf(false) }
     val fit = remember(d, catalog) { ProgramScorer.score(d, catalog) }
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
+    var photoBusy by remember { mutableStateOf(false) }
 
     if (picking) {
         BackHandler { picking = false }
@@ -253,7 +248,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         }
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                ProgramCover(d.icon, Color(d.colorArgb), 76.dp)
+                ProgramCover(d.icon, Color(d.colorArgb), 76.dp, photo = d.coverPhoto)
                 OutlinedTextField(
                     value = d.name, onValueChange = { v -> vm.update { it.copy(name = v) } },
                     label = { Text("Название программы") }, singleLine = true, modifier = Modifier.weight(1f),
@@ -287,19 +282,16 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             Section("Обложка") {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ProgramIcons.all.forEach { icon ->
-                        val on = d.icon == icon
+                        val on = d.icon == icon && d.coverPhoto == null
                         Box(
                             Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface)
                                 .border(1.5.dp, if (on) Color(d.colorArgb) else Color(0xFF26262F), RoundedCornerShape(12.dp))
                                 .semantics { contentDescription = "Обложка: ${IconPaths.titles[icon]}"; selected = on }
-                                .clickable(role = Role.RadioButton) { vm.update { it.copy(icon = icon) } },
+                                .clickable(role = Role.RadioButton) { vm.update { it.copy(icon = icon, coverPhoto = null) } },
                             contentAlignment = Alignment.Center
                         ) { StrokeIcon(icon, if (on) Color(d.colorArgb) else Fc.Muted, Modifier.size(22.dp), strokeWidth = 2f) }
                     }
-                    Box(
-                        Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(12.dp)).border(1.5.dp, Color(0xFF4A4A55), RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center
-                    ) { Icon(Icons.Outlined.PhotoCamera, contentDescription = "Своё фото — скоро", tint = Fc.Muted) }
+                    ProgramPhotoButton(d.coverPhoto, { photo -> vm.update { it.copy(coverPhoto = photo) } }, Modifier.weight(1f), onBusy = { photoBusy = it })
                 }
             }
         }
@@ -330,9 +322,6 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                     Stepper(d.freqPerWeek, "тренировок в неделю", { vm.update { it.copy(freqPerWeek = (it.freqPerWeek - 1).coerceAtLeast(1)) } }, { vm.update { it.copy(freqPerWeek = (it.freqPerWeek + 1).coerceAtMost(7)) } })
                 }
             }
-        }
-        item {
-            FitSummary(fit, d.goal) { scope.launch { listState.animateScrollToItem(FIT_DETAILS_INDEX_OFFSET + d.days[day].items.size) } }
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -374,8 +363,11 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                 DashedButton("+  Добавить упражнение", { picking = true })
             }
         }
-        item { FitDetails(fit) }
-        item { PrimaryButton("Сохранить программу", { vm.save(onClose) }) }
+        item { FitDetails(fit, d.goal) }
+        item {
+            if (photoBusy) Text("Сохраняем фото…", color = Fc.Muted)
+            else PrimaryButton("Сохранить программу", { vm.save(onClose) })
+        }
         item {
             TextButton(onClick = { vm.delete(onClose) }, modifier = Modifier.fillMaxWidth()) {
                 Text("Удалить программу", color = Fc.Pink, fontWeight = FontWeight.ExtraBold)
@@ -384,8 +376,6 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
     }
 }
 
-/** Индекс блока «Разбор программы»: 8 элементов до списка упражнений + кнопка «Добавить упражнение». */
-private const val FIT_DETAILS_INDEX_OFFSET = 9
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
@@ -409,31 +399,7 @@ private fun Stepper(value: Int, what: String, onDec: () -> Unit, onInc: () -> Un
 }
 
 @Composable
-private fun FitSummary(fit: FitResult, goal: Goal, onDetails: () -> Unit) {
-    val color = Fc.fit(fit.percent / 100f)
-    FcCard(border = color, onClick = onDetails) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
-                Canvas(Modifier.fillMaxSize()) {
-                    val sw = 8.dp.toPx()
-                    val inset = sw / 2
-                    drawArc(Fc.Line, 0f, 360f, false, Offset(inset, inset), Size(size.width - sw, size.height - sw), style = Stroke(sw))
-                    drawArc(color, -90f, 360f * fit.percent / 100f, false, Offset(inset, inset), Size(size.width - sw, size.height - sw), style = Stroke(sw, cap = StrokeCap.Round))
-                }
-                Text("${fit.percent}%", style = MaterialTheme.typography.headlineSmall, color = Fc.Text)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text("Соответствие цели «${goal.title}»", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                Text(fit.verdict, style = MaterialTheme.typography.titleMedium, color = color)
-                val n = fit.recommendations.size
-                Text("$n ${plural(n, "рекомендация", "рекомендации", "рекомендаций")} · смотреть ↓", style = MaterialTheme.typography.labelMedium, color = Color(0xFFC4C4CE))
-            }
-        }
-    }
-}
-
-@Composable
-private fun FitDetails(fit: FitResult) {
+private fun FitDetails(fit: FitResult, goal: Goal) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("РАЗБОР ПРОГРАММЫ", style = MaterialTheme.typography.headlineSmall, color = Fc.Text, modifier = Modifier.weight(1f))
@@ -468,6 +434,11 @@ private fun FitDetails(fit: FitResult) {
             "Оценка основана на общепринятых рекомендациях по силовому тренингу (диапазоны повторений, отдых, объём, частота) и не заменяет работу с тренером.",
             style = MaterialTheme.typography.labelSmall, color = Fc.Muted2
         )
+        FcCard(modifier = Modifier.testTag("program-fit-conclusion")) {
+            Text("Итог для цели «${goal.title}»", style = MaterialTheme.typography.titleSmall, color = Fc.Text)
+            Text(fit.verdict, style = MaterialTheme.typography.titleMedium, color = Fc.fit(fit.percent / 100f))
+            Text("${fit.percent}%", color = Fc.Muted)
+        }
     }
 }
 
@@ -515,6 +486,12 @@ internal fun ItemCard(
                 options = REST_OPTIONS.map { sec -> restLabel(sec) to { onChange { x -> x.copy(restSec = sec) } } }
             )
         }
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(value = item.comment,
+            onValueChange = { text -> onChange { it.copy(comment = text.take(2000)) } },
+            label = { Text("Комментарий") }, placeholder = { Text("Хват, техника, рабочий вес…") },
+            minLines = 2, maxLines = 4,
+            modifier = Modifier.fillMaxWidth().testTag("exercise-comment-${item.exerciseId}"))
     }
 }
 
@@ -544,58 +521,3 @@ private fun Dropdown(title: String, value: String, ok: Boolean, options: List<Pa
     }
 }
 
-// ---------- Выбор упражнения ----------
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-internal fun ExercisePicker(
-    catalog: List<ExerciseEntity>, already: Set<String>, subtitle: String,
-    onBack: () -> Unit, onPick: (String) -> Unit
-) {
-    var group by rememberSaveable { mutableStateOf<MuscleGroup?>(null) }
-    val shown = catalog.filter { group == null || it.group == group }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { BackRow("К программе", onBack) }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                ScreenTitle("Добавить упражнение")
-                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Fc.Muted)
-            }
-        }
-        item {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                (listOf<MuscleGroup?>(null) + MuscleGroup.entries).forEach { g ->
-                    val on = group == g
-                    Text(
-                        g?.title ?: "Все", style = MaterialTheme.typography.labelLarge, color = if (on) Fc.Bg else Fc.Text,
-                        modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(if (on) Fc.Text else Fc.Surface)
-                            .semantics { selected = on }
-                            .clickable(role = Role.RadioButton) { group = g }
-                            .padding(horizontal = 12.dp, vertical = 9.dp)
-                    )
-                }
-            }
-        }
-        items(shown, key = { it.id }) { e ->
-            val has = e.id in already
-            FcCard(onClick = if (has) null else ({ onPick(e.id) })) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(e.name, style = MaterialTheme.typography.titleSmall, color = Fc.Text)
-                        Text("${e.group.title} · ${e.type.title} · ${e.equipment}", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
-                    }
-                    Box(
-                        Modifier.size(36.dp).clip(CircleShape).background(if (has) Fc.Surface2 else Fc.Lime),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            if (has) Icons.Filled.Check else Icons.Filled.Add,
-                            contentDescription = if (has) "Уже в этом дне" else "Добавить ${e.name}",
-                            tint = if (has) Fc.Lime else Fc.Bg
-                        )
-                    }
-                }
-            }
-        }
-    }
-}

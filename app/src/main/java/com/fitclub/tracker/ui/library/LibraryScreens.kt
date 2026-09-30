@@ -34,9 +34,6 @@ class LibraryViewModel(c: AppContainer) : ViewModel() {
     val settings = c.profile.settings
 }
 
-private val groupOrder = listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS,
-    MuscleGroup.FOREARMS, MuscleGroup.CORE, MuscleGroup.BACK, MuscleGroup.GLUTES, MuscleGroup.QUADS,
-    MuscleGroup.HAMSTRINGS, MuscleGroup.CALVES)
 
 @Composable
 fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Unit) {
@@ -63,25 +60,12 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Группы мышц", style = MaterialTheme.typography.titleMedium, color = Fc.Text)
-                    Text("${groupOrder.size} групп", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
+                    Text("${AnatomyGroupOrder.size} групп", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
                 }
             }
             val counts = all.groupingBy { it.group }.eachCount()
-            items(groupOrder.chunked(2)) { pair ->
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    pair.forEach { g ->
-                        Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(Fc.Surface)
-                            .border(1.dp, Fc.Line, RoundedCornerShape(16.dp)).clickable(role = Role.Button) { onGroup(g) }) {
-                            GroupImage(profile.sex, g, Modifier.fillMaxWidth().height(124.dp))
-                            Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text(if (g == MuscleGroup.CORE) "Пресс и кор" else g.title, color = Fc.Text,
-                                    style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                                Text("${counts[g] ?: 0} →", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
-                    }
-                    if (pair.size == 1) Spacer(Modifier.weight(1f))
-                }
+            items(AnatomyGroupOrder.chunked(2)) { pair ->
+                MuscleCategoryRow(pair, profile.sex, counts, onGroup)
             }
             item { AnatomyCard(profile.sex) }
         }
@@ -118,10 +102,11 @@ fun LibraryGroupScreen(group: MuscleGroup, onBack: () -> Unit, onExercise: (Stri
                 GroupImage(profile.sex, group, Modifier.fillMaxWidth().height(205.dp))
                 Row(Modifier.fillMaxWidth().padding(17.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("${inGroup.size} упражнений", style = MaterialTheme.typography.titleSmall, color = Fc.Text)
-                    Pill("${group.regions.size} зон", Fc.LimeSoft, Fc.Lime)
+                    Pill(if (group == MuscleGroup.QUADS) "4 головки" else "${group.regions.size} зон", Fc.LimeSoft, Fc.Lime)
                 }
             }
         }
+        if (group == MuscleGroup.QUADS) item { QuadricepsLegend() }
         item {
             Segmented(listOf(null, ExerciseType.BASIC, ExerciseType.ISOLATION), type, { type = it },
                 { when (it) { null -> "Все"; ExerciseType.BASIC -> "Базовые"; else -> "Изоляция" } }, selectedBg = Fc.Lime)
@@ -176,6 +161,7 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
                 }
             }
         }
+        if (e.group == MuscleGroup.QUADS) item { QuadricepsLegend() }
         item { AnatomyCard(profile.sex) }
         item { Segmented(listOf(0, 1, 2), tab, { tab = it }, { listOf("Техника", "Описание", "Замены")[it] }, selectedBg = Fc.Lime) }
         when (tab) {

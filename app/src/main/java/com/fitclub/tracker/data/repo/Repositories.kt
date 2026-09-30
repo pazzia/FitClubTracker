@@ -26,7 +26,8 @@ data class ProgramDraft(
     val icon: String = ProgramIcons.TARGET,
     val freqPerWeek: Int = 3,
     val isActive: Boolean = false,
-    val days: List<DayDraft> = listOf(DayDraft())
+    val days: List<DayDraft> = listOf(DayDraft()),
+    val coverPhoto: String? = null
 ) {
     val exerciseCount: Int get() = days.sumOf { it.items.size }
 }
@@ -37,7 +38,8 @@ data class ItemDraft(
     val exerciseId: String,
     val sets: Int,
     val reps: RepRange,
-    val restSec: Int
+    val restSec: Int,
+    val comment: String = ""
 )
 
 object ProgramIcons {
@@ -58,8 +60,9 @@ fun ProgramWithDays.toDraft() = ProgramDraft(
     icon = program.icon,
     freqPerWeek = program.freqPerWeek,
     isActive = program.isActive,
+    coverPhoto = program.coverPhoto,
     days = days.sortedBy { it.day.position }.map { d ->
-        DayDraft(d.items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec) })
+        DayDraft(d.items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec, it.comment) })
     }
 )
 
@@ -85,14 +88,14 @@ class ProgramRepository(private val db: AppDatabase) {
         val entity = ProgramEntity(
             id = draft.id, name = draft.name.ifBlank { "Без названия" }, goal = draft.goal,
             colorArgb = draft.colorArgb, icon = draft.icon, freqPerWeek = draft.freqPerWeek,
-            isActive = draft.isActive
+            isActive = draft.isActive, coverPhoto = draft.coverPhoto
         )
         val id = if (draft.id == 0L) dao.insertProgram(entity) else { dao.updateProgram(entity); draft.id }
         dao.deleteDays(id)
         draft.days.forEachIndexed { index, day ->
             val dayId = dao.insertDay(ProgramDayEntity(programId = id, position = index))
             dao.insertItems(day.items.mapIndexed { pos, it ->
-                ProgramExerciseEntity(dayId = dayId, exerciseId = it.exerciseId, position = pos, sets = it.sets, reps = it.reps, restSec = it.restSec)
+                ProgramExerciseEntity(dayId = dayId, exerciseId = it.exerciseId, position = pos, sets = it.sets, reps = it.reps, restSec = it.restSec, comment = it.comment)
             })
         }
         if (draft.isActive) dao.setActive(id)

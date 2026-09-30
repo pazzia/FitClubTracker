@@ -156,7 +156,7 @@ interface ScheduleDao {
         BodyMeasurementEntity::class, WorkoutSessionEntity::class, SetLogEntity::class,
         ScheduledWorkoutEntity::class, ScheduledExerciseEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -180,9 +180,16 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_scheduled_exercises_scheduleId ON scheduled_exercises (scheduleId)")
             }
         }
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE programs ADD COLUMN coverPhoto TEXT DEFAULT NULL")
+                db.execSQL("ALTER TABLE program_exercises ADD COLUMN comment TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE scheduled_exercises ADD COLUMN comment TEXT NOT NULL DEFAULT ''")
+            }
+        }
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
     }
 }

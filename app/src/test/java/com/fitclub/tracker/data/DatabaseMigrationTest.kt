@@ -19,6 +19,7 @@ import org.robolectric.annotation.Config
 class DatabaseMigrationTest {
     @Test fun migratesVersionOneWithoutLosingHistory() = checkMigration(1)
     @Test fun migratesVersionTwoWithoutLosingHistory() = checkMigration(2)
+    @Test fun migratesVersionThreeWithoutLosingPlans() = checkMigration(3)
     private fun checkMigration(version: Int) = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         context.deleteDatabase("fitclub.db")
@@ -26,10 +27,17 @@ class DatabaseMigrationTest {
             .name("fitclub.db").callback(object : SupportSQLiteOpenHelper.Callback(version) {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     legacySchema.forEach { db.execSQL(it) }
+                    if (version == 3) AppDatabase.MIGRATION_2_3.migrate(db)
                     db.execSQL("INSERT INTO programs VALUES (1, 'Моя программа', 'MASS', 4292149050, 'target', 3, 1, 1)")
                     db.execSQL("INSERT INTO body_measurements VALUES (1, 20000, 78.4, 82, NULL, NULL, NULL)")
-                    db.execSQL("INSERT INTO workout_sessions VALUES (1, 1, 0, 20000, 1000, 61000)")
+                    db.execSQL("INSERT INTO workout_sessions (id, programId, dayPosition, epochDay, startedAt, finishedAt) VALUES (1, 1, 0, 20000, 1000, 61000)")
                     db.execSQL("INSERT INTO set_logs VALUES (1, 1, 'bench', 0, 60, 8, 1)")
+                    db.execSQL("INSERT INTO program_days VALUES (1, 1, 0)")
+                    db.execSQL("INSERT INTO program_exercises VALUES (1, 1, 'bench', 0, 3, 'R8_12', 90)")
+                    if (version == 3) {
+                        db.execSQL("INSERT INTO scheduled_workouts VALUES (1, 20001, 'Мой план', 1080, 1, 0)")
+                        db.execSQL("INSERT INTO scheduled_exercises VALUES (1, 1, 'bench', 0, 3, 'R8_12', 90)")
+                    }
                 }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
             }).build())
@@ -38,13 +46,21 @@ class DatabaseMigrationTest {
         val current = AppDatabase.build(context)
         try {
             current.openHelper.writableDatabase
-            assertEquals("Моя программа", current.programDao().get(1)!!.program.name)
+            val program = current.programDao().get(1)!!
+            assertEquals("Моя программа", program.program.name)
+            assertNull(program.program.coverPhoto)
+            assertEquals("", program.days.single().items.single().comment)
+            assertEquals(3, program.days.single().items.single().sets)
             assertEquals(78.4f, current.measurementDao().observeAll().first().single().weightKg!!)
             val session = current.workoutDao().observeSessions().first().single()
             assertEquals(20000L, session.epochDay)
             assertNull(session.scheduleId)
             assertEquals(8, current.workoutDao().observeSets().first().single().reps)
-            assertTrue(current.scheduleDao().observeAll().first().isEmpty())
+            val plans = current.scheduleDao().observeAll().first()
+            if (version == 3) {
+                assertEquals("Мой план", plans.single().workout.title)
+                assertEquals("", plans.single().items.single().comment)
+            } else assertTrue(plans.isEmpty())
         } finally { current.close(); context.deleteDatabase("fitclub.db") }
     }
     private val legacySchema = listOf(

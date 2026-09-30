@@ -1,5 +1,6 @@
 package com.fitclub.tracker.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -51,7 +52,8 @@ data class ProgramEntity(
     val icon: String,
     val freqPerWeek: Int,
     val isActive: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(defaultValue = "NULL") val coverPhoto: String? = null
 )
 
 @Entity(
@@ -83,7 +85,8 @@ data class ProgramExerciseEntity(
     val position: Int,
     val sets: Int,
     val reps: RepRange,
-    val restSec: Int
+    val restSec: Int,
+    @ColumnInfo(defaultValue = "''") val comment: String = ""
 )
 
 data class DayWithItems(
@@ -164,7 +167,8 @@ data class ScheduledExerciseEntity(
     val position: Int,
     val sets: Int,
     val reps: RepRange,
-    val restSec: Int
+    val restSec: Int,
+    @ColumnInfo(defaultValue = "''") val comment: String = ""
 )
 
 data class ScheduledWorkoutWithItems(

@@ -24,7 +24,7 @@ data class ScheduledDraft(
 
 fun ScheduledWorkoutWithItems.toDraft() = ScheduledDraft(
     workout.id, workout.epochDay, workout.title, workout.startMinute, workout.programId, workout.dayPosition,
-    items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec) }
+    items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec, it.comment) }
 )
 
 class ScheduleRepository(private val db: AppDatabase) {
@@ -41,7 +41,7 @@ class ScheduleRepository(private val db: AppDatabase) {
             dao.deleteItems(id)
             dao.insertItems(draft.items.mapIndexed { position, item ->
                 ScheduledExerciseEntity(scheduleId = id, exerciseId = item.exerciseId, position = position,
-                    sets = item.sets, reps = item.reps, restSec = item.restSec)
+                    sets = item.sets, reps = item.reps, restSec = item.restSec, comment = item.comment)
             })
             id
         }
