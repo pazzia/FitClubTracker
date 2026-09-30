@@ -23,6 +23,9 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    System.getenv("FITCLUB_DEBUG_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }?.let { path ->
+        signingConfigs.getByName("debug").storeFile = file(path)
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

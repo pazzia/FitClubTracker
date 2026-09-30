@@ -53,9 +53,6 @@ jobs:
               target.chmod(0o600)
           PY
 
-      - name: Require the approved signing key
-        run: python3 tools/check_debug_signing.py --keystore "$HOME/.android/debug.keystore"
-
       - name: Set up Android 34 SDK
         run: |
           SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
@@ -69,10 +66,29 @@ jobs:
           gradle-version: '8.9'
 
       - name: Unit tests
-        run: gradle testDebugUnitTest --stacktrace
+        run: |
+          gradle testDebugUnitTest --stacktrace
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          roots = [ET.parse(p).getroot() for p in Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml')]
+          tests = sum(int(r.get('tests', 0)) for r in roots)
+          failures = sum(int(r.get('failures', 0)) + int(r.get('errors', 0)) for r in roots)
+          print(f'Test report: {tests} tests, {failures} failures/errors')
+          if not tests or failures:
+              raise SystemExit('Missing or failing test reports')
+          PY
+
+      - name: Locate an existing approved key
+        run: |
+          gradle signingReport --console=plain > signing-report.txt || true
+          python3 tools/recover_debug_signing.py --report signing-report.txt
+
+      - name: Require the approved signing key
+        run: python3 tools/check_debug_signing.py --keystore "$HOME/.android/debug.keystore"
 
       - name: Build debug APK
-        run: gradle assembleDebug --stacktrace
+        run: FITCLUB_DEBUG_KEYSTORE_PATH="$HOME/.android/debug.keystore" gradle assembleDebug --stacktrace
 
       - name: Verify APK signing identity
         run: python3 tools/check_debug_signing.py --apk app/build/outputs/apk/debug/app-debug.apk --apksigner "$ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner"
@@ -114,8 +130,11 @@ jobs:
           retention-days: 14
 
       - name: Upload test reports
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
-          path: app/build/reports/tests/
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+          if-no-files-found: ignore
