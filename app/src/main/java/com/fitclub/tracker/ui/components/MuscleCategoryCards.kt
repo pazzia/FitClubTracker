@@ -40,6 +40,7 @@ fun MuscleCategoryRow(groups: List<MuscleGroup>, sex: Sex, counts: Map<MuscleGro
 
 @Composable
 fun QuadricepsLegend() {
-    Text("4 головки: прямая, латеральная широкая, медиальная широкая и промежуточная широкая. Глубокая промежуточная показана в учебном разрезе.",
+    Text("4 головки: прямая, латеральная широкая, медиальная широкая и промежуточная широкая. Промежуточная широкая лежит глубже прямой мышцы и не видна на поверхностном изображении.",
         color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
 }
+

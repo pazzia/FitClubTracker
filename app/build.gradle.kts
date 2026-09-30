@@ -13,8 +13,8 @@ android {
         applicationId = "com.fitclub.tracker"
         minSdk = 28
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
     }
 
     buildTypes {
@@ -69,3 +69,4 @@ dependencies {
 tasks.withType<Test>().configureEach {
     systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
 }
+

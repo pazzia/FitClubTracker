@@ -29,9 +29,11 @@ class PlanningUiTest {
         val date = calendarDate(LocalDate.now().toEpochDay())
         rule.onNodeWithContentDescription("$date, запланировать тренировку").performClick()
         waitFor("План тренировки")
-        rule.onNodeWithText("Выбрать программу ↓").performClick()
+        rule.onNodeWithText("Выбрать программу →").performClick()
+        waitFor("Выберите программу")
         waitFor("Фулбоди 3×")
         rule.onNodeWithText("Фулбоди 3×").performClick()
+        waitFor("План тренировки")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить план"))
         rule.onNodeWithText("Сохранить план").performClick()
         waitFor("Открыть план →")
@@ -59,3 +61,4 @@ class PlanningUiTest {
         rule.onAllNodesWithText("Женская").assertCountEquals(0)
     }
 }
+

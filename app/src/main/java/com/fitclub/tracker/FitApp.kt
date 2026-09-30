@@ -11,6 +11,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /** Простой контейнер зависимостей (без Hilt — для MVP достаточно). */
 class AppContainer(app: Application) {
@@ -22,18 +24,35 @@ class AppContainer(app: Application) {
     val schedule = ScheduleRepository(db)
 }
 
+sealed interface StartupState {
+    data object Loading : StartupState
+    data object Ready : StartupState
+    data class Failed(val message: String) : StartupState
+}
+
 class FitApp : Application() {
     lateinit var container: AppContainer
         private set
 
+    private val _startup = MutableStateFlow<StartupState>(StartupState.Loading)
+    val startup = _startup.asStateFlow()
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        initialize()
+    }
+
+    fun initialize() {
+        _startup.value = StartupState.Loading
         appScope.launch {
-            container.exercises.seedIfEmpty()
-            container.programs.seedIfEmpty()
+            runCatching {
+                container.exercises.seedIfEmpty()
+                container.programs.seedIfEmpty()
+            }.onSuccess { _startup.value = StartupState.Ready }
+                .onFailure { _startup.value = StartupState.Failed(it.message ?: "Не удалось открыть данные") }
         }
     }
 }
+

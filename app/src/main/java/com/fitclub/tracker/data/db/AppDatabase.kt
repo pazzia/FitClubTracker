@@ -113,6 +113,12 @@ interface WorkoutDao {
     @Query("SELECT * FROM set_logs ORDER BY sessionId DESC, setIndex")
     fun observeSets(): Flow<List<SetLogEntity>>
 
+    @Query("SELECT * FROM exercise_logs ORDER BY sessionId DESC, position")
+    fun observeExercises(): Flow<List<ExerciseLogEntity>>
+
+    @Insert
+    suspend fun insertExercises(items: List<ExerciseLogEntity>)
+
     @Insert
     suspend fun insertSession(item: WorkoutSessionEntity): Long
 
@@ -154,9 +160,9 @@ interface ScheduleDao {
     entities = [
         ExerciseEntity::class, ProgramEntity::class, ProgramDayEntity::class, ProgramExerciseEntity::class,
         BodyMeasurementEntity::class, WorkoutSessionEntity::class, SetLogEntity::class,
-        ScheduledWorkoutEntity::class, ScheduledExerciseEntity::class
+        ScheduledWorkoutEntity::class, ScheduledExerciseEntity::class, ExerciseLogEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -187,9 +193,18 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE scheduled_exercises ADD COLUMN comment TEXT NOT NULL DEFAULT ''")
             }
         }
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN isTimed INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("CREATE TABLE IF NOT EXISTS exercise_logs (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, sessionId INTEGER NOT NULL, exerciseId TEXT NOT NULL, position INTEGER NOT NULL, durationMillis INTEGER NOT NULL, completed INTEGER NOT NULL, FOREIGN KEY(sessionId) REFERENCES workout_sessions(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_exercise_logs_sessionId ON exercise_logs (sessionId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_exercise_logs_exerciseId ON exercise_logs (exerciseId)")
+            }
+        }
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
     }
 }
+

@@ -8,6 +8,7 @@ import com.fitclub.tracker.data.db.ProgramEntity
 import com.fitclub.tracker.data.db.ProgramExerciseEntity
 import com.fitclub.tracker.data.db.ProgramWithDays
 import com.fitclub.tracker.data.db.BodyMeasurementEntity
+import com.fitclub.tracker.data.db.ExerciseLogEntity
 import com.fitclub.tracker.data.db.SetLogEntity
 import com.fitclub.tracker.data.db.WorkoutSessionEntity
 import com.fitclub.tracker.data.model.Goal
@@ -114,22 +115,25 @@ class ProgramRepository(private val db: AppDatabase) {
 
 data class WorkoutLog(
     val session: WorkoutSessionEntity,
-    val sets: List<SetLogEntity>
+    val sets: List<SetLogEntity>,
+    val exercises: List<ExerciseLogEntity> = emptyList()
 ) {
-    val volumeKg: Float get() = sets.filter { it.done }.sumOf { (it.weightKg * it.reps).toDouble() }.toFloat()
+    val volumeKg: Float get() = sets.filter { it.done && !it.isTimed }.sumOf { (it.weightKg * it.reps).toDouble() }.toFloat()
     val completedSets: Int get() = sets.count { it.done }
     val durationMin: Int get() = (((session.finishedAt ?: session.startedAt) - session.startedAt) / 60_000L).toInt().coerceAtLeast(1)
 }
 
-data class CompletedSet(val exerciseId: String, val setIndex: Int, val weightKg: Float, val reps: Int)
+data class CompletedExercise(val exerciseId: String, val position: Int, val durationMillis: Long, val completed: Boolean)
+
+data class CompletedSet(val exerciseId: String, val setIndex: Int, val weightKg: Float, val reps: Int, val isTimed: Boolean = false)
 
 class FitnessRepository(private val db: AppDatabase) {
     fun observeMeasurements(): Flow<List<BodyMeasurementEntity>> = db.measurementDao().observeAll()
 
     fun observeWorkouts(): Flow<List<WorkoutLog>> = combine(
-        db.workoutDao().observeSessions(), db.workoutDao().observeSets()
-    ) { sessions, sets ->
-        sessions.map { session -> WorkoutLog(session, sets.filter { it.sessionId == session.id }) }
+        db.workoutDao().observeSessions(), db.workoutDao().observeSets(), db.workoutDao().observeExercises()
+    ) { sessions, sets, exercises ->
+        sessions.map { session -> WorkoutLog(session, sets.filter { it.sessionId == session.id }, exercises.filter { it.sessionId == session.id }) }
     }
 
     suspend fun addMeasurement(weight: Float?, waist: Float?, fat: Float?, chest: Float?, arm: Float?) {
@@ -142,7 +146,8 @@ class FitnessRepository(private val db: AppDatabase) {
     }
 
     suspend fun finishWorkout(programId: Long?, day: Int?, startedAt: Long, sets: List<CompletedSet>,
-        scheduleId: Long? = null, epochDay: Long = java.time.LocalDate.now().toEpochDay()): Long =
+        scheduleId: Long? = null, epochDay: Long = java.time.LocalDate.now().toEpochDay(),
+        exercises: List<CompletedExercise> = emptyList()): Long =
         db.withTransaction {
             val now = System.currentTimeMillis()
             val id = db.workoutDao().insertSession(
@@ -154,8 +159,12 @@ class FitnessRepository(private val db: AppDatabase) {
             db.workoutDao().insertSets(sets.map {
                 SetLogEntity(
                     sessionId = id, exerciseId = it.exerciseId, setIndex = it.setIndex,
-                    weightKg = it.weightKg, reps = it.reps, done = true
+                    weightKg = it.weightKg, reps = it.reps, done = true, isTimed = it.isTimed
                 )
+            })
+            db.workoutDao().insertExercises(exercises.map {
+                ExerciseLogEntity(sessionId = id, exerciseId = it.exerciseId, position = it.position,
+                    durationMillis = it.durationMillis.coerceAtLeast(0), completed = it.completed)
             })
             id
         }
@@ -190,3 +199,4 @@ object SamplePrograms {
         )
     )
 }
+

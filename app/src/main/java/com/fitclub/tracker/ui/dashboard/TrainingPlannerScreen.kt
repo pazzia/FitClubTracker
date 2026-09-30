@@ -72,7 +72,8 @@ fun parseScheduleTime(value: String): Int? {
 }
 
 @Composable
-fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -> Unit) {
+fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -> Unit,
+    onChooseProgram: () -> Unit = {}, selectedProgramId: Long = 0L, onSelectionConsumed: () -> Unit = {}) {
     val vm = appViewModel(key = "plan-$epochDay") { TrainingPlannerViewModel(it, epochDay) }
     val value by vm.draft.collectAsStateWithLifecycle()
     val catalog by vm.catalog.collectAsStateWithLifecycle()
@@ -105,7 +106,14 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
             onBack = { picker = false }, onPick = { vm.add(it); picker = false })
         return
     }
-    var templateMenu by remember { mutableStateOf(false) }
+    LaunchedEffect(selectedProgramId, programs, draft.id) {
+        if (selectedProgramId != 0L) {
+            programs.firstOrNull { it.id == selectedProgramId }?.let { selected ->
+                vm.update { it.fromProgram(selected, 0) }
+                onSelectionConsumed()
+            }
+        }
+    }
     var time by rememberSaveable(draft.id) { mutableStateOf(scheduleTime(draft.startMinute)) }
     val minute = parseScheduleTime(time)
     val canSave = draft.canSave && minute != null && !saving
@@ -128,14 +136,8 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
         item {
             FcCard {
                 Text("Взять день из программы", color = Fc.Text, style = MaterialTheme.typography.titleSmall)
-                Box {
-                    TextButton(onClick = { templateMenu = true }) { Text(programs.firstOrNull { it.id == draft.programId }?.name ?: "Выбрать программу ↓", color = Fc.Lime) }
-                    DropdownMenu(templateMenu, onDismissRequest = { templateMenu = false }) {
-                        programs.forEach { program -> DropdownMenuItem(text = { Text(program.name) }, onClick = {
-                            vm.update { it.fromProgram(program, 0) }; templateMenu = false
-                        }) }
-                        if (programs.isEmpty()) DropdownMenuItem(text = { Text("Нет программ — добавьте упражнения ниже") }, onClick = { templateMenu = false })
-                    }
+                TextButton(onClick = onChooseProgram) {
+                    Text(programs.firstOrNull { it.id == draft.programId }?.name ?: "Выбрать программу →", color = Fc.Lime)
                 }
                 val program = programs.firstOrNull { it.id == draft.programId }
                 if (program != null && program.days.isNotEmpty()) {
@@ -164,3 +166,4 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
         }
     }
 }
+

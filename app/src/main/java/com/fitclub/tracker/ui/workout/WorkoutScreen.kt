@@ -4,8 +4,10 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
@@ -14,8 +16,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -23,10 +26,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fitclub.tracker.AppContainer
 import com.fitclub.tracker.data.db.ExerciseEntity
-import com.fitclub.tracker.data.repo.CompletedSet
-import com.fitclub.tracker.data.repo.ProgramDraft
-import com.fitclub.tracker.data.repo.ScheduledDraft
-import com.fitclub.tracker.data.repo.DayDraft
+import com.fitclub.tracker.data.model.RepRange
+import com.fitclub.tracker.data.model.Sex
+import com.fitclub.tracker.data.repo.*
 import com.fitclub.tracker.ui.components.*
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.theme.Fc
@@ -35,20 +37,35 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-data class WorkoutSource(val plan: ScheduledDraft? = null, val catalog: Map<String, ExerciseEntity> = emptyMap(), val unitsKg: Boolean = true, val sex: com.fitclub.tracker.data.model.Sex = com.fitclub.tracker.data.model.Sex.MALE)
-data class SetEntry(var weight: String = "", var reps: String = "", var done: Boolean = false)
+// Entries belong to positions, so two occurrences of an exercise never share rows.
+data class WorkoutSource(val plan: ScheduledDraft? = null, val catalog: Map<String, ExerciseEntity> = emptyMap(),
+    val unitsKg: Boolean = true, val sex: Sex = Sex.MALE, val loaded: Boolean = false)
+data class SetEntry(val weight: String = "", val reps: String = "", val done: Boolean = false)
 
 class WorkoutViewModel(private val c: AppContainer, scheduleId: Long) : ViewModel() {
-    val source = combine(c.schedule.observe(scheduleId), c.exercises.observeAll(), c.profile.settings) { p, e, settings -> WorkoutSource(p, e.associateBy { it.id }, settings.unitsKg, settings.sex) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutSource())
+    val source = combine(c.schedule.observe(scheduleId), c.exercises.observeAll(), c.profile.settings) { p, e, s ->
+        WorkoutSource(p, e.associateBy { it.id }, s.unitsKg, s.sex, true)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, WorkoutSource())
+    val history = c.fitness.observeWorkouts().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val startedAt = System.currentTimeMillis()
     var elapsed by mutableLongStateOf(0L)
     var exerciseIndex by mutableIntStateOf(0)
+        private set
     var rest by mutableIntStateOf(0)
+        private set
     private var restUntil = 0L
-    val logs = mutableStateMapOf<String, SnapshotStateList<SetEntry>>()
+    val logs = mutableStateMapOf<Int, SnapshotStateList<SetEntry>>()
+    val completed = mutableStateMapOf<Int, Boolean>()
+    private val durations = mutableMapOf<Int, Long>()
+    private var activeIndex: Int? = null
+    private var activeSince = 0L
+    var summaryIndex by mutableStateOf<Int?>(null)
+        private set
     var finishing by mutableStateOf(false)
+        private set
+    private var saved = false
     var error by mutableStateOf<String?>(null)
+
     init { viewModelScope.launch { while (true) {
         val now = System.currentTimeMillis()
         elapsed = (now - startedAt) / 1000
@@ -57,12 +74,49 @@ class WorkoutViewModel(private val c: AppContainer, scheduleId: Long) : ViewMode
     } } }
     fun startRest(seconds: Int) { restUntil = System.currentTimeMillis() + seconds * 1000L; rest = seconds }
     fun stopRest() { restUntil = 0; rest = 0 }
-    fun finish(plan: ScheduledDraft, sets: List<CompletedSet>, done: () -> Unit) {
-        if (finishing || sets.isEmpty()) return
+    fun startExercise() {
+        if (activeIndex == null && summaryIndex == null) {
+            activeIndex = exerciseIndex; activeSince = System.currentTimeMillis()
+        }
+    }
+    fun duration(index: Int): Long = (durations[index] ?: 0L) +
+        if (activeIndex == index) (System.currentTimeMillis() - activeSince).coerceAtLeast(0) else 0L
+    private fun pauseExercise() {
+        activeIndex?.let { durations[it] = duration(it) }
+        activeIndex = null
+        stopRest()
+    }
+    fun moveTo(index: Int) {
+        pauseExercise(); exerciseIndex = index; summaryIndex = if (completed[index] == true) index else null
+        startExercise()
+    }
+    fun completeExercise() {
+        pauseExercise(); completed[exerciseIndex] = true; summaryIndex = exerciseIndex
+    }
+    fun editExercise() { completed.remove(exerciseIndex); summaryIndex = null; startExercise() }
+    fun completedSets(plan: ScheduledDraft, unitsKg: Boolean): List<CompletedSet> {
+        val counters = mutableMapOf<String, Int>()
+        return plan.items.flatMapIndexed { position, item ->
+            logs[position].orEmpty().filter { it.done }.map { row ->
+                val index = counters[item.exerciseId] ?: 0
+                counters[item.exerciseId] = index + 1
+                CompletedSet(item.exerciseId, index, weightKg(row.weight, unitsKg), row.reps.toInt(), item.reps == RepRange.TIME)
+            }
+        }
+    }
+    fun finish(plan: ScheduledDraft, unitsKg: Boolean, onSaved: () -> Unit) {
+        if (finishing || saved) return
+        pauseExercise()
+        val sets = completedSets(plan, unitsKg)
+        val exercises = plan.items.mapIndexedNotNull { index, item ->
+            if (durations.containsKey(index) || logs.containsKey(index))
+                CompletedExercise(item.exerciseId, index, duration(index), completed[index] == true) else null
+        }
         finishing = true
         viewModelScope.launch {
-            runCatching { c.fitness.finishWorkout(plan.programId, plan.dayPosition, startedAt, sets, plan.id, plan.epochDay) }
-                .onSuccess { done() }.onFailure { error = "Не удалось сохранить тренировку: ${it.message}" }
+            runCatching { c.fitness.finishWorkout(plan.programId, plan.dayPosition, startedAt, sets, plan.id, plan.epochDay, exercises) }
+                .onSuccess { saved = true; onSaved() }
+                .onFailure { error = "Не удалось сохранить тренировку: ${it.message}"; startExercise() }
             finishing = false
         }
     }
@@ -70,119 +124,157 @@ class WorkoutViewModel(private val c: AppContainer, scheduleId: Long) : ViewMode
 
 @Composable
 fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -> Unit) {
+    val focus = LocalFocusManager.current
     val vm = appViewModel(key = "workout-$scheduleId") { WorkoutViewModel(it, scheduleId) }
     val source by vm.source.collectAsStateWithLifecycle()
+    val history by vm.history.collectAsStateWithLifecycle()
     val plan = source.plan
-    val p = plan?.let { ProgramDraft(id = it.programId ?: 0, name = it.title, days = listOf(DayDraft(it.items))) }
-    val day = p?.days?.firstOrNull()
-    val elapsed = vm.elapsed
-    var exerciseIndex by vm::exerciseIndex
-    val rest = vm.rest
-    var confirmClose by remember { mutableStateOf(false) }
-    val logs = vm.logs
-
-    BackHandler { confirmClose = true }
-
-    if (confirmClose) AlertDialog(
-        onDismissRequest = { confirmClose = false },
-        title = { Text("Прервать тренировку?") },
-        text = { Text("Незаписанные подходы будут потеряны.") },
-        confirmButton = { TextButton(onClick = onClose) { Text("Выйти", color = Fc.Pink) } },
-        dismissButton = { TextButton(onClick = { confirmClose = false }) { Text("Продолжить") } }
-    )
-
-    if (p == null || plan == null || day == null || day.items.isEmpty()) {
+    var confirmFinish by remember { mutableStateOf(false) }
+    BackHandler { confirmFinish = true }
+    if (!source.loaded) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Fc.Lime) }
+        return
+    }
+    if (plan == null || plan.items.isEmpty()) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("В этом дне пока нет упражнений", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
-                TextButton(onClick = onClose) { Text("Вернуться к программе", color = Fc.Lime) }
+                Text("В этом дне пока нет упражнений", color = Fc.Text)
+                TextButton(onClick = onClose) { Text("Вернуться к плану", color = Fc.Lime) }
             }
         }
         return
     }
-    val item = day.items[exerciseIndex.coerceIn(0, day.items.lastIndex)]
+    val index = vm.exerciseIndex.coerceIn(0, plan.items.lastIndex)
+    val item = plan.items[index]
     val exercise = source.catalog[item.exerciseId]
-    val rows = logs.getOrPut(item.exerciseId) {
-        mutableStateListOf<SetEntry>().apply { repeat(item.sets) { add(SetEntry(weight = suggestedWeight(item.exerciseId), reps = if (item.reps == com.fitclub.tracker.data.model.RepRange.TIME) "45" else "8")) } }
+    val rows = vm.logs.getOrPut(index) {
+        mutableStateListOf<SetEntry>().apply { repeat(item.sets) { add(SetEntry(suggestedWeight(item.exerciseId), if (item.reps == RepRange.TIME) "45" else "8")) } }
     }
-    val allDone = day.items.flatMap { i -> logs[i.exerciseId].orEmpty() }.filter { it.done }
+    LaunchedEffect(plan.id, index) { vm.startExercise() }
+    val units = if (source.unitsKg) "кг" else "фунт."
+    val doneRows = rows.filter { it.done }
+    val heaviest = doneRows.maxWithOrNull(compareBy<SetEntry> { weightKg(it.weight, source.unitsKg) }.thenBy { it.reps.toIntOrNull() ?: 0 })
+    val previousBest = history.filter { it.session.startedAt < vm.startedAt }.flatMap { it.sets }
+        .filter { it.done && it.exerciseId == item.exerciseId && it.isTimed == (item.reps == RepRange.TIME) }
+        .maxWithOrNull(compareBy<com.fitclub.tracker.data.db.SetLogEntity> { it.weightKg }.thenBy { it.reps })
+    val volume = if (item.reps == RepRange.TIME) 0f else doneRows.sumOf { (weightKg(it.weight, source.unitsKg) * it.reps.toInt()).toDouble() }.toFloat()
+    val summary = vm.summaryIndex != null
+    val listState = rememberLazyListState()
+    LaunchedEffect(index, summary) { listState.scrollToItem(0) }
+
+    if (confirmFinish) AlertDialog(
+        onDismissRequest = { if (!vm.finishing) confirmFinish = false },
+        title = { Text("Завершить тренировку?") },
+        text = { Text("Сохраним ${vm.completedSets(plan, source.unitsKg).size} выполненных подходов и время тренировки. Выполнять весь план не обязательно. Неотмеченные подходы не считаются выполненными.") },
+        confirmButton = { TextButton(onClick = { vm.finish(plan, source.unitsKg, onClose) }, enabled = !vm.finishing) { Text(if (vm.finishing) "Сохраняю…" else "Завершить и сохранить") } },
+        dismissButton = { TextButton(onClick = { confirmFinish = false }, enabled = !vm.finishing) { Text("Продолжить тренировку") } }
+    )
 
     Column(Modifier.fillMaxSize().background(Fc.Bg)) {
         Row(Modifier.fillMaxWidth().background(Fc.Nav).padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) { Text("${p.name}", style = MaterialTheme.typography.titleSmall, color = Fc.Text); Text(time(elapsed), color = Fc.Lime, style = MaterialTheme.typography.labelMedium) }
-            TextButton(onClick = {
-                val completed = logs.flatMap { (id, list) -> list.mapIndexedNotNull { idx, r -> if (r.done) CompletedSet(id, idx, (r.weight.replace(',', '.').toFloatOrNull() ?: 0f) / if (source.unitsKg) 1f else 2.2046226f, r.reps.toIntOrNull() ?: 0) else null } }
-                vm.finish(plan, completed, onClose)
-            }, enabled = allDone.isNotEmpty() && !vm.finishing) { Text("Завершить", color = if (allDone.isNotEmpty()) Fc.Lime else Fc.Muted) }
+            Column(Modifier.weight(1f)) { Text(plan.title, style = MaterialTheme.typography.titleSmall, color = Fc.Text); Text(time(vm.elapsed), color = Fc.Lime) }
+            TextButton(onClick = { focus.clearFocus(); confirmFinish = true }, enabled = !vm.finishing, modifier = Modifier.testTag("finish-workout")) { Text("Завершить", color = Fc.Lime) }
         }
-        LinearProgressIndicator(progress = { (exerciseIndex + 1f) / day.items.size }, modifier = Modifier.fillMaxWidth(), color = Fc.Lime, trackColor = Fc.Surface2)
-        LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            item { Text("УПРАЖНЕНИЕ ${exerciseIndex + 1} ИЗ ${day.items.size}", style = MaterialTheme.typography.labelMedium, color = Fc.Muted); Text(exercise?.name ?: item.exerciseId, style = MaterialTheme.typography.displaySmall, color = Fc.Text) }
+        LinearProgressIndicator(progress = { vm.completed.count { it.value }.toFloat() / plan.items.size }, modifier = Modifier.fillMaxWidth(), color = Fc.Lime, trackColor = Fc.Surface2)
+        LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            item {
+                Text("УПРАЖНЕНИЕ ${index + 1} ИЗ ${plan.items.size}", color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
+                Text(exercise?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.displaySmall)
+            }
             if (exercise != null) item { GroupImage(source.sex, exercise.group, Modifier.fillMaxWidth().height(145.dp)) }
-            if (item.comment.isNotBlank()) item { FcCard {
-                Text("Комментарий к упражнению", style = MaterialTheme.typography.titleSmall, color = Fc.Lime)
-                Text(item.comment, color = Fc.Text)
-            } }
-            item { TextButton(onClick = { onTechnique(item.exerciseId) }, contentPadding = PaddingValues(0.dp)) { Text("Техника выполнения →", color = Fc.Lime) } }
-            item {
-                FcCard {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("№", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.width(34.dp)); Text(if (source.unitsKg) "кг" else "фунты", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)); Text(if (item.reps == com.fitclub.tracker.data.model.RepRange.TIME) "сек." else "повт.", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f)); Spacer(Modifier.width(46.dp))
+            if (summary) {
+                item {
+                    FcCard(border = Fc.Lime.copy(.45f)) {
+                        Text("Упражнение завершено", color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
+                        Text("Подходов: ${doneRows.size}", color = Fc.Text)
+                        if (item.reps == RepRange.TIME) Text("Выполнено: ${doneRows.sumOf { it.reps.toInt() }} сек.", color = Fc.Text)
+                        else Text("Тоннаж: ${number(displayWeight(volume, source.unitsKg))} $units", color = Fc.Text)
+                        Text("Время упражнения: ${time(vm.duration(index) / 1000)}", color = Fc.Text)
+                        Text("Самый тяжёлый подход: " + (heaviest?.let { "${number(displayWeight(weightKg(it.weight, source.unitsKg), source.unitsKg))} $units × ${it.reps}${if (item.reps == RepRange.TIME) " сек." else ""}" } ?: "нет выполненных подходов"), color = Fc.Text)
+                        Text("Рекорд за всю историю до этой тренировки: " + (previousBest?.let { "${number(displayWeight(it.weightKg, source.unitsKg))} $units × ${it.reps}${if (it.isTimed) " сек." else ""}" } ?: "первый результат"), color = Fc.Muted)
+                        if (heaviest != null && previousBest != null) {
+                            val current = weightKg(heaviest.weight, source.unitsKg)
+                            val delta = displayWeight(current - previousBest.weightKg, source.unitsKg)
+                            Text("Сравнение по весу: ${if (delta > 0) "+" else ""}${number(delta)} $units", color = if (delta > 0) Fc.Lime else Fc.Text)
+                            if (current == previousBest.weightKg) Text("При том же весе: ${heaviest.reps.toInt() - previousBest.reps} ${if (item.reps == RepRange.TIME) "сек." else "повт."}", color = Fc.Muted)
+                        }
+                        TextButton(onClick = { vm.editExercise() }) { Text("Изменить подходы", color = Fc.Lime) }
                     }
-                    rows.forEachIndexed { index, row ->
-                        SetRow(index, row, onDone = { checked ->
-                            val weight = row.weight.replace(',', '.').toFloatOrNull()
-                            val reps = row.reps.toIntOrNull()
-                            if (!checked || (weight != null && weight.isFinite() && weight >= 0 && reps != null && reps > 0)) {
-                                rows[index] = row.copy(done = checked); vm.error = null
-                                if (checked) vm.startRest(item.restSec)
-                            } else vm.error = "Укажите вес не меньше 0 и количество больше 0"
-
-                        }, onRemove = { if (rows.size > 1) rows.removeAt(index) }) { w, r -> rows[index] = row.copy(weight = w, reps = r, done = false) }
-                    }
-                    TextButton(onClick = { rows.add(SetEntry(weight = rows.lastOrNull()?.weight ?: suggestedWeight(item.exerciseId))) }, modifier = Modifier.fillMaxWidth()) { Text("+ Добавить подход", color = Fc.Lime) }
                 }
+            } else {
+                if (item.comment.isNotBlank()) item { FcCard { Text("Комментарий к упражнению", color = Fc.Lime); Text(item.comment, color = Fc.Text) } }
+                item { TextButton(onClick = { onTechnique(item.exerciseId) }, contentPadding = PaddingValues(0.dp)) { Text("Техника выполнения →", color = Fc.Lime) } }
+                item {
+                    FcCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("№", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.width(26.dp))
+                            Text(units, color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                            Spacer(Modifier.width(8.dp))
+                            Text(if (item.reps == RepRange.TIME) "сек." else "повт.", color = Fc.Muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                            Spacer(Modifier.width(80.dp))
+                        }
+                        rows.forEachIndexed { rowIndex, row ->
+                            SetRow(rowIndex, row, canRemove = rowIndex >= item.sets, onDone = { checked ->
+                                if (!checked || validSet(row)) {
+                                    rows[rowIndex] = row.copy(done = checked); vm.error = null
+                                    if (checked) vm.startRest(item.restSec)
+                                } else vm.error = "Укажите вес не меньше 0 и количество больше 0"
+                            }, onRemove = { rows.removeAt(rowIndex) }) { w, r -> rows[rowIndex] = row.copy(weight = w, reps = r, done = false) }
+                        }
+                        TextButton(onClick = { rows.add(SetEntry(weight = rows.lastOrNull()?.weight ?: suggestedWeight(item.exerciseId))) }, modifier = Modifier.fillMaxWidth()) { Text("+ Добавить подход", color = Fc.Lime) }
+                    }
+                }
+                if (vm.rest > 0) item { FcCard { Text("Отдых: ${time(vm.rest.toLong())}", color = Fc.Lime); TextButton(onClick = vm::stopRest) { Text("Пропустить отдых", color = Fc.Lime) } } }
             }
-            if (rest > 0) item {
-                FcCard(border = Fc.Lime.copy(.45f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(58.dp).background(Fc.LimeSoft, CircleShape), contentAlignment = Alignment.Center) { Text(time(rest.toLong()), color = Fc.Lime, fontWeight = FontWeight.ExtraBold) }
-                        Column(Modifier.padding(start = 12.dp).weight(1f)) { Text("Отдых", style = MaterialTheme.typography.titleMedium, color = Fc.Text); Text("готовы к следующему подходу", color = Fc.Muted) }
-                        TextButton(onClick = { vm.stopRest() }) { Text("Пропустить", color = Fc.Lime) }
-                    }
-                }
-            }
             item {
-                val next = day.items.getOrNull(exerciseIndex + 1)
-                if (next != null) FcCard {
-                    Text("ДАЛЕЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                    Text(source.catalog[next.exerciseId]?.name ?: next.exerciseId, style = MaterialTheme.typography.titleMedium, color = Fc.Text)
-                    Text("${next.sets} × ${next.reps.label}", color = Fc.Muted)
-                }
+                plan.items.getOrNull(index + 1)?.let { next -> FcCard {
+                    Text("СЛЕДУЮЩЕЕ УПРАЖНЕНИЕ", color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
+                    Text(source.catalog[next.exerciseId]?.name ?: next.exerciseId, color = Fc.Text)
+                } }
             }
         }
         if (vm.error != null) Text(vm.error.orEmpty(), color = Fc.Pink, modifier = Modifier.padding(16.dp))
-        Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = { if (exerciseIndex > 0) exerciseIndex-- }, enabled = exerciseIndex > 0, modifier = Modifier.weight(1f)) { Text("Назад") }
-            Button(onClick = { if (exerciseIndex < day.items.lastIndex) exerciseIndex++ else {
-                val completed = logs.flatMap { (id, list) -> list.mapIndexedNotNull { idx, r -> if (r.done) CompletedSet(id, idx, (r.weight.replace(',', '.').toFloatOrNull() ?: 0f) / if (source.unitsKg) 1f else 2.2046226f, r.reps.toIntOrNull() ?: 0) else null } }
-                vm.finish(plan, completed, onClose)
-            } }, enabled = !vm.finishing && (exerciseIndex < day.items.lastIndex || allDone.isNotEmpty()), colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime), modifier = Modifier.weight(1f)) { Text(if (exerciseIndex == day.items.lastIndex) "Завершить" else "Далее", color = Fc.Bg) }
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!summary) Button(onClick = { focus.clearFocus(); vm.completeExercise() }, enabled = !vm.finishing,
+                modifier = Modifier.fillMaxWidth().testTag("complete-exercise"), colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime)) { Text("Завершить упражнение", color = Fc.Bg) }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = { focus.clearFocus(); vm.moveTo(index - 1) }, enabled = index > 0 && !vm.finishing, modifier = Modifier.weight(1f)) { Text("Назад") }
+                OutlinedButton(onClick = { focus.clearFocus(); if (index < plan.items.lastIndex) vm.moveTo(index + 1) else confirmFinish = true },
+                    enabled = !vm.finishing, modifier = Modifier.weight(1f).testTag("next-exercise")) {
+                    Text(if (index == plan.items.lastIndex) "Завершить тренировку" else if (summary) "Следующее упражнение" else "Далее →")
+                }
+            }
         }
     }
 }
 
-@Composable private fun SetRow(index: Int, row: SetEntry, onDone: (Boolean) -> Unit, onRemove: () -> Unit, onEdit: (String, String) -> Unit) {
+@Composable
+internal fun SetRow(index: Int, row: SetEntry, canRemove: Boolean, onDone: (Boolean) -> Unit, onRemove: () -> Unit, onEdit: (String, String) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("${index + 1}", color = if (row.done) Fc.Lime else Fc.Text, textAlign = TextAlign.Center, modifier = Modifier.width(34.dp))
-        OutlinedTextField(row.weight, { onEdit(it, row.reps) }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), colors = fieldColors())
+        Text("${index + 1}", color = if (row.done) Fc.Lime else Fc.Text, textAlign = TextAlign.Center, modifier = Modifier.width(26.dp))
+        OutlinedTextField(row.weight, { onEdit(it, row.reps) }, singleLine = true,
+            modifier = Modifier.weight(1f).height(56.dp).testTag("weight-$index"), shape = RoundedCornerShape(10.dp), colors = fieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
         Spacer(Modifier.width(8.dp))
-        OutlinedTextField(row.reps, { onEdit(row.weight, it.filter(Char::isDigit)) }, singleLine = true, modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), colors = fieldColors())
-        IconButton(onClick = { onDone(!row.done) }) { Icon(Icons.Filled.Check, "Подход выполнен", tint = if (row.done) Fc.Bg else Fc.Muted, modifier = Modifier.background(if (row.done) Fc.Lime else Fc.Surface2, CircleShape).padding(5.dp)) }
-        if (!row.done && index > 2) IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) { Icon(Icons.Filled.Delete, "Удалить подход", tint = Fc.Muted) }
+        OutlinedTextField(row.reps, { onEdit(row.weight, it.filter(Char::isDigit)) }, singleLine = true,
+            modifier = Modifier.weight(1f).height(56.dp).testTag("reps-$index"), shape = RoundedCornerShape(10.dp), colors = fieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+        IconButton(onClick = { onDone(!row.done) }, modifier = Modifier.size(48.dp).testTag("done-$index")) {
+            Icon(Icons.Filled.Check, "Подход ${index + 1} выполнен", tint = if (row.done) Fc.Bg else Fc.Muted,
+                modifier = Modifier.background(if (row.done) Fc.Lime else Fc.Surface2, CircleShape).padding(5.dp))
+        }
+        // Reserve the same column for every row, including planned and completed sets.
+        Box(Modifier.width(32.dp), contentAlignment = Alignment.Center) {
+            if (canRemove && !row.done) IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) { Icon(Icons.Filled.Delete, "Удалить подход ${index + 1}", tint = Fc.Muted) }
+        }
     }
 }
 
+private fun validSet(row: SetEntry): Boolean {
+    val w = row.weight.replace(',', '.').toFloatOrNull()
+    return w != null && w.isFinite() && w >= 0 && (row.reps.toIntOrNull() ?: 0) > 0
+}
+private fun weightKg(text: String, unitsKg: Boolean) = (text.replace(',', '.').toFloatOrNull() ?: 0f) / if (unitsKg) 1f else 2.2046226f
+private fun displayWeight(kg: Float, unitsKg: Boolean) = kg * if (unitsKg) 1f else 2.2046226f
+private fun number(value: Float) = String.format(Locale.US, "%.1f", value).removeSuffix(".0")
 @Composable private fun fieldColors() = OutlinedTextFieldDefaults.colors(focusedTextColor = Fc.Text, unfocusedTextColor = Fc.Text, focusedBorderColor = Fc.Lime, unfocusedBorderColor = Fc.Line, cursorColor = Fc.Lime)
 private fun time(sec: Long) = "%02d:%02d".format(Locale.US, sec / 60, sec % 60)
 private fun suggestedWeight(id: String) = if (id in listOf("plank", "pushup", "pullup", "hangraise")) "0" else ""

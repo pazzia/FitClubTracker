@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -80,6 +81,7 @@ object Routes {
     const val PROGRESS = "progress"
     const val PROFILE = "profile"
     const val WORKOUT = "workout/{schedule}"
+    const val PICK_PROGRAM = "plan-programs/{epochDay}"
     const val PLANNER = "plan/{epochDay}"
     fun program(id: Long, add: String = "") = "program/$id?add=$add"
     fun group(g: MuscleGroup) = "library/${g.name}"
@@ -110,9 +112,18 @@ fun AppRoot() {
                 CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.navigate(Routes.PROFILE) })
             }
             composable(Routes.PLANNER, arguments = listOf(navArgument("epochDay") { type = NavType.LongType })) { entry ->
-                TrainingPlannerScreen(epochDay = entry.arguments!!.getLong("epochDay"), onClose = { nav.popBackStack() }, onStart = {
+                val selectedProgram by entry.savedStateHandle.getStateFlow("selectedProgramId", 0L).collectAsStateWithLifecycle()
+                TrainingPlannerScreen(onChooseProgram = { nav.navigate("plan-programs/${entry.arguments!!.getLong("epochDay")}") },
+                    selectedProgramId = selectedProgram, onSelectionConsumed = { entry.savedStateHandle["selectedProgramId"] = 0L }, epochDay = entry.arguments!!.getLong("epochDay"), onClose = { nav.popBackStack() }, onStart = {
                     nav.navigate(Routes.workout(it)) { popUpTo(Routes.PLANNER) { inclusive = true } }
                 })
+            }
+            composable(Routes.PICK_PROGRAM, arguments = listOf(navArgument("epochDay") { type = NavType.LongType })) {
+                ProgramsScreen(choosingProgram = true, onBack = { nav.popBackStack() },
+                    onCreate = { nav.navigate(Routes.program(0L)) }, onOpen = { id ->
+                        nav.previousBackStackEntry?.savedStateHandle?.set("selectedProgramId", id)
+                        nav.popBackStack()
+                    })
             }
             composable(Routes.PROGRESS) { ProgressScreen(onProfile = { nav.navigate(Routes.PROFILE) }) }
             composable(Routes.PROFILE) { ProfileScreen(onBack = { nav.popBackStack() }) }
@@ -156,7 +167,7 @@ fun AppRoot() {
 private fun BottomBar(nav: NavHostController) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: ""
-    if (route.startsWith("workout") || route.startsWith("plan/") || runCatching { nav.getBackStackEntry(Routes.WORKOUT) }.getOrNull() != null) return
+    if (route.startsWith("workout") || route.startsWith("plan/") || route.startsWith("plan-programs/") || runCatching { nav.getBackStackEntry(Routes.WORKOUT) }.getOrNull() != null) return
     Column(Modifier.background(Fc.Nav).navigationBarsPadding()) {
         HorizontalDivider(color = Fc.Line, thickness = 1.dp)
         Row(Modifier.fillMaxWidth().height(72.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -194,3 +205,4 @@ private fun BottomBar(nav: NavHostController) {
         }
     }
 }
+

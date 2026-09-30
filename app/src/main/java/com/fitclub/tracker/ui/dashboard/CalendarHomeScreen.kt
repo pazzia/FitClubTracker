@@ -158,8 +158,25 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                 Text("Результат за этот день", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
                 logs.forEach { log ->
                     Text("${log.completedSets} подходов · ${log.volumeKg.toInt()} кг · ${log.durationMin} мин", color = Fc.Muted, modifier = Modifier.padding(top = 8.dp))
+                    log.exercises.groupBy { it.exerciseId }.forEach { (exerciseId, times) ->
+                        val sets = log.sets.filter { it.done && it.exerciseId == exerciseId }
+                        val best = sets.maxWithOrNull(compareBy<com.fitclub.tracker.data.db.SetLogEntity> { it.weightKg }.thenBy { it.reps })
+                        val previous = state.workouts.filter { it.session.startedAt < log.session.startedAt }.flatMap { it.sets }
+                            .filter { it.done && it.exerciseId == exerciseId && it.isTimed == best?.isTimed }
+                            .maxWithOrNull(compareBy<com.fitclub.tracker.data.db.SetLogEntity> { it.weightKg }.thenBy { it.reps })
+                        val seconds = times.sumOf { it.durationMillis } / 1000
+                        Text(state.catalog[exerciseId]?.name ?: exerciseId, color = Fc.Text, modifier = Modifier.padding(top = 12.dp))
+                        Text("${if (times.all { it.completed }) "Завершено" else "Выполнено частично"} · ${sets.size} подходов · ${seconds / 60} мин ${seconds % 60} сек", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                        Text("Тоннаж: ${sets.filter { !it.isTimed }.sumOf { (it.weightKg * it.reps).toDouble() }.toInt()} кг", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                        if (best != null) {
+                            Text("Самый тяжёлый: ${best.weightKg} кг × ${best.reps}${if (best.isTimed) " сек." else ""}", color = Fc.Text, style = MaterialTheme.typography.bodySmall)
+                            if (previous != null) Text("До тренировки: ${previous.weightKg} кг × ${previous.reps} · разница ${best.weightKg - previous.weightKg} кг", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                            else Text("Первый результат в истории", color = Fc.Lime, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
                 }
             }
         }
     }
 }
+

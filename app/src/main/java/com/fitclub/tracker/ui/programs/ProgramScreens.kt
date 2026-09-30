@@ -117,7 +117,8 @@ class ProgramsViewModel(c: AppContainer) : ViewModel() {
 }
 
 @Composable
-fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false) {
+fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false,
+    choosingProgram: Boolean = false, onBack: (() -> Unit)? = null, onCreate: () -> Unit = { onOpen(0L) }) {
     val vm = appViewModel { ProgramsViewModel(it) }
     val programs by vm.programs.collectAsStateWithLifecycle()
     val catalog by vm.catalog.collectAsStateWithLifecycle()
@@ -125,14 +126,15 @@ fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                ScreenTitle(if (choosingExercise) "Выберите программу" else "Программы")
+                if (onBack != null) BackRow("План тренировки", onBack)
+                ScreenTitle(if (choosingExercise || choosingProgram) "Выберите программу" else "Программы")
                 Text(
                     "${programs.size} ${plural(programs.size, "программа", "программы", "программ")} · создавайте сколько угодно",
                     style = MaterialTheme.typography.bodyMedium, color = Fc.Muted
                 )
             }
         }
-        item { PrimaryButton("+  Создать программу", { onOpen(0L) }) }
+        item { PrimaryButton("+  Создать программу", onCreate) }
         items(programs, key = { it.id }) { p ->
             val fit = remember(p, catalog) { ProgramScorer.score(p, catalog) }
             FcCard(onClick = { onOpen(p.id) }, border = if (p.isActive) Fc.Lime.copy(alpha = 0.5f) else Color(0xFF26262F)) {
@@ -520,4 +522,5 @@ private fun Dropdown(title: String, value: String, ok: Boolean, options: List<Pa
         }
     }
 }
+
 

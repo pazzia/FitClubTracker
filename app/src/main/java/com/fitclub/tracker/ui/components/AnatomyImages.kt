@@ -29,7 +29,7 @@ fun anatomyIndex(group: MuscleGroup): Int = when (group) {
 }
 
 @Composable
-fun GroupImage(sex: Sex, group: MuscleGroup, modifier: Modifier = Modifier, scale: ContentScale = ContentScale.Crop) {
+fun GroupImage(sex: Sex, group: MuscleGroup, modifier: Modifier = Modifier, scale: ContentScale = ContentScale.Fit) {
     val resource = (if (sex == Sex.FEMALE) femaleGroups else maleGroups)[anatomyIndex(group)]
     Image(painterResource(resource), contentDescription = "${group.title}, ${sex.title.lowercase()} атлас",
         contentScale = scale, modifier = modifier.background(Color(0xFF14191D)))
@@ -42,3 +42,4 @@ fun BodyPair(sex: Sex, modifier: Modifier = Modifier) {
         contentScale = ContentScale.Fit,
         modifier = modifier.fillMaxWidth().height(250.dp).background(Color(0xFF14191D)))
 }
+

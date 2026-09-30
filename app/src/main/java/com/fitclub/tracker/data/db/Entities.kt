@@ -140,7 +140,8 @@ data class SetLogEntity(
     val setIndex: Int,
     val weightKg: Float,
     val reps: Int,
-    val done: Boolean
+    val done: Boolean,
+    @ColumnInfo(defaultValue = "0") val isTimed: Boolean = false
 )
 
 /** Снимок тренировки на конкретную дату: изменения программы не меняют этот план. */
@@ -175,4 +176,19 @@ data class ScheduledWorkoutWithItems(
     @Embedded val workout: ScheduledWorkoutEntity,
     @Relation(parentColumn = "id", entityColumn = "scheduleId")
     val items: List<ScheduledExerciseEntity>
+)
+
+
+/** Время и статус каждого упражнения, в том числе при досрочном завершении. */
+@Entity(tableName = "exercise_logs",
+    foreignKeys = [ForeignKey(entity = WorkoutSessionEntity::class, parentColumns = ["id"],
+        childColumns = ["sessionId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("sessionId"), Index("exerciseId")])
+data class ExerciseLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val sessionId: Long,
+    val exerciseId: String,
+    val position: Int,
+    val durationMillis: Long,
+    val completed: Boolean
 )
