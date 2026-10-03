@@ -1,0 +1,43 @@
+{
+  "source": "https://github.com/yuhonas/free-exercise-db",
+  "datasetSha256": "5bb747e3fc658f095a60dcbf6d53c96627acdcc6ffb6fffde86f7e26995d40bf",
+  "sourceRecords": 876,
+  "importedRecords": 220,
+  "counts": {
+    "CHEST": 20,
+    "BACK": 20,
+    "SHOULDERS": 20,
+    "BICEPS": 20,
+    "TRICEPS": 20,
+    "FOREARMS": 20,
+    "QUADS": 20,
+    "HAMSTRINGS": 20,
+    "GLUTES": 20,
+    "CALVES": 20,
+    "CORE": 20
+  },
+  "primaryTargetCounts": {
+    "CHEST": 20,
+    "BACK": 20,
+    "SHOULDERS": 20,
+    "BICEPS": 20,
+    "TRICEPS": 20,
+    "FOREARMS": 20,
+    "QUADS": 20,
+    "HAMSTRINGS": 20,
+    "GLUTES": 14,
+    "CALVES": 20,
+    "CORE": 20
+  },
+  "photos": 440,
+  "videoLinks": 220,
+  "videoSource": "https://github.com/yuhonas/free-exercise-db/pull/26",
+  "videoSourceCommit": "fe40028def68793fbd5c652402420a4c63d28a1e",
+  "notes": [
+    "Photos bundled unchanged; videos are YouTube links, not downloaded files.",
+    "5 calf stretches are tagged as stretching.",
+    "6 glute entries target glutes as a secondary muscle.",
+    "Russian technique is an abridged adaptation; original instructions retained in catalog.json."
+  ],
+  "sourceCommit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5"
+}

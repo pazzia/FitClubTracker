@@ -7,3 +7,4 @@ captures/
 .kotlin/
 __pycache__/
 *.pyc
+app/src/main/assets/free_exercise_db/*/*.jpg

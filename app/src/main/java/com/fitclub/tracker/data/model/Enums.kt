@@ -14,7 +14,9 @@ enum class Muscle(val title: String) {
     HAMS("бицепс бедра"),
     GLUTES("ягодичные"),
     CALVES("икры"),
-    ABS("пресс")
+    ABS("пресс"),
+    MIDDLE_BACK("середина спины"),
+    ADDUCTORS("приводящие мышцы бедра")
 }
 
 enum class BodyView { FRONT, BACK }
