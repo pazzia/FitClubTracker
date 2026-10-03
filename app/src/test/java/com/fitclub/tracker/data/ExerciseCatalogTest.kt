@@ -41,7 +41,9 @@ class ExerciseCatalogTest {
                 }
             }
         }
-        assertEquals(5, FreeExerciseCatalog.media.values.count { it.category == "Растяжка" })
+        assertEquals(5, FreeExerciseCatalog.all.count {
+            it.group == MuscleGroup.CALVES && FreeExerciseCatalog.media.getValue(it.id).category == "Растяжка"
+        })
     }
 
     @Test fun populatedInstallGetsCatalogAndRepeatedStartupPreservesExistingRows() = runBlocking {
