@@ -26,7 +26,7 @@ val prepareExercisePhotos by tasks.registering {
             require(fields[1].matches(Regex("[A-Za-z0-9_\\-]+/[01]\\.jpg")))
             fields[1] to fields[0]
         }
-        require(wanted.size == 440) { "Expected 440 unique photos" }
+        require(wanted.size == 448) { "Expected 448 unique photos" }
         val cache = rootProject.layout.projectDirectory.dir(".gradle/free-exercise-db").asFile.apply { mkdirs() }
         val archive = File(cache, "$sourceCommit.zip")
         if (!archive.exists()) {
@@ -73,8 +73,8 @@ android {
         applicationId = "com.fitclub.tracker"
         minSdk = 28
         targetSdk = 34
-        versionCode = 7
-        versionName = "0.6.0"
+        versionCode = 8
+        versionName = "0.6.1"
     }
 
     buildTypes {

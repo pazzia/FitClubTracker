@@ -78,7 +78,7 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
 private fun ExerciseRow(e: ExerciseEntity, sex: Sex, onClick: () -> Unit) {
     FcCard(onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            GroupImage(sex, e.group, Modifier.size(55.dp).clip(RoundedCornerShape(11.dp)))
+            ExerciseThumbnail(e, Modifier.size(64.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(e.name, style = MaterialTheme.typography.titleSmall, color = Fc.Text)
                 val category = FreeExerciseCatalog.media[e.id]?.category
@@ -168,7 +168,7 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
             }
         }
         if (e.group == MuscleGroup.QUADS) item { QuadricepsLegend() }
-        item { AnatomyCard(profile.sex) }
+        item { ExerciseMuscleMap(profile.sex, e.primary, e.secondary) }
         item { Segmented(listOf(0, 1, 2), tab, { tab = it }, { listOf("Техника", "Описание", "Замены")[it] }, selectedBg = Fc.Lime) }
         when (tab) {
             0 -> item { FcCard { Text(e.technique, style = MaterialTheme.typography.bodyMedium, color = Fc.Text) } }

@@ -28,11 +28,12 @@ class ExerciseCatalogTest {
         for (group in MuscleGroup.entries) {
             assertEquals(group.title, 20, FreeExerciseCatalog.all.count { it.group == group })
         }
-        for (e in FreeExerciseCatalog.all) {
+        assertEquals(ExerciseSeed.all.map { it.id }.toSet(), FreeExerciseCatalog.media.keys)
+        for (e in ExerciseSeed.all) {
             assertTrue(e.name.any { it in 'А'..'я' })
             val media = FreeExerciseCatalog.media.getValue(e.id)
             assertEquals(2, media.images.size)
-            assertTrue(media.videoUrl!!.startsWith("https://www.youtube.com/watch?v="))
+            media.videoUrl?.let { assertTrue(it.startsWith("https://www.youtube.com/watch?v=")) }
             for (path in media.images) {
                 context.assets.open(path).use { stream ->
                     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }

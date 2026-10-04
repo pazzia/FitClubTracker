@@ -29,7 +29,8 @@
     "CALVES": 20,
     "CORE": 20
   },
-  "photos": 440,
+  "photos": 448,
+  "exercisesWithMedia": 226,
   "videoLinks": 220,
   "videoSource": "https://github.com/yuhonas/free-exercise-db/pull/26",
   "videoSourceCommit": "fe40028def68793fbd5c652402420a4c63d28a1e",
@@ -38,6 +39,5 @@
     "5 calf stretches are tagged as stretching.",
     "6 glute entries target glutes as a secondary muscle.",
     "Russian technique is an abridged adaptation; original instructions retained in catalog.json."
-  ],
-  "sourceCommit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5"
+  ]
 }

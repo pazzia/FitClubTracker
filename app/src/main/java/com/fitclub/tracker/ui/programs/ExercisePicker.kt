@@ -74,7 +74,7 @@ internal fun ExercisePicker(
                 val has = exercise.id in already
                 FcCard(onClick = if (has) null else ({ onPick(exercise.id) })) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GroupImage(profile.sex, selectedGroup, Modifier.size(52.dp))
+                        ExerciseThumbnail(exercise, Modifier.size(64.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(exercise.name, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
                             val category = FreeExerciseCatalog.media[exercise.id]?.category
