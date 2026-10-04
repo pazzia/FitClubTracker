@@ -20,6 +20,7 @@ import com.fitclub.tracker.AppContainer
 import com.fitclub.tracker.data.db.ExerciseEntity
 import com.fitclub.tracker.data.model.ExerciseType
 import com.fitclub.tracker.data.model.MuscleGroup
+import com.fitclub.tracker.data.seed.FreeExerciseCatalog
 import com.fitclub.tracker.ui.components.*
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.theme.Fc
@@ -65,17 +66,19 @@ internal fun ExercisePicker(
                 Segmented(listOf(null, ExerciseType.BASIC, ExerciseType.ISOLATION), type, { type = it },
                     { when (it) { null -> "Все"; ExerciseType.BASIC -> "Базовые"; else -> "Изоляция" } }, selectedBg = Fc.Lime)
             }
-            val shown = catalog.filter { it.group == selectedGroup && (type == null || it.type == type) &&
+            val shown = catalog.filter { it.group == selectedGroup && (type == null ||
+                (it.type == type && FreeExerciseCatalog.media[it.id]?.category != "Растяжка")) &&
                 it.name.contains(query.trim(), ignoreCase = true) }
             if (shown.isEmpty()) item { Text("Нет упражнений с такими фильтрами", color = Fc.Muted) }
             items(shown, key = { it.id }) { exercise ->
                 val has = exercise.id in already
                 FcCard(onClick = if (has) null else ({ onPick(exercise.id) })) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GroupImage(profile.sex, selectedGroup, Modifier.size(52.dp))
+                        ExerciseThumbnail(exercise, Modifier.size(64.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(exercise.name, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
-                            Text("${exercise.type.title} · ${exercise.equipment}", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                            val category = FreeExerciseCatalog.media[exercise.id]?.category
+                            Text("${if (category == "Растяжка") category else exercise.type.title} · ${exercise.equipment}", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                             if (has) Text("Уже в этом дне", color = Fc.Lime, style = MaterialTheme.typography.labelSmall)
                         }
                         Icon(if (has) Icons.Filled.Check else Icons.Filled.Add,

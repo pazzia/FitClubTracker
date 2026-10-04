@@ -72,7 +72,8 @@ class ExerciseRepository(private val db: AppDatabase) {
     fun observe(id: String): Flow<ExerciseEntity?> = db.exerciseDao().observe(id)
 
     suspend fun seedIfEmpty() {
-        if (db.exerciseDao().count() == 0) db.exerciseDao().insertAll(ExerciseSeed.all)
+        // Additive and idempotent on upgrades: keep user programs and recorded exercise IDs.
+        db.exerciseDao().insertMissing(ExerciseSeed.all)
     }
 }
 

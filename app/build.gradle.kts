@@ -1,9 +1,69 @@
+import java.io.File
+import java.net.URI
+import java.security.MessageDigest
+import java.util.zip.ZipFile
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
+
+// Bundle verified upstream photos into the APK without committing 30 MB of generated assets.
+// No network is used by the installed app. The pinned source ZIP is cached for later builds.
+val exercisePhotosDirectory = layout.buildDirectory.dir("generated/exercisePhotos")
+val prepareExercisePhotos by tasks.registering {
+    val sourceCommit = "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5"
+    val manifest = layout.projectDirectory.file("src/main/assets/free_exercise_db/photos.sha256")
+    inputs.file(manifest)
+    inputs.property("sourceCommit", sourceCommit)
+    outputs.dir(exercisePhotosDirectory)
+    doLast {
+        val wanted = manifest.asFile.readLines().filter { it.isNotBlank() }.associate { line ->
+            val fields = line.split(' ', limit = 2)
+            require(fields.size == 2 && fields[0].matches(Regex("[0-9a-f]{64}")))
+            require(fields[1].matches(Regex("[A-Za-z0-9_\\-]+/[01]\\.jpg")))
+            fields[1] to fields[0]
+        }
+        require(wanted.size == 448) { "Expected 448 unique photos" }
+        val cache = rootProject.layout.projectDirectory.dir(".gradle/free-exercise-db").asFile.apply { mkdirs() }
+        val archive = File(cache, "$sourceCommit.zip")
+        if (!archive.exists()) {
+            val temporary = File(cache, "$sourceCommit.download")
+            val connection = URI("https://codeload.github.com/yuhonas/free-exercise-db/zip/$sourceCommit").toURL().openConnection()
+            connection.connectTimeout = 30_000
+            connection.readTimeout = 120_000
+            try {
+                connection.getInputStream().use { input -> temporary.outputStream().use { input.copyTo(it) } }
+                check(temporary.renameTo(archive)) { "Cannot cache source archive" }
+            } finally { temporary.delete() }
+        }
+        val output = exercisePhotosDirectory.get().asFile
+        output.deleteRecursively()
+        output.mkdirs()
+        val prefix = "free-exercise-db-$sourceCommit/exercises/"
+        try {
+            ZipFile(archive).use { zip ->
+                wanted.forEach { (path, expected) ->
+                    val entry = zip.getEntry(prefix + path) ?: error("Missing source photo: $path")
+                    val target = File(output, "free_exercise_db/$path")
+                    target.parentFile.mkdirs()
+                    zip.getInputStream(entry).use { input -> target.outputStream().use { input.copyTo(it) } }
+                    val hash = MessageDigest.getInstance("SHA-256").digest(target.readBytes())
+                        .joinToString("") { "%02x".format(it) }
+                    check(hash == expected) { "Photo checksum mismatch: $path" }
+                }
+            }
+        } catch (failure: Exception) {
+            output.deleteRecursively()
+            archive.delete()
+            throw failure
+        }
+    }
+}
+
+tasks.named("preBuild").configure { dependsOn(prepareExercisePhotos) }
 
 android {
     namespace = "com.fitclub.tracker"
@@ -13,8 +73,8 @@ android {
         applicationId = "com.fitclub.tracker"
         minSdk = 28
         targetSdk = 34
-        versionCode = 6
-        versionName = "0.5.1"
+        versionCode = 8
+        versionName = "0.6.1"
     }
 
     buildTypes {
@@ -36,6 +96,7 @@ android {
     buildFeatures {
         compose = true
     }
+    sourceSets.getByName("main").assets.srcDir(exercisePhotosDirectory)
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
@@ -69,4 +130,3 @@ dependencies {
 tasks.withType<Test>().configureEach {
     systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
 }
-

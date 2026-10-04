@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.fitclub.tracker.AppContainer
 import com.fitclub.tracker.data.db.ExerciseEntity
+import com.fitclub.tracker.data.seed.FreeExerciseCatalog
 import com.fitclub.tracker.data.model.*
 import com.fitclub.tracker.ui.components.*
 import com.fitclub.tracker.ui.navigation.appViewModel
@@ -42,7 +43,8 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
     val profile by vm.settings.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     val q = query.trim().lowercase()
-    val results = all.filter { it.name.lowercase().contains(q) || it.group.title.lowercase().contains(q) }
+    val results = all.filter { it.name.lowercase().contains(q) || it.group.title.lowercase().contains(q) ||
+        FreeExerciseCatalog.media[it.id]?.sourceId?.replace('_', ' ')?.lowercase()?.contains(q) == true }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Text("ИЗУЧАЙ. ВЫБИРАЙ. ТРЕНИРУЙСЯ.", style = MaterialTheme.typography.labelSmall, color = Fc.Muted)
@@ -76,10 +78,11 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
 private fun ExerciseRow(e: ExerciseEntity, sex: Sex, onClick: () -> Unit) {
     FcCard(onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            GroupImage(sex, e.group, Modifier.size(55.dp).clip(RoundedCornerShape(11.dp)))
+            ExerciseThumbnail(e, Modifier.size(64.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(e.name, style = MaterialTheme.typography.titleSmall, color = Fc.Text)
-                Text("${e.type.title} · ${e.equipment}", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
+                val category = FreeExerciseCatalog.media[e.id]?.category
+                Text("${if (category == "Растяжка") category else e.type.title} · ${e.equipment}", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
             }
             Text("›", color = Fc.Muted)
         }
@@ -94,7 +97,7 @@ fun LibraryGroupScreen(group: MuscleGroup, onBack: () -> Unit, onExercise: (Stri
     var type by rememberSaveable { mutableStateOf<ExerciseType?>(null) }
     var level by rememberSaveable { mutableStateOf<Int?>(null) }
     val inGroup = all.filter { it.group == group }
-    val shown = inGroup.filter { (type == null || it.type == type) && (level == null || it.level == level) }
+    val shown = inGroup.filter { (type == null || (it.type == type && FreeExerciseCatalog.media[it.id]?.category != "Растяжка")) && (level == null || it.level == level) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { BackRow("Справочник", onBack); ScreenTitle(group.title) }
         item {
@@ -148,10 +151,13 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Pill(e.equipment, Fc.LimeSoft, Fc.Lime)
-                Pill(e.type.title, Fc.Surface2, Fc.Text)
+                Pill(FreeExerciseCatalog.media[e.id]?.category?.takeIf { it == "Растяжка" } ?: e.type.title, Fc.Surface2, Fc.Text)
             }
         }
         item { GroupImage(profile.sex, e.group, Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(20.dp))) }
+        FreeExerciseCatalog.media[e.id]?.let { media ->
+            item { ExerciseMediaCard(e.id, e.name, media) }
+        }
         item {
             FcCard {
                 Text("Основные мышцы", color = Fc.Lime, style = MaterialTheme.typography.titleSmall)
@@ -162,7 +168,7 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
             }
         }
         if (e.group == MuscleGroup.QUADS) item { QuadricepsLegend() }
-        item { AnatomyCard(profile.sex) }
+        item { ExerciseMuscleMap(profile.sex, e.primary, e.secondary) }
         item { Segmented(listOf(0, 1, 2), tab, { tab = it }, { listOf("Техника", "Описание", "Замены")[it] }, selectedBg = Fc.Lime) }
         when (tab) {
             0 -> item { FcCard { Text(e.technique, style = MaterialTheme.typography.bodyMedium, color = Fc.Text) } }

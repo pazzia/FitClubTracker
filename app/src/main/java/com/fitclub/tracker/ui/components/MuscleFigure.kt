@@ -1,150 +1,88 @@
 package com.fitclub.tracker.ui.components
 
-import android.graphics.BlurMaskFilter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.asAndroidPath
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.fitclub.tracker.data.model.BodyView
-import com.fitclub.tracker.data.model.Muscle
-import com.fitclub.tracker.data.model.Sex
+import androidx.compose.ui.unit.dp
 import com.fitclub.tracker.R
-import kotlin.math.max
+import com.fitclub.tracker.data.model.*
+import com.fitclub.tracker.ui.theme.Fc
+import kotlin.math.min
 
-private class ParsedPart(val muscle: Muscle, val angle: Float, val path: Path) {
-    val bounds: Rect = path.getBounds()
+internal fun highlightedMuscles(target: Collection<Muscle>, aux: Collection<Muscle>): Pair<Set<Muscle>, Set<Muscle>> {
+    val primary = target.toSet()
+    return primary to (aux.toSet() - primary)
 }
 
-private class ParsedFigure(data: FigureData) {
-    private fun p(s: String) = PathParser().parsePathString(s).toPath()
-    val silhouette = p(data.silhouette)
-    val trunks = p(data.trunks)
-    val veinsFront = p(data.veinsFront)
-    val veinsBack = p(data.veinsBack)
-    val front = data.front.map { ParsedPart(it.muscle, it.fiberAngle, p(it.path)) }
-    val back = data.back.map { ParsedPart(it.muscle, it.fiberAngle, p(it.path)) }
-}
-
-private val NEUTRAL = listOf(Color(0xFFF1F2F5), Color(0xFFB9BCC3), Color(0xFF7B7E87))
-private val TARGET = listOf(Color(0xFFFF7A55), Color(0xFFF0302F), Color(0xFFA3122A))
-private val AUX = listOf(Color(0xFFFFD28E), Color(0xFFFF9A3C), Color(0xFFC2641C))
-private val GLOW = Color(0xFF4D63FF)
-
-/**
- * Серый «глиняный» манекен в стиле 3D-рендера.
- * Целевые мышцы — красные с синим свечением, вспомогательные — оранжевые.
- * [detailed] добавляет мышечные волокна и вены (для крупных размеров).
- */
 @Composable
-fun MuscleFigure(
-    sex: Sex,
-    view: BodyView,
-    target: Collection<Muscle>,
-    aux: Collection<Muscle> = emptyList(),
-    modifier: Modifier = Modifier,
-    detailed: Boolean = true,
-    description: String? = null
-) {
-    val figure = remember(sex) { ParsedFigure(if (sex == Sex.FEMALE) BodyShapes.female else BodyShapes.male) }
-    val targetSet = target.toSet()
-    val auxSet = aux.toSet() - targetSet
-    Box(
-        modifier
-            .aspectRatio(if (sex == Sex.FEMALE) 0.51f else 0.62f)
-            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
-    ) {
-        val asset = when {
-            sex == Sex.FEMALE && view == BodyView.FRONT -> R.drawable.body_female_front
-            sex == Sex.FEMALE -> R.drawable.body_female_back
-            view == BodyView.FRONT -> R.drawable.body_male_front
-            else -> R.drawable.body_male_back
-        }
-        Image(painterResource(asset), contentDescription = null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+fun MuscleFigure(sex: Sex, view: BodyView, target: Collection<Muscle>, aux: Collection<Muscle> = emptyList(),
+    modifier: Modifier = Modifier, detailed: Boolean = true, description: String? = null) {
+    val geometry = AthleteMusclePaths.forFigure(sex, view)
+    val paths = remember(sex, view) { geometry.parts.mapValues { PathParser().parsePathString(it.value).toPath() } }
+    val (primary, secondary) = highlightedMuscles(target, aux)
+    val asset = when {
+        sex == Sex.FEMALE && view == BodyView.FRONT -> R.drawable.body_female_front
+        sex == Sex.FEMALE -> R.drawable.body_female_back
+        view == BodyView.FRONT -> R.drawable.body_male_front
+        else -> R.drawable.body_male_back
+    }
+    val visiblePrimary = primary.intersect(paths.keys)
+    val visibleSecondary = secondary.intersect(paths.keys)
+    val label = description ?: "${if (view == BodyView.FRONT) "Тело спереди" else "Тело сзади"}. Основные: ${visiblePrimary.joinToString { it.title }}. Дополнительные: ${visibleSecondary.joinToString { it.title }}"
+    Box(modifier.aspectRatio(geometry.width / geometry.height).semantics { contentDescription = label }) {
+        Image(painterResource(asset), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         Canvas(Modifier.fillMaxSize()) {
-            val kx = size.width / 200f
-            val ky = size.height / 440f
-            withTransform({ scale(kx, ky, pivot = Offset.Zero) }) {
-            val parts = if (view == BodyView.FRONT) figure.front else figure.back
-            val veins = if (view == BodyView.FRONT) figure.veinsFront else figure.veinsBack
-            drawSide(parts, veins, targetSet, auxSet, detailed)
-            withTransform({ scale(-1f, 1f, pivot = Offset(100f, 0f)) }) {
-                drawSide(parts, veins, targetSet, auxSet, detailed)
-            }
-            }
-        }
-    }
-}
-
-private fun DrawScope.drawSide(
-    parts: List<ParsedPart>, veins: Path, target: Set<Muscle>, aux: Set<Muscle>, detailed: Boolean
-) {
-    parts.forEach { part ->
-        val isTarget = part.muscle in target
-        val isAux = !isTarget && part.muscle in aux
-        if (!isTarget && !isAux) return@forEach
-        if (isTarget || isAux) {
-            drawIntoCanvas { canvas ->
-                val paint = android.graphics.Paint().apply {
-                    isAntiAlias = true
-                    color = GLOW.copy(alpha = if (isTarget) 1f else 0.5f).toArgb()
-                    maskFilter = BlurMaskFilter(if (isTarget) 3.2f else 2.4f, BlurMaskFilter.Blur.NORMAL)
+            // Match ContentScale.Fit exactly, including padding and the off-centre source silhouette.
+            val factor = min(size.width / geometry.width, size.height / geometry.height)
+            withTransform({
+                translate((size.width - geometry.width * factor) / 2, (size.height - geometry.height * factor) / 2)
+                scale(factor, factor, pivot = Offset.Zero)
+            }) {
+                paths.forEach { (muscle, path) ->
+                    val color = when (muscle) { in primary -> Color(0xFFE6FF50); in secondary -> Color(0xFFFFA557); else -> null }
+                    if (color != null) {
+                        drawPath(path, color.copy(alpha = 0.66f))
+                        withTransform({ scale(-1f, 1f, pivot = Offset(geometry.centre, 0f)) }) {
+                            drawPath(path, color.copy(alpha = 0.66f))
+                        }
+                    }
                 }
-                canvas.nativeCanvas.drawPath(part.path.asAndroidPath(), paint)
             }
         }
-        val b = part.bounds
-        val colors = if (isTarget) TARGET else AUX
-        drawPath(
-            part.path,
-            Brush.radialGradient(
-                0f to colors[0], 0.55f to colors[1], 1f to colors[2],
-                center = Offset(b.left + b.width * 0.38f, b.top + b.height * 0.3f),
-                radius = max(b.width, b.height) * 0.8f
-            )
-        )
-        drawPath(part.path, Color(0xFF6F727B), style = Stroke(0.8f))
-        if (detailed) drawFibers(part)
     }
 }
 
-/** Мышечные волокна: тонкая штриховка вдоль хода мышцы, обрезанная по её контуру. */
-private fun DrawScope.drawFibers(part: ParsedPart) {
-    val b = part.bounds
-    val half = max(b.width, b.height)
-    clipPath(part.path) {
-        rotate(part.angle, pivot = b.center) {
-            var x = -half
-            while (x < half) {
-                drawLine(Color.Black.copy(alpha = 0.17f), Offset(b.center.x + x, b.center.y - half), Offset(b.center.x + x, b.center.y + half), 0.55f)
-                drawLine(Color.White.copy(alpha = 0.11f), Offset(b.center.x + x + 1.2f, b.center.y - half), Offset(b.center.x + x + 1.2f, b.center.y + half), 0.45f)
-                x += 2.4f
+@Composable
+fun ExerciseMuscleMap(sex: Sex, primary: Collection<Muscle>, secondary: Collection<Muscle>) {
+    val (target, aux) = highlightedMuscles(primary, secondary)
+    FcCard {
+        Text("Карта мышечных групп", color = Fc.Text, style = MaterialTheme.typography.titleSmall)
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f)) {
+                MuscleFigure(sex, BodyView.FRONT, target, aux, Modifier.fillMaxWidth())
+                Text("Спереди", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+            }
+            Column(Modifier.weight(1f)) {
+                MuscleFigure(sex, BodyView.BACK, target, aux, Modifier.fillMaxWidth())
+                Text("Сзади", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
             }
         }
+        Spacer(Modifier.height(12.dp))
+        Text("● Основные: ${target.joinToString { it.title }}", color = Color(0xFFE6FF50), style = MaterialTheme.typography.bodySmall)
+        if (aux.isNotEmpty()) Text("● Дополнительные: ${aux.joinToString { it.title }}", color = Color(0xFFFFA557), style = MaterialTheme.typography.bodySmall)
     }
 }

@@ -5,6 +5,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import com.fitclub.tracker.FitApp
 import com.fitclub.tracker.data.model.Sex
+import com.fitclub.tracker.data.model.MuscleGroup
+import com.fitclub.tracker.data.seed.ExerciseSeed
 import com.fitclub.tracker.ui.dashboard.calendarDate
 import com.fitclub.tracker.ui.navigation.AppRoot
 import com.fitclub.tracker.ui.theme.FitClubTheme
@@ -53,7 +55,7 @@ class PlanningUiTest {
         rule.runOnIdle { assertEquals(Sex.FEMALE, app.container.profile.settings.value.sex) }
         rule.onNodeWithText("Справочник").performClick()
         rule.onNodeWithContentDescription("Грудь, женский атлас").performClick()
-        waitFor("7 упражнений")
+        waitFor("${ExerciseSeed.all.count { it.group == MuscleGroup.CHEST }} упражнений")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Жим штанги лёжа"))
         rule.onNodeWithText("Жим штанги лёжа").performClick()
         rule.onAllNodesWithContentDescription("Грудь, женский атлас").onFirst().assertExists()

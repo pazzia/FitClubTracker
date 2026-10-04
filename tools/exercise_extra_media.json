@@ -1,0 +1,21 @@
+{
+  "reardelt": {
+    "sourceId": "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
+    "photoNote": "На фото — вариант разведений с опорой головы на скамью."
+  },
+  "dbrdl": {
+    "sourceId": "Stiff-Legged_Dumbbell_Deadlift"
+  },
+  "farmer": {
+    "sourceId": "Farmers_Walk"
+  },
+  "revcurl": {
+    "sourceId": "Reverse_Barbell_Curl"
+  },
+  "bulgarian": {
+    "sourceId": "Split_Squat_with_Dumbbells"
+  },
+  "abduction": {
+    "sourceId": "Thigh_Abductor"
+  }
+}

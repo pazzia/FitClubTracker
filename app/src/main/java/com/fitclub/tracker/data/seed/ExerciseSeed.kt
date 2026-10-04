@@ -6,9 +6,13 @@ import com.fitclub.tracker.data.model.ExerciseType
 import com.fitclub.tracker.data.model.Muscle.*
 import com.fitclub.tracker.data.model.MuscleGroup
 
-/** Стартовый справочник: 52 упражнения, 11 групп мышц. Заполняется при первом запуске. */
+/** Старые IDs сохраняются для программ и истории; импорт обновляет справочник без дублей этих IDs. */
 object ExerciseSeed {
-    val all: List<ExerciseEntity> = listOf(
+    val all: List<ExerciseEntity> by lazy {
+        val legacyIds = legacy.map { it.id }.toSet()
+        legacy + FreeExerciseCatalog.all.filterNot { it.id in legacyIds }
+    }
+    private val legacy: List<ExerciseEntity> = listOf(
         ExerciseEntity(
             id = "bench", name = "Жим штанги лёжа", group = MuscleGroup.CHEST,
             primary = listOf(CHEST), secondary = listOf(TRICEPS, DELTS),

@@ -12,9 +12,11 @@ class ProgramScorerTest {
     private val catalog = ExerciseSeed.all.associateBy { it.id }
 
     @Test
-    fun seedHas52UniqueExercises() {
-        assertEquals(52, ExerciseSeed.all.size)
-        assertEquals(52, catalog.size)
+    fun seedHasAtLeastTwentyUniqueExercisesPerGroup() {
+        assertEquals(ExerciseSeed.all.size, catalog.size)
+        com.fitclub.tracker.data.model.MuscleGroup.entries.forEach { group ->
+            assertTrue(group.title, ExerciseSeed.all.count { it.group == group } >= 20)
+        }
     }
 
     @Test
