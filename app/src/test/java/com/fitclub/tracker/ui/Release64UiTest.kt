@@ -28,6 +28,7 @@ class Release64UiTest {
         val repository = ProfileRepository(context)
         repository.update(repository.settings.value.copy(theme = "White Day", accent = 0xFF536D00))
         assertEquals("White Day", ProfileRepository(context).settings.value.theme)
+        rule.mainClock.autoAdvance = false
         val light = mutableStateOf(true)
         var background = Color.Unspecified
         var text = Color.Unspecified
@@ -36,19 +37,24 @@ class Release64UiTest {
             text = Fc.Text
             Text("Тема")
         } }
+        rule.mainClock.advanceTimeBy(64)
         rule.runOnIdle { assertEquals(Color.White, background); assertEquals(Color(0xFF17212B), text); light.value = false }
+        rule.mainClock.advanceTimeBy(64)
         rule.runOnIdle { assertEquals(Color(0xFF0E1317), background); assertEquals(Color(0xFFF5F5F7), text) }
     }
     @Test fun deletionRequiresExplicitConfirmationAndCancelPreservesProgram() {
+        rule.mainClock.autoAdvance = false
         var programExists = true
         val dialog = mutableStateOf(true)
         rule.setContent { FitClubTheme {
             if (dialog.value) ProgramDeleteDialog("План", { dialog.value = false }) { programExists = false; dialog.value = false }
         } }
+        rule.mainClock.advanceTimeBy(64)
         rule.onNodeWithText("Удалить программу?").assertExists()
         rule.runOnIdle { assertTrue(programExists) }
         rule.onNodeWithText("Отмена").performClick()
         rule.runOnIdle { assertTrue(programExists); dialog.value = true }
+        rule.mainClock.advanceTimeBy(64)
         rule.onNodeWithText("Удалить").performClick()
         rule.runOnIdle { assertFalse(programExists) }
     }

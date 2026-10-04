@@ -157,6 +157,7 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
 
 @Composable
 fun DashedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val line = Fc.Line
     Box(
         modifier
             .fillMaxWidth()
@@ -167,7 +168,7 @@ fun DashedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
     ) {
         Canvas(Modifier.matchParentSize()) {
             drawRoundRect(
-                color = Fc.Line, style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))),
+                color = line, style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
             )
         }
