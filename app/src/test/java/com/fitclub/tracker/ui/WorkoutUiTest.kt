@@ -1,5 +1,6 @@
 package com.fitclub.tracker.ui
 
+import android.app.Application
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -51,13 +52,19 @@ class WorkoutUiTest {
         rule.onNodeWithTag("next-exercise").assertIsEnabled().performClick()
         waitFor("Завершить и сохранить")
     }
-    @Test fun plannedAndExtraRowsKeepIdenticalFieldBounds() {
+    @Test
+    @Config(application = Application::class)
+    fun plannedAndExtraRowsKeepIdenticalFieldBounds() {
+        // Bounds do not depend on Material text-field animation time.
+        rule.mainClock.autoAdvance = false
         rule.setContent { FitClubTheme { Column {
             SetRow(0, SetEntry("60", "8"), false, {}, {}) { _, _ -> }
             SetRow(3, SetEntry("60", "8"), true, {}, {}) { _, _ -> }
             SetRow(4, SetEntry("60", "8", true), true, {}, {}) { _, _ -> }
         } } }
+        rule.mainClock.advanceTimeBy(64)
         val bounds = listOf("weight-0", "reps-0", "weight-3", "reps-3", "weight-4", "reps-4").map { rule.onNodeWithTag(it).fetchSemanticsNode().boundsInRoot.size }
         bounds.forEach { assertEquals(bounds.first().width, it.width, 1f); assertEquals(bounds.first().height, it.height, 1f) }
     }
 }
+
