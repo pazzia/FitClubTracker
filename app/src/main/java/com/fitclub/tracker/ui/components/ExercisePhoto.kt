@@ -52,6 +52,7 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                     context.assets.open(it).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
                         ?.let { decoded ->
                             val trimmed = trimPhotoPadding(decoded)
+                            if (thumbnail) value = trimmed
                             val result = if (thumbnail) emphasizeExerciseThumbnail(trimmed) else trimmed
                             photoCache.put(cacheKey, result)
                             result
