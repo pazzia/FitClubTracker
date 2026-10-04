@@ -3,6 +3,10 @@ package com.fitclub.tracker.ui
 import android.app.Application
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.*
@@ -29,18 +33,23 @@ class Release64UiTest {
         repository.update(repository.settings.value.copy(theme = "White Day", accent = 0xFF536D00))
         assertEquals("White Day", ProfileRepository(context).settings.value.theme)
         val light = mutableStateOf(true)
-        var background = Color.Unspecified
-        var text = Color.Unspecified
+        fun colours(bg: Color, fg: Color) = "Фон: $bg; Текст: $fg"
         rule.setContent { FitClubTheme(lightTheme = light.value, accent = 0xFF536D00) {
-            background = MaterialTheme.colorScheme.background
-            text = Fc.Text
-            Text(if (light.value) "Светлая" else "Тёмная", color = Fc.Text)
+            val bg = MaterialTheme.colorScheme.background
+            val fg = Fc.Text
+            TextButton(onClick = { light.value = !light.value }) {
+                Text(if (light.value) "Светлая" else "Тёмная", color = fg,
+                    modifier = Modifier.semantics { contentDescription = colours(bg, fg) })
+            }
         } }
-        rule.mainClock.advanceTimeBy(64)
-        rule.runOnIdle { assertEquals(Color.White, background); assertEquals(Color(0xFF17212B), text); light.value = false }
-        rule.waitUntil(10_000) { background == Color(0xFF0E1317) }
+        rule.onNodeWithContentDescription(colours(Color.White, Color(0xFF17212B))).assertExists()
+        rule.onNodeWithText("Светлая").performClick()
+        rule.waitUntil(10_000) {
+            rule.onAllNodesWithContentDescription(colours(Color(0xFF0E1317), Color(0xFFF5F5F7)))
+                .fetchSemanticsNodes().isNotEmpty()
+        }
         rule.onNodeWithText("Тёмная").assertExists()
-        rule.runOnIdle { assertEquals(Color(0xFF0E1317), background); assertEquals(Color(0xFFF5F5F7), text) }
+
     }
     @Test fun deletionRequiresExplicitConfirmationAndCancelPreservesProgram() {
         rule.mainClock.autoAdvance = false
