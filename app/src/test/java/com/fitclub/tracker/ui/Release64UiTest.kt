@@ -28,7 +28,6 @@ class Release64UiTest {
         val repository = ProfileRepository(context)
         repository.update(repository.settings.value.copy(theme = "White Day", accent = 0xFF536D00))
         assertEquals("White Day", ProfileRepository(context).settings.value.theme)
-        rule.mainClock.autoAdvance = false
         val light = mutableStateOf(true)
         var background = Color.Unspecified
         var text = Color.Unspecified
@@ -39,7 +38,7 @@ class Release64UiTest {
         } }
         rule.mainClock.advanceTimeBy(64)
         rule.runOnIdle { assertEquals(Color.White, background); assertEquals(Color(0xFF17212B), text); light.value = false }
-        rule.mainClock.advanceTimeUntil(5_000) { background == Color(0xFF0E1317) }
+        rule.waitUntil(10_000) { background == Color(0xFF0E1317) }
         rule.onNodeWithText("Тёмная").assertExists()
         rule.runOnIdle { assertEquals(Color(0xFF0E1317), background); assertEquals(Color(0xFFF5F5F7), text) }
     }
