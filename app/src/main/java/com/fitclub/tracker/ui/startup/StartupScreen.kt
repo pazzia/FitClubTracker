@@ -18,8 +18,9 @@ import com.fitclub.tracker.ui.theme.Fc
 import kotlinx.coroutines.delay
 
 object ReleaseNotes {
-    const val VERSION = "0.6.2"
+    const val VERSION = "0.6.3"
     val items = listOf(
+        "Обновлены иллюстрации ягодиц и трицепса в мужском атласе.",
         "Справочник: 226 упражнений, не менее 20 в каждой группе мышц.",
         "Увеличенные миниатюры: спортсмен контрастнее, фон приглушён.",
         "Фото техники показаны без белых полос и без обрезки исходного кадра.",

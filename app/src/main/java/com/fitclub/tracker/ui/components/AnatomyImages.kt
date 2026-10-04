@@ -1,15 +1,8 @@
 package com.fitclub.tracker.ui.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.PathParser
-import androidx.compose.runtime.remember
-import kotlin.math.min
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,7 +36,6 @@ fun GroupImage(sex: Sex, group: MuscleGroup, modifier: Modifier = Modifier, scal
     Box(modifier.background(Color(0xFF14191D))) {
         Image(painterResource(resource), contentDescription = "${group.title}, ${sex.title.lowercase()} атлас",
             contentScale = scale, modifier = Modifier.fillMaxSize())
-        if (sex == Sex.MALE && group == MuscleGroup.GLUTES) GlutePosingBrief(Modifier.fillMaxSize())
     }
 }
 
@@ -53,27 +45,4 @@ fun BodyPair(sex: Sex, modifier: Modifier = Modifier) {
         contentDescription = "Карта мышечных групп: ${sex.title.lowercase()} атлас, спереди и сзади",
         contentScale = ContentScale.Fit,
         modifier = modifier.fillMaxWidth().height(250.dp).background(Color(0xFF14191D)))
-}
-
-
-
-/** A separate garment layer preserves the source anatomy and leaves both glute regions exposed. */
-@Composable
-internal fun GlutePosingBrief(modifier: Modifier = Modifier) {
-    val belt = remember { PathParser().parsePathString(
-        "M80 34 Q199 62 320 34 L322 44 Q200 74 78 44 Z").toPath() }
-    val strap = remember { PathParser().parsePathString(
-        "M195 62 Q201 64 207 62 L205 183 Q207 205 202 218 L196 218 Q193 201 196 180 Z").toPath() }
-    Canvas(modifier) {
-        val factor = min(size.width, size.height) / 400f
-        withTransform({
-            translate((size.width - 400 * factor) / 2, (size.height - 400 * factor) / 2)
-            scale(factor, factor, pivot = Offset.Zero)
-        }) {
-            drawPath(belt, Color(0xFF252D34))
-            drawPath(strap, Color(0xFF20272D))
-            drawPath(belt, Color(0xFF536069), style = Stroke(.9f))
-            drawPath(strap, Color(0xFF536069), style = Stroke(.7f))
-        }
-    }
 }
