@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.fitclub.tracker.data.repo.ProgramIcons
 import com.fitclub.tracker.ui.theme.Fc
+import com.fitclub.tracker.ui.theme.foregroundFor
 
 @Composable
 fun ScreenTitle(text: String, modifier: Modifier = Modifier) {
@@ -106,7 +107,7 @@ fun <T> Segmented(
     modifier: Modifier = Modifier,
     height: Dp = 40.dp,
     selectedBg: Color = Fc.Text,
-    selectedFg: Color = Fc.Bg,
+    selectedFg: Color = foregroundFor(selectedBg),
     leading: @Composable RowScope.(T, Boolean) -> Unit = { _, _ -> },
     trailing: @Composable RowScope.(T, Boolean) -> Unit = { _, _ -> }
 ) {
@@ -143,7 +144,7 @@ fun <T> Segmented(
 }
 
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Fc.Lime, textColor: Color = Fc.Bg) {
+fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Fc.Lime, textColor: Color = foregroundFor(color)) {
     Surface(
         onClick = onClick, color = color, shape = RoundedCornerShape(16.dp),
         modifier = modifier.fillMaxWidth().height(54.dp)
@@ -156,6 +157,7 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
 
 @Composable
 fun DashedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val line = Fc.Line
     Box(
         modifier
             .fillMaxWidth()
@@ -166,7 +168,7 @@ fun DashedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
     ) {
         Canvas(Modifier.matchParentSize()) {
             drawRoundRect(
-                color = Color(0xFF4A4A55), style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))),
+                color = line, style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
             )
         }
@@ -211,8 +213,9 @@ fun ProgramCover(icon: String, color: Color, size: Dp, modifier: Modifier = Modi
         contentAlignment = Alignment.Center
     ) {
         if (bitmap != null) Image(bitmap.asImageBitmap(), "Своя обложка программы", Modifier.size(size), contentScale = ContentScale.Crop)
-        else StrokeIcon(icon, Fc.Bg, Modifier.size(size * 0.48f))
+        else StrokeIcon(icon, foregroundFor(color), Modifier.size(size * 0.48f))
     }
 }
 
 val DefaultBorder = BorderStroke(1.dp, Color(0xFF26262F))
+

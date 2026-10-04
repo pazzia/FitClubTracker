@@ -39,6 +39,8 @@ fun MuscleFigure(sex: Sex, view: BodyView, target: Collection<Muscle>, aux: Coll
         view == BodyView.FRONT -> R.drawable.athlete_male_front
         else -> R.drawable.athlete_male_back
     }
+    val primaryColor = Fc.Lime
+    val secondaryColor = Fc.Orange
     val visiblePrimary = primary.intersect(paths.keys)
     val visibleSecondary = secondary.intersect(paths.keys)
     val label = description ?: "${if (view == BodyView.FRONT) "Тело спереди" else "Тело сзади"}. Основные: ${visiblePrimary.joinToString { it.title }}. Дополнительные: ${visibleSecondary.joinToString { it.title }}"
@@ -52,7 +54,7 @@ fun MuscleFigure(sex: Sex, view: BodyView, target: Collection<Muscle>, aux: Coll
                 scale(factor, factor, pivot = Offset.Zero)
             }) {
                 paths.forEach { (muscle, path) ->
-                    val color = when (muscle) { in primary -> Fc.Lime; in secondary -> Fc.Orange; else -> null }
+                    val color = when (muscle) { in primary -> primaryColor; in secondary -> secondaryColor; else -> null }
                     if (color != null) {
                         drawPath(path, color.copy(alpha = 0.66f))
                         withTransform({ scale(-1f, 1f, pivot = Offset(geometry.centre, 0f)) }) {

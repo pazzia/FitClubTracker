@@ -44,6 +44,7 @@ class ProgramEditorUiTest {
         rule.onNodeWithText("Жим штанги лёжа").performClick()
         rule.waitForIdle()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("exercise-comment-bench"))
+        rule.onNodeWithContentDescription("Жим штанги лёжа — миниатюра техники").assertExists()
         rule.onNodeWithTag("exercise-comment-bench").performTextInput("Без рывков")
         rule.onAllNodesWithText("Соответствие цели «Масса»").assertCountEquals(0)
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("program-fit-conclusion"))
