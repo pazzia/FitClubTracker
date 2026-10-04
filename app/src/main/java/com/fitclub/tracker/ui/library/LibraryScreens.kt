@@ -78,7 +78,7 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
 private fun ExerciseRow(e: ExerciseEntity, sex: Sex, onClick: () -> Unit) {
     FcCard(onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ExerciseThumbnail(e, Modifier.size(64.dp))
+            ExerciseThumbnail(e, Modifier.width(104.dp).height(82.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(e.name, style = MaterialTheme.typography.titleSmall, color = Fc.Text)
                 val category = FreeExerciseCatalog.media[e.id]?.category

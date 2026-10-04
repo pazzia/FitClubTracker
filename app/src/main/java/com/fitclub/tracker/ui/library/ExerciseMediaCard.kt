@@ -28,9 +28,9 @@ internal fun ExerciseMediaCard(exerciseId: String, name: String, media: Exercise
         FcCard {
             Text("Техника в фотографиях", color = Fc.Text, style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(12.dp))
-            HorizontalPager(state = pager, modifier = Modifier.fillMaxWidth().height(260.dp)
+            HorizontalPager(state = pager, modifier = Modifier.fillMaxWidth()
                 .testTag("exercise-photo-pager"), key = { media.images[it] }) { page ->
-                ExercisePhoto(media.images[page], "$name — фото ${page + 1}", Modifier.fillMaxSize())
+                ExercisePhoto(media.images[page], "$name — фото ${page + 1}", Modifier.fillMaxWidth())
             }
             Text("${pager.currentPage + 1} / ${media.images.size} · Листайте свайпом",
                 color = Fc.Muted, style = MaterialTheme.typography.bodySmall)

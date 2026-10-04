@@ -29,6 +29,10 @@ class ExerciseMediaUiTest {
             ExerciseMediaCard("bench", "Жим", FreeExerciseCatalog.media.getValue("bench"))
         } }
         rule.onNodeWithText("1 / 2 · Листайте свайпом").assertExists()
+        rule.waitUntil(10_000) {
+            val bounds = rule.onNodeWithContentDescription("Жим — фото 1").fetchSemanticsNode().boundsInRoot
+            kotlin.math.abs(bounds.width / bounds.height - 850f / 567f) < .03f
+        }
         rule.onNodeWithTag("exercise-photo-pager").performTouchInput { swipeLeft() }
         rule.waitForIdle()
         rule.onNodeWithText("2 / 2 · Листайте свайпом").assertExists()
