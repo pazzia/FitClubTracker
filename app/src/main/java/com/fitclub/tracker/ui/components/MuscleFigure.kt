@@ -34,10 +34,10 @@ fun MuscleFigure(sex: Sex, view: BodyView, target: Collection<Muscle>, aux: Coll
     val paths = remember(sex, view) { geometry.parts.mapValues { PathParser().parsePathString(it.value).toPath() } }
     val (primary, secondary) = highlightedMuscles(target, aux)
     val asset = when {
-        sex == Sex.FEMALE && view == BodyView.FRONT -> R.drawable.body_female_front
-        sex == Sex.FEMALE -> R.drawable.body_female_back
-        view == BodyView.FRONT -> R.drawable.body_male_front
-        else -> R.drawable.body_male_back
+        sex == Sex.FEMALE && view == BodyView.FRONT -> R.drawable.athlete_female_front
+        sex == Sex.FEMALE -> R.drawable.athlete_female_back
+        view == BodyView.FRONT -> R.drawable.athlete_male_front
+        else -> R.drawable.athlete_male_back
     }
     val visiblePrimary = primary.intersect(paths.keys)
     val visibleSecondary = secondary.intersect(paths.keys)
@@ -52,7 +52,7 @@ fun MuscleFigure(sex: Sex, view: BodyView, target: Collection<Muscle>, aux: Coll
                 scale(factor, factor, pivot = Offset.Zero)
             }) {
                 paths.forEach { (muscle, path) ->
-                    val color = when (muscle) { in primary -> Color(0xFFE6FF50); in secondary -> Color(0xFFFFA557); else -> null }
+                    val color = when (muscle) { in primary -> Fc.Lime; in secondary -> Fc.Orange; else -> null }
                     if (color != null) {
                         drawPath(path, color.copy(alpha = 0.66f))
                         withTransform({ scale(-1f, 1f, pivot = Offset(geometry.centre, 0f)) }) {
@@ -82,7 +82,7 @@ fun ExerciseMuscleMap(sex: Sex, primary: Collection<Muscle>, secondary: Collecti
             }
         }
         Spacer(Modifier.height(12.dp))
-        Text("● Основные: ${target.joinToString { it.title }}", color = Color(0xFFE6FF50), style = MaterialTheme.typography.bodySmall)
-        if (aux.isNotEmpty()) Text("● Дополнительные: ${aux.joinToString { it.title }}", color = Color(0xFFFFA557), style = MaterialTheme.typography.bodySmall)
+        Text("● Основные: ${target.joinToString { it.title }}", color = Fc.Lime, style = MaterialTheme.typography.bodySmall)
+        if (aux.isNotEmpty()) Text("● Дополнительные: ${aux.joinToString { it.title }}", color = Fc.Orange, style = MaterialTheme.typography.bodySmall)
     }
 }

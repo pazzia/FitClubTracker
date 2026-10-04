@@ -7,13 +7,15 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import com.fitclub.tracker.ui.theme.Fc
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -46,16 +48,28 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
         value = withContext(Dispatchers.IO) {
             photoCache.get(cacheKey) ?: try {
                 path?.let {
-                    val options = BitmapFactory.Options().apply { inSampleSize = if (thumbnail) 4 else 1 }
+                    val options = BitmapFactory.Options().apply { inSampleSize = if (thumbnail) 2 else 1 }
                     context.assets.open(it).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
-                        ?.also { photoCache.put(cacheKey, it) }
+                        ?.let { decoded ->
+                            val trimmed = trimPhotoPadding(decoded)
+                            if (thumbnail) value = trimmed
+                            val result = if (thumbnail) emphasizeExerciseThumbnail(trimmed) else trimmed
+                            photoCache.put(cacheKey, result)
+                            result
+                        }
                 }
             } catch (_: IOException) { null }
         }
     }
-    Box(modifier.background(Color.White).semantics { contentDescription = description },
+    val layout = if (thumbnail) modifier else modifier.fillMaxWidth().aspectRatio(bitmap?.let { it.width.toFloat() / it.height } ?: 1.5f)
+    Box(layout.background(Fc.Surface2).semantics { contentDescription = description },
         contentAlignment = Alignment.Center) {
-        bitmap?.let { Image(it.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
-            ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Color.DarkGray)
+        bitmap?.let {
+            val portraitThumbnail = thumbnail && it.height > it.width
+            if (portraitThumbnail) Image(it.asImageBitmap(), null, Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop, alpha = .14f)
+            Image(it.asImageBitmap(), null, Modifier.fillMaxSize(),
+                contentScale = if (thumbnail && !portraitThumbnail) ContentScale.Crop else ContentScale.Fit)
+        } ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Fc.Muted)
     }
 }

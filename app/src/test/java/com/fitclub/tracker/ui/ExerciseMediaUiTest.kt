@@ -3,6 +3,7 @@ package com.fitclub.tracker.ui
 import android.app.Application
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -29,6 +30,10 @@ class ExerciseMediaUiTest {
             ExerciseMediaCard("bench", "Жим", FreeExerciseCatalog.media.getValue("bench"))
         } }
         rule.onNodeWithText("1 / 2 · Листайте свайпом").assertExists()
+        rule.waitUntil(10_000) {
+            val bounds = rule.onNodeWithContentDescription("Жим — фото 1").fetchSemanticsNode().boundsInRoot
+            kotlin.math.abs(bounds.width / bounds.height - 850f / 567f) < .03f
+        }
         rule.onNodeWithTag("exercise-photo-pager").performTouchInput { swipeLeft() }
         rule.waitForIdle()
         rule.onNodeWithText("2 / 2 · Листайте свайпом").assertExists()
@@ -39,6 +44,16 @@ class ExerciseMediaUiTest {
         rule.waitForIdle()
         rule.onNodeWithText("2 / 2 · Листайте свайпом").assertExists()
         rule.onNodeWithText("Free Exercise DB", substring = true).assertDoesNotExist()
+    }
+
+    @Test fun portraitPhotoKeepsItsOwnRatioWithoutLandscapePadding() {
+        rule.setContent { FitClubTheme {
+            ExercisePhoto("free_exercise_db/Split_Squat_with_Dumbbells/0.jpg", "Вертикальное фото техники", Modifier.width(200.dp))
+        } }
+        rule.waitUntil(10_000) {
+            val bounds = rule.onNodeWithContentDescription("Вертикальное фото техники").fetchSemanticsNode().boundsInRoot
+            kotlin.math.abs(bounds.height / bounds.width - 1.5f) < .03f
+        }
     }
 
     @Test fun exerciseThumbnailDescribesTheSpecificExercise() {
