@@ -192,7 +192,7 @@ fun ProfileScreen(onBack: () -> Unit) {
         item {
             FcCard {
                 Text("ОФОРМЛЕНИЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                listOf("Светлая", "Тёмная").forEach { name ->
+                listOf("Светлая", "Темная").forEach { name ->
                     Row(Modifier.fillMaxWidth().clickable { vm.update(st.copy(theme = name)) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(14.dp).background(if (name == "Светлая") Color.White else Color(0xFF69B7FF), CircleShape))
                         Text(name, color = Fc.Text, modifier = Modifier.padding(start = 10.dp).weight(1f))

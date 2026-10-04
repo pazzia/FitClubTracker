@@ -44,6 +44,8 @@ def main():
     archive=cache/f'{SOURCE}.zip'
     download(f'https://codeload.github.com/yuhonas/free-exercise-db/zip/{SOURCE}', archive)
     options=ort.SessionOptions()
+    options.enable_cpu_mem_arena=False
+    options.enable_mem_pattern=False
     options.intra_op_num_threads=2
     options.inter_op_num_threads=1
     session=ort.InferenceSession(str(model), options, providers=['CPUExecutionProvider'])
@@ -70,7 +72,11 @@ def main():
             coverage=float((np.asarray(matte)>128).mean())
             assert .003<coverage<.98, f'Invalid foreground coverage {coverage}: {path}'
             summary.append({'path':path,'coverage':coverage,'source_sha256':expected,'mask_sha256':hashlib.sha256(target.read_bytes()).hexdigest()})
-            print(f'Shard {args.shard}: {index+1}/{len(selected)} {path} foreground={coverage:.3f}',flush=True)
+            memory = next(line.strip() for line in Path('/proc/self/status').read_text().splitlines() if line.startswith('VmRSS:'))
+            print(f'Shard {args.shard}: {index+1}/{len(selected)} {path} foreground={coverage:.3f} {memory}',flush=True)
+            del tensor, logits, prediction, matte, image, data
+            import gc
+            gc.collect()
     report=root/'contour-reports'/f'shard-{args.shard}.json'
     report.parent.mkdir(exist_ok=True)
     report.write_text(json.dumps(summary, indent=2))

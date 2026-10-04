@@ -38,7 +38,7 @@ class Release64UiTest {
             val bg = MaterialTheme.colorScheme.background
             val fg = Fc.Text
             TextButton(onClick = { light.value = !light.value }) {
-                Text(if (light.value) "Светлая" else "Тёмная", color = fg,
+                Text(if (light.value) "Светлая" else "Темная", color = fg,
                     modifier = Modifier.semantics { contentDescription = colours(bg, fg) })
             }
         } }
@@ -48,7 +48,7 @@ class Release64UiTest {
             rule.onAllNodesWithContentDescription(colours(Color(0xFF0E1317), Color(0xFFF5F5F7)))
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText("Тёмная").assertExists()
+        rule.onNodeWithText("Темная").assertExists()
 
     }
     @Test fun removedThemesAndAccentsMigrateToTwoSupportedChoices() {
@@ -57,7 +57,7 @@ class Release64UiTest {
         for (old in listOf("Volt Night", "Hot Pulse", "Cobalt Chalk")) {
             prefs.edit().putString("theme", old).putLong("accent", 0xFFD4FF3A).commit()
             val st = ProfileRepository(context).settings.value
-            assertEquals("Тёмная", st.theme)
+            assertEquals("Темная", st.theme)
             assertEquals(0xFF69B7FF, st.accent)
         }
         prefs.edit().putString("theme", "White Day").commit()

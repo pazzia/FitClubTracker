@@ -12,7 +12,7 @@ data class ProfileSettings(
     val level: Int = 2,
     val unitsKg: Boolean = true,
     val reminders: Boolean = true,
-    val theme: String = "Тёмная",
+    val theme: String = "Темная",
     val accent: Long = 0xFF69B7FF
 )
 
@@ -42,5 +42,5 @@ class ProfileRepository(context: Context) {
 }
 
 
-internal fun normalizedTheme(name: String?): String = if (name == "White Day" || name == "Светлая") "Светлая" else "Тёмная"
+internal fun normalizedTheme(name: String?): String = if (name == "White Day" || name == "Светлая") "Светлая" else "Темная"
 internal fun themeAccent(name: String): Long = if (name == "Светлая") 0xFF236B9D else 0xFF69B7FF
