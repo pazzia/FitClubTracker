@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val settings by (application as FitApp).container.profile.settings.collectAsStateWithLifecycle()
-            val light = settings.theme == "White Day"
+            val light = settings.theme == "Светлая"
             SideEffect {
                 window.statusBarColor = if (light) android.graphics.Color.WHITE else android.graphics.Color.rgb(14, 19, 23)
                 window.navigationBarColor = window.statusBarColor

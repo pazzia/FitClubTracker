@@ -31,7 +31,7 @@ class Release64UiTest {
         val context = ApplicationProvider.getApplicationContext<Application>()
         val repository = ProfileRepository(context)
         repository.update(repository.settings.value.copy(theme = "White Day", accent = 0xFF536D00))
-        assertEquals("White Day", ProfileRepository(context).settings.value.theme)
+        assertEquals("Светлая", ProfileRepository(context).settings.value.theme)
         val light = mutableStateOf(true)
         fun colours(bg: Color, fg: Color) = "Фон: $bg; Текст: $fg"
         rule.setContent { FitClubTheme(lightTheme = light.value, accent = 0xFF536D00) {
@@ -50,6 +50,20 @@ class Release64UiTest {
         }
         rule.onNodeWithText("Тёмная").assertExists()
 
+    }
+    @Test fun removedThemesAndAccentsMigrateToTwoSupportedChoices() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val prefs = context.getSharedPreferences("profile", android.content.Context.MODE_PRIVATE)
+        for (old in listOf("Volt Night", "Hot Pulse", "Cobalt Chalk")) {
+            prefs.edit().putString("theme", old).putLong("accent", 0xFFD4FF3A).commit()
+            val st = ProfileRepository(context).settings.value
+            assertEquals("Тёмная", st.theme)
+            assertEquals(0xFF69B7FF, st.accent)
+        }
+        prefs.edit().putString("theme", "White Day").commit()
+        val st = ProfileRepository(context).settings.value
+        assertEquals("Светлая", st.theme)
+        assertEquals(0xFF236B9D, st.accent)
     }
     @Test fun deletionRequiresExplicitConfirmationAndCancelPreservesProgram() {
         rule.mainClock.autoAdvance = false

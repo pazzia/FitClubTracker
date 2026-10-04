@@ -51,9 +51,15 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                     val options = BitmapFactory.Options().apply { inSampleSize = if (thumbnail) 2 else 1 }
                     context.assets.open(it).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
                         ?.let { decoded ->
-                            val trimmed = trimPhotoPadding(decoded)
-                            if (thumbnail) value = trimmed
-                            val result = if (thumbnail) emphasizeExerciseThumbnail(trimmed) else trimmed
+                            val maskPath = "exercise_masks/" + it.removePrefix("free_exercise_db/").removeSuffix(".jpg") + ".png"
+                            val mask = context.assets.open(maskPath).use { stream -> BitmapFactory.decodeStream(stream) }
+                                ?: throw IOException("Missing foreground matte: $maskPath")
+                            // Process before trimming so matte coordinates remain aligned at both sample sizes.
+                            val processed = renderExercisePhoto(decoded, mask)
+                            mask.recycle()
+                            val result = trimPhotoPadding(processed, decoded)
+                            decoded.recycle()
+                            if (result !== processed) processed.recycle()
                             photoCache.put(cacheKey, result)
                             result
                         }
@@ -65,11 +71,7 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
     Box(layout.background(Fc.Surface2).semantics { contentDescription = description },
         contentAlignment = Alignment.Center) {
         bitmap?.let {
-            val portraitThumbnail = thumbnail && it.height > it.width
-            if (portraitThumbnail) Image(it.asImageBitmap(), null, Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop, alpha = .14f)
-            Image(it.asImageBitmap(), null, Modifier.fillMaxSize(),
-                contentScale = if (thumbnail && !portraitThumbnail) ContentScale.Crop else ContentScale.Fit)
+            Image(it.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         } ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Fc.Muted)
     }
 }
