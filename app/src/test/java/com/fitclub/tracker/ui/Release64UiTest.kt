@@ -35,11 +35,12 @@ class Release64UiTest {
         rule.setContent { FitClubTheme(lightTheme = light.value, accent = 0xFF536D00) {
             background = MaterialTheme.colorScheme.background
             text = Fc.Text
-            Text("Тема")
+            Text(if (light.value) "Светлая" else "Тёмная", color = Fc.Text)
         } }
         rule.mainClock.advanceTimeBy(64)
         rule.runOnIdle { assertEquals(Color.White, background); assertEquals(Color(0xFF17212B), text); light.value = false }
-        rule.mainClock.advanceTimeBy(64)
+        rule.mainClock.advanceTimeUntil(5_000) { background == Color(0xFF0E1317) }
+        rule.onNodeWithText("Тёмная").assertExists()
         rule.runOnIdle { assertEquals(Color(0xFF0E1317), background); assertEquals(Color(0xFFF5F5F7), text) }
     }
     @Test fun deletionRequiresExplicitConfirmationAndCancelPreservesProgram() {
@@ -59,3 +60,4 @@ class Release64UiTest {
         rule.runOnIdle { assertFalse(programExists) }
     }
 }
+
