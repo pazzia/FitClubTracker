@@ -64,7 +64,12 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
     val layout = if (thumbnail) modifier else modifier.fillMaxWidth().aspectRatio(bitmap?.let { it.width.toFloat() / it.height } ?: 1.5f)
     Box(layout.background(Fc.Surface2).semantics { contentDescription = description },
         contentAlignment = Alignment.Center) {
-        bitmap?.let { Image(it.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = if (thumbnail) ContentScale.Crop else ContentScale.Fit) }
-            ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Fc.Muted)
+        bitmap?.let {
+            val portraitThumbnail = thumbnail && it.height > it.width
+            if (portraitThumbnail) Image(it.asImageBitmap(), null, Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop, alpha = .14f)
+            Image(it.asImageBitmap(), null, Modifier.fillMaxSize(),
+                contentScale = if (thumbnail && !portraitThumbnail) ContentScale.Crop else ContentScale.Fit)
+        } ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Fc.Muted)
     }
 }
