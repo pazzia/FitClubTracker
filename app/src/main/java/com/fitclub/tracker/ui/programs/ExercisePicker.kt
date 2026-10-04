@@ -24,6 +24,7 @@ import com.fitclub.tracker.data.seed.FreeExerciseCatalog
 import com.fitclub.tracker.ui.components.*
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.theme.Fc
+import com.fitclub.tracker.ui.library.matchesExercise
 
 private class PickerProfileViewModel(c: AppContainer) : ViewModel() { val settings = c.profile.settings }
 
@@ -68,7 +69,7 @@ internal fun ExercisePicker(
             }
             val shown = catalog.filter { it.group == selectedGroup && (type == null ||
                 (it.type == type && FreeExerciseCatalog.media[it.id]?.category != "Растяжка")) &&
-                it.name.contains(query.trim(), ignoreCase = true) }
+                matchesExercise(it, query) }
             if (shown.isEmpty()) item { Text("Нет упражнений с такими фильтрами", color = Fc.Muted) }
             items(shown, key = { it.id }) { exercise ->
                 val has = exercise.id in already

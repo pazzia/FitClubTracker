@@ -1,6 +1,8 @@
 package com.fitclub.tracker
 
 import android.os.Bundle
+import androidx.compose.runtime.SideEffect
+import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
@@ -13,8 +15,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val settings by (application as FitApp).container.profile.settings.collectAsStateWithLifecycle()
-            FitClubTheme(accent = settings.accent) { AppStartup(application as FitApp) }
+            val light = settings.theme == "White Day"
+            SideEffect {
+                window.statusBarColor = if (light) android.graphics.Color.WHITE else android.graphics.Color.rgb(14, 19, 23)
+                window.navigationBarColor = window.statusBarColor
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = light
+                    isAppearanceLightNavigationBars = light
+                }
+            }
+            FitClubTheme(accent = settings.accent, lightTheme = light) { AppStartup(application as FitApp) }
         }
     }
 }
+
 

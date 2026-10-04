@@ -43,8 +43,7 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
     val profile by vm.settings.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     val q = query.trim().lowercase()
-    val results = all.filter { it.name.lowercase().contains(q) || it.group.title.lowercase().contains(q) ||
-        FreeExerciseCatalog.media[it.id]?.sourceId?.replace('_', ' ')?.lowercase()?.contains(q) == true }
+    val results = all.filter { matchesExercise(it, query) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {
             Text("ИЗУЧАЙ. ВЫБИРАЙ. ТРЕНИРУЙСЯ.", style = MaterialTheme.typography.labelSmall, color = Fc.Muted)
@@ -52,6 +51,7 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
         }
         item {
             OutlinedTextField(query, { query = it }, modifier = Modifier.fillMaxWidth(),
+                label = { Text("Поиск упражнений") },
                 placeholder = { Text("Поиск упражнения или группы…", style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = { Icon(Icons.Filled.Search, null) }, singleLine = true, shape = RoundedCornerShape(14.dp))
         }
@@ -96,8 +96,9 @@ fun LibraryGroupScreen(group: MuscleGroup, onBack: () -> Unit, onExercise: (Stri
     val profile by vm.settings.collectAsStateWithLifecycle()
     var type by rememberSaveable { mutableStateOf<ExerciseType?>(null) }
     var level by rememberSaveable { mutableStateOf<Int?>(null) }
+    var query by rememberSaveable { mutableStateOf("") }
     val inGroup = all.filter { it.group == group }
-    val shown = inGroup.filter { (type == null || (it.type == type && FreeExerciseCatalog.media[it.id]?.category != "Растяжка")) && (level == null || it.level == level) }
+    val shown = inGroup.filter { (type == null || (it.type == type && FreeExerciseCatalog.media[it.id]?.category != "Растяжка")) && (level == null || it.level == level) && matchesExercise(it, query) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { BackRow("Справочник", onBack); ScreenTitle(group.title) }
         item {
@@ -110,6 +111,12 @@ fun LibraryGroupScreen(group: MuscleGroup, onBack: () -> Unit, onExercise: (Stri
             }
         }
         if (group == MuscleGroup.QUADS) item { QuadricepsLegend() }
+        item {
+            OutlinedTextField(query, { query = it }, modifier = Modifier.fillMaxWidth(),
+                label = { Text("Поиск упражнений") }, placeholder = { Text("Поиск в группе…") },
+                leadingIcon = { Icon(Icons.Filled.Search, null) }, singleLine = true, shape = RoundedCornerShape(14.dp))
+            if (query.isNotBlank()) Text("Найдено: ${shown.size}", color = Fc.Muted)
+        }
         item {
             Segmented(listOf(null, ExerciseType.BASIC, ExerciseType.ISOLATION), type, { type = it },
                 { when (it) { null -> "Все"; ExerciseType.BASIC -> "Базовые"; else -> "Изоляция" } }, selectedBg = Fc.Lime)

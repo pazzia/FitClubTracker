@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -87,6 +88,7 @@ import com.fitclub.tracker.ui.components.ScreenTitle
 import com.fitclub.tracker.ui.components.StrokeIcon
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.theme.Fc
+import com.fitclub.tracker.ui.theme.foregroundFor
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -137,7 +139,7 @@ fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false,
         item { PrimaryButton("+  Создать программу", onCreate) }
         items(programs, key = { it.id }) { p ->
             val fit = remember(p, catalog) { ProgramScorer.score(p, catalog) }
-            FcCard(onClick = { onOpen(p.id) }, border = if (p.isActive) Fc.Lime.copy(alpha = 0.5f) else Color(0xFF26262F)) {
+            FcCard(onClick = { onOpen(p.id) }, border = if (p.isActive) Fc.Lime.copy(alpha = 0.5f) else Fc.Line) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     ProgramCover(p.icon, Color(p.colorArgb), 60.dp, photo = p.coverPhoto)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -227,6 +229,11 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
     val fit = remember(d, catalog) { ProgramScorer.score(d, catalog) }
     val listState = rememberLazyListState()
     var photoBusy by remember { mutableStateOf(false) }
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    if (confirmDelete) ProgramDeleteDialog(d.name, { confirmDelete = false }) {
+        confirmDelete = false
+        vm.delete(onClose)
+    }
 
     if (picking) {
         BackHandler { picking = false }
@@ -287,7 +294,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                         val on = d.icon == icon && d.coverPhoto == null
                         Box(
                             Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface)
-                                .border(1.5.dp, if (on) Color(d.colorArgb) else Color(0xFF26262F), RoundedCornerShape(12.dp))
+                                .border(1.5.dp, if (on) Color(d.colorArgb) else Fc.Line, RoundedCornerShape(12.dp))
                                 .semantics { contentDescription = "Обложка: ${IconPaths.titles[icon]}"; selected = on }
                                 .clickable(role = Role.RadioButton) { vm.update { it.copy(icon = icon, coverPhoto = null) } },
                             contentAlignment = Alignment.Center
@@ -333,7 +340,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                         val on = i == day
                         Text(
                             "День ${'A' + i} · ${dd.items.size}", style = MaterialTheme.typography.labelLarge,
-                            color = if (on) Fc.Bg else Fc.Text,
+                            color = if (on) foregroundFor(Color(d.colorArgb)) else Fc.Text,
                             modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) Color(d.colorArgb) else Fc.Surface)
                                 .semantics { selected = on }
                                 .clickable(role = Role.Tab) { dayIndex = i }
@@ -354,7 +361,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             ItemCard(
                 name = e?.name ?: item.exerciseId,
                 meta = e?.let { "${it.group.title} · ${it.type.title} · ${it.equipment}" } ?: "",
-                item = item, goal = d.goal,
+                item = item, goal = d.goal, exercise = e,
                 onChange = { fn -> vm.updateItem(day, index, fn) },
                 onRemove = { vm.removeItem(day, index) }
             )
@@ -371,7 +378,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             else PrimaryButton("Сохранить программу", { vm.save(onClose) })
         }
         item {
-            TextButton(onClick = { vm.delete(onClose) }, modifier = Modifier.fillMaxWidth()) {
+            TextButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Удалить программу", color = Fc.Pink, fontWeight = FontWeight.ExtraBold)
             }
         }
@@ -427,7 +434,7 @@ private fun FitDetails(fit: FitResult, goal: Goal) {
                     Box(Modifier.width(6.dp).height(44.dp).clip(RoundedCornerShape(3.dp)).background(Fc.fit(r.severity)))
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(r.title, style = MaterialTheme.typography.titleSmall, color = Fc.Text)
-                        Text(r.text, style = MaterialTheme.typography.bodySmall, color = Color(0xFFC4C4CE))
+                        Text(r.text, style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
                     }
                 }
             }
@@ -447,12 +454,13 @@ private fun FitDetails(fit: FitResult, goal: Goal) {
 @Composable
 internal fun ItemCard(
     name: String, meta: String, item: ItemDraft, goal: Goal,
-    onChange: ((ItemDraft) -> ItemDraft) -> Unit, onRemove: () -> Unit
+    onChange: ((ItemDraft) -> ItemDraft) -> Unit, onRemove: () -> Unit, exercise: ExerciseEntity? = null
 ) {
     val repsOk = item.reps in goal.idealReps || item.reps in goal.okReps
     val restOk = item.restSec in goal.restOk
     FcCard {
-        Row(verticalAlignment = Alignment.Top) {
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            exercise?.let { ExerciseThumbnail(it, Modifier.width(88.dp).height(70.dp)) }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(name, style = MaterialTheme.typography.titleSmall, color = Fc.Text)
                 Text(meta, style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
@@ -524,3 +532,15 @@ private fun Dropdown(title: String, value: String, ok: Boolean, options: List<Pa
 }
 
 
+
+
+@Composable
+internal fun ProgramDeleteDialog(name: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Удалить программу?") },
+        text = { Text("Программа «$name» будет удалена. Это действие нельзя отменить.") },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("Удалить", color = Fc.Pink) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } }
+    )
+}

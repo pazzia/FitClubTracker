@@ -192,9 +192,9 @@ fun ProfileScreen(onBack: () -> Unit) {
         item {
             FcCard {
                 Text("ОФОРМЛЕНИЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                listOf("Volt Night", "Hot Pulse", "Cobalt Chalk").forEach { name ->
-                    Row(Modifier.fillMaxWidth().clickable { vm.update(st.copy(theme = name, accent = if (name == "Volt Night") 0xFFD4FF3A else if (name == "Hot Pulse") 0xFFFF3D6E else 0xFF69B7FF)) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(14.dp).background(if (name == "Volt Night") Fc.Lime else if (name == "Hot Pulse") Fc.Pink else Color(0xFF2B3BFF), CircleShape)); Text(name, color = Fc.Text, modifier = Modifier.padding(start = 10.dp).weight(1f)); if (st.theme == name) Icon(Icons.Filled.Check, null, tint = Fc.Lime)
+                listOf("White Day", "Volt Night", "Hot Pulse", "Cobalt Chalk").forEach { name ->
+                    Row(Modifier.fillMaxWidth().clickable { vm.update(st.copy(theme = name, accent = if (name == "White Day") 0xFF536D00 else if (name == "Volt Night") 0xFFD4FF3A else if (name == "Hot Pulse") 0xFFFF3D6E else 0xFF69B7FF)) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(14.dp).background(if (name == "Volt Night") Fc.Lime else if (name == "Hot Pulse") Fc.Pink else Color(0xFF2B3BFF), CircleShape)); Text(if (name == "White Day") "Светлая · White Day" else name, color = Fc.Text, modifier = Modifier.padding(start = 10.dp).weight(1f)); if (st.theme == name) Icon(Icons.Filled.Check, null, tint = Fc.Lime)
                     }
                 }
             }
@@ -211,3 +211,4 @@ fun ProfileScreen(onBack: () -> Unit) {
 private fun num(s: String) = s.replace(',', '.').toFloatOrNull()
 private fun fmt(v: Float) = if (v == v.roundToInt().toFloat()) v.roundToInt().toString() else "%.1f".format(Locale.US, v).replace('.', ',')
 private fun signed(v: Float) = (if (v > 0) "+" else "") + fmt(v)
+
