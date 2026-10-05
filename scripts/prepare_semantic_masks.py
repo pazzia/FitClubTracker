@@ -63,7 +63,7 @@ def main():
    text='a person. '+''.join('a '+label+'. ' for label in groups)
    inputs=processor(images=image,text=text,return_tensors='pt',size={'shortest_edge':640,'longest_edge':960})
    with torch.inference_mode():result=detector(**inputs)
-   found=processor.post_process_grounded_object_detection(result,inputs.input_ids,box_threshold=.15,text_threshold=.15,target_sizes=[(h,w)])[0]
+   found=processor.post_process_grounded_object_detection(result,inputs.input_ids,box_threshold=.10,text_threshold=.10,target_sizes=[(h,w)])[0]
    candidates=[]
    for box,label,score in zip(found['boxes'].numpy(),found['labels'],found['scores'].numpy()):
     label=label.removeprefix('a ').strip();box=np.clip(box,[0,0,0,0],[w-1,h-1,w-1,h-1])
@@ -75,22 +75,10 @@ def main():
    prior_path=output/Path(path).with_suffix('.png')
    prior=np.asarray(Image.open(prior_path).convert('L'),dtype=np.float32)/255
    def segment(box):
-    # Choose among SAM silhouettes against the fine original matte, rather than its default mask.
-    x1,y1,x2,y2=np.round(box).astype(int)
-    domain=np.zeros((h,w),dtype=bool);domain[y1:y2+1,x1:x2+1]=True
-    target=(prior>.65)&domain
-    positive=cv2.distanceTransform(target.astype('uint8'),cv2.DIST_L2,3)
-    yy,xx=np.unravel_index(positive.argmax(),positive.shape)
-    bg=(prior<.08)&domain
-    negative=cv2.distanceTransform(bg.astype('uint8'),cv2.DIST_L2,3)
-    ny,nx=np.unravel_index(negative.argmax(),negative.shape)
-    points=np.asarray([[xx,yy],[nx,ny]],dtype=np.float32) if negative.max()>2 else np.asarray([[xx,yy]],dtype=np.float32)
-    labels=np.asarray([1,0] if len(points)==2 else [1])
-    masks,scores,_=predictor.predict(box=box,point_coords=points,point_labels=labels,multimask_output=True)
-    def quality(mask):
-     intersection=(mask&target).sum();union=(mask|target).sum()
-     return intersection/max(1,union)
-    return max(masks,key=quality)
+    # Never use salient-background pixels as negative prompts: they can be part
+    # of the active machine. Segment whole objects independently of old mattes.
+    masks,scores,_=predictor.predict(box=box,multimask_output=True)
+    return masks[int(np.argmax(scores))]
 
    person=segment(athlete['box']);assert person.mean()>.003,f'No athlete pixels: {path}'
    radius=max(9,round(max(w,h)*.025));near=cv2.dilate(person.astype('uint8'),cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2*radius+1,2*radius+1)))>0
@@ -106,7 +94,10 @@ def main():
     for _,r,mask in sorted(objects,key=lambda row:row[0],reverse=True)[:maximum]:
      foreground|=mask;kept.append({'label':label,'box':r['box'].tolist(),'score':r['score']})
    target=output/Path(path).with_suffix('.png');target.parent.mkdir(parents=True,exist_ok=True)
-   Image.fromarray(np.round(prior*foreground*255).astype('uint8')).save(target,optimize=True)
+   # Feather only the subpixel boundary; interiors keep the original photo unchanged.
+   from PIL import ImageFilter
+   contour=Image.fromarray((foreground*255).astype('uint8')).filter(ImageFilter.GaussianBlur(.6))
+   contour.convert('RGB').save(target,optimize=True)
    report['photos'].append({'path':path,'source_sha256':expected,'mask_sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'coverage':float(foreground.mean()),'equipment':records[path.split('/')[0]].get('equipment'),'kept':kept,'detections':[{'label':r['label'],'score':r['score'],'box':r['box'].tolist()} for r in candidates]})
    print(f'Semantic {args.shard}: {index+1}/{len(selected)} {path} athlete+{[r["label"] for r in kept]}',flush=True)
    del inputs,result,found,data,image,array,prior,person,foreground

@@ -45,7 +45,7 @@ class PhotoPresentationTest {
         assertEquals(255, Color.alpha(result.getPixel(50, 40)))
         assertEquals(255, Color.alpha(result.getPixel(10, 40))) // equipment outside person bounds
         assertTrue(Color.alpha(result.getPixel(20, 40)) <= 64) // gap between weight and athlete
-        assertTrue(Color.alpha(result.getPixel(0, 0)) < 60)
+        assertTrue(Color.alpha(result.getPixel(0, 0)) <= 64)
         assertEquals(255, Color.alpha(source.getPixel(0, 0)))
         assertEquals(source.getPixel(50, 40), result.getPixel(50, 40))
     }

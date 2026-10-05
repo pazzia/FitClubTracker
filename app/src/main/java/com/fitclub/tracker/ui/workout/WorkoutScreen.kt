@@ -178,12 +178,12 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
             TextButton(onClick = { focus.clearFocus(); confirmFinish = true }, enabled = !vm.finishing, modifier = Modifier.testTag("finish-workout")) { Text("Завершить", color = Fc.Lime) }
         }
         LinearProgressIndicator(progress = { vm.completed.count { it.value }.toFloat() / plan.items.size }, modifier = Modifier.fillMaxWidth(), color = Fc.Lime, trackColor = Fc.Surface2)
-        LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        LazyColumn(Modifier.weight(1f).testTag("workout-list"), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
                 Text("УПРАЖНЕНИЕ ${index + 1} ИЗ ${plan.items.size}", color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
                 Text(exercise?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.displaySmall)
             }
-            if (exercise != null) FreeExerciseCatalog.media[exercise.id]?.let { media ->
+            if (!summary && exercise != null) FreeExerciseCatalog.media[exercise.id]?.let { media ->
                 item { ExerciseMediaCard(exercise.id, exercise.name, media, showVideo = false) }
             }
             if (summary) {

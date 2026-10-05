@@ -41,7 +41,7 @@ class WorkoutUiTest {
     }
     @Test fun completedExerciseShowsStatsAndNextExerciseRemainsReachable() {
         open()
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("weight-0"))
+        rule.onNodeWithTag("workout-list").performScrollToNode(hasTestTag("weight-0"))
         rule.onNodeWithTag("weight-0").performTextReplacement("60")
         rule.onNodeWithTag("done-0").performClick()
         rule.onNodeWithTag("complete-exercise").performClick()
