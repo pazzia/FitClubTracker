@@ -527,7 +527,8 @@
     {
       "path": "Close-Grip_Barbell_Bench_Press/0.jpg",
       "source_sha256": "3a428440c0f95ee87234a260ca80cc1dfa205e3db8f8fa6098b7eeb2afb2cde8",
-      "mask_sha256": "97229a8945edf5361d208c5889031a3f8600a451daf1eb65df2cb031883b0384"
+      "mask_sha256": "3fe97debea54327b17b3df47829020f2aab733582cf0c5ec5798ca6ad63edbd7",
+      "reviewed_override": "Working barbell outline restored from fine matte"
     },
     {
       "path": "Close-Grip_Barbell_Bench_Press/1.jpg",
