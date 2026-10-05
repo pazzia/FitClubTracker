@@ -47,7 +47,7 @@ class Preview66UiTest {
         rule.onNodeWithText("Удалить").performClick()
         waitFor("Удалить программу?")
         screenshot("single-delete")
-        rule.onNodeWithText("Отмена").performClick()
+        rule.onAllNodesWithText("Отмена").onLast().performClick()
         rule.onNodeWithText("Фулбоди 3×").assertExists()
         rule.onNodeWithText("Сила 5×5").performClick()
         waitFor("Выбрано: 2")
