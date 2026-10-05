@@ -18,7 +18,7 @@ import com.fitclub.tracker.ui.theme.Fc
 import kotlinx.coroutines.delay
 
 object ReleaseNotes {
-    const val VERSION = "0.6.5"
+    const val VERSION = "0.6.6-preview"
     val items = listOf(
         "Две темы: Светлая и Темная. Старые цветные темы заменены.",
         "Контурное выделение спортсмена и снаряда на всех фотографиях и миниатюрах.",
@@ -78,3 +78,4 @@ fun StartupScreen(state: StartupState, minimumElapsed: Boolean, onContinue: () -
             modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime)) { Text("Продолжить") }
     }
 }
+
