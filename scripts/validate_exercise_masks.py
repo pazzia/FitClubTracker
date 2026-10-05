@@ -16,7 +16,7 @@ for row in entries:
     assert row['source_sha256'] == sources[row['path']], row['path']
     mask = assets / 'exercise_masks' / Path(row['path']).with_suffix('.png')
     assert hashlib.sha256(mask.read_bytes()).hexdigest() == row['mask_sha256'], str(mask)
-    with Image.open(mask) as image, Image.open(assets / 'free_exercise_db' / row['path']) as source:
+    with Image.open(mask) as image, Image.open(root / 'app/build/generated/exercisePhotos/free_exercise_db' / row['path']) as source:
         assert image.size == source.size, f"Mask dimensions: {row['path']}"
         histogram = image.convert('RGB').getchannel('R').histogram()
         total = sum(histogram)
