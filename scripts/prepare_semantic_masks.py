@@ -11,7 +11,7 @@ from mobile_sam import sam_model_registry, SamPredictor
 
 SOURCE='f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5'
 SAM_REV='f706ad9c4eb7f219c00d9050e46328518ffb65d2'
-DINO_REV='main'  # Initial probe records the immutable revision; release preparation pins it.
+DINO_REV='a2bb814dd30d776dcf7e30523b00659f4f141c71'
 PROBE={'Barbell_Bench_Press_-_Medium_Grip','Incline_Dumbbell_Press','Dumbbell_Flyes','Close-Grip_Barbell_Bench_Press','Barbell_Curl','Leg_Press'}
 
 def download(url,target):
@@ -37,7 +37,7 @@ def prompts(record):
  elif eq=='other':groups['weight plate']=2
  if any(part in name for part in ['pull-up','pullup','pull_up','chin-up','chin_up']):groups['pull-up bar']=1
  if 'dip' in name:groups['parallel bars']=1
- groups['exercise bench']=1
+ if eq not in ('machine','cable') and any(part in name for part in ['bench','incline','decline','lying','seated','flyes','concentration','preacher','bulgarian','step-up']):groups['exercise bench']=1
  if eq=='body only' and any(part in name for part in ['crunch','plank','roller','push-up','push_up','bridge','glute','hamstring','dead_bug','air_bike','russian']):groups['exercise mat']=1
  return groups
 
@@ -63,7 +63,7 @@ def main():
    text='a person. '+''.join('a '+label+'. ' for label in groups)
    inputs=processor(images=image,text=text,return_tensors='pt',size={'shortest_edge':640,'longest_edge':960})
    with torch.inference_mode():result=detector(**inputs)
-   found=processor.post_process_grounded_object_detection(result,inputs.input_ids,box_threshold=.20,text_threshold=.20,target_sizes=[(h,w)])[0]
+   found=processor.post_process_grounded_object_detection(result,inputs.input_ids,box_threshold=.15,text_threshold=.15,target_sizes=[(h,w)])[0]
    candidates=[]
    for box,label,score in zip(found['boxes'].numpy(),found['labels'],found['scores'].numpy()):
     label=label.removeprefix('a ').strip();box=np.clip(box,[0,0,0,0],[w-1,h-1,w-1,h-1])
@@ -72,25 +72,44 @@ def main():
    assert people,f'No athlete detected: {path}'
    athlete=max(people,key=lambda r:r['score']*np.sqrt((r['box'][2]-r['box'][0])*(r['box'][3]-r['box'][1])/(w*h)))
    predictor.set_image(array)
-   person_mask,_,_=predictor.predict(box=athlete['box'],multimask_output=False)
-   person=person_mask[0];assert person.mean()>.003,f'No athlete pixels: {path}'
+   prior_path=output/Path(path).with_suffix('.png')
+   prior=np.asarray(Image.open(prior_path).convert('L'),dtype=np.float32)/255
+   def segment(box):
+    # Choose among SAM silhouettes against the fine original matte, rather than its default mask.
+    x1,y1,x2,y2=np.round(box).astype(int)
+    domain=np.zeros((h,w),dtype=bool);domain[y1:y2+1,x1:x2+1]=True
+    target=(prior>.65)&domain
+    positive=cv2.distanceTransform(target.astype('uint8'),cv2.DIST_L2,3)
+    yy,xx=np.unravel_index(positive.argmax(),positive.shape)
+    bg=(prior<.08)&domain
+    negative=cv2.distanceTransform(bg.astype('uint8'),cv2.DIST_L2,3)
+    ny,nx=np.unravel_index(negative.argmax(),negative.shape)
+    points=np.asarray([[xx,yy],[nx,ny]],dtype=np.float32) if negative.max()>2 else np.asarray([[xx,yy]],dtype=np.float32)
+    labels=np.asarray([1,0] if len(points)==2 else [1])
+    masks,scores,_=predictor.predict(box=box,point_coords=points,point_labels=labels,multimask_output=True)
+    def quality(mask):
+     intersection=(mask&target).sum();union=(mask|target).sum()
+     return intersection/max(1,union)
+    return max(masks,key=quality)
+
+   person=segment(athlete['box']);assert person.mean()>.003,f'No athlete pixels: {path}'
    radius=max(9,round(max(w,h)*.025));near=cv2.dilate(person.astype('uint8'),cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2*radius+1,2*radius+1)))>0
    foreground=person.copy();kept=[]
    for label,maximum in groups.items():
     objects=[]
     possible=sorted([r for r in candidates if label in r['label']],key=lambda r:r['score'],reverse=True)[:8]
     for r in possible:
-     masks,_,_=predictor.predict(box=r['box'],multimask_output=False);mask=masks[0]
+     mask=segment(r['box'])
      # Active gear touches the athlete. Objects elsewhere in the gym are rejected.
      contact=int((mask & near).sum());fraction=contact/max(1,int(mask.sum()))
      if contact>12 and fraction>.004:objects.append((contact*max(.2,r['score']),r,mask))
     for _,r,mask in sorted(objects,key=lambda row:row[0],reverse=True)[:maximum]:
      foreground|=mask;kept.append({'label':label,'box':r['box'].tolist(),'score':r['score']})
    target=output/Path(path).with_suffix('.png');target.parent.mkdir(parents=True,exist_ok=True)
-   Image.fromarray((foreground*255).astype('uint8')).save(target,optimize=True)
-   report['photos'].append({'path':path,'coverage':float(foreground.mean()),'equipment':records[path.split('/')[0]].get('equipment'),'kept':kept,'detections':[{'label':r['label'],'score':r['score'],'box':r['box'].tolist()} for r in candidates]})
+   Image.fromarray(np.round(prior*foreground*255).astype('uint8')).save(target,optimize=True)
+   report['photos'].append({'path':path,'source_sha256':expected,'mask_sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'coverage':float(foreground.mean()),'equipment':records[path.split('/')[0]].get('equipment'),'kept':kept,'detections':[{'label':r['label'],'score':r['score'],'box':r['box'].tolist()} for r in candidates]})
    print(f'Semantic {args.shard}: {index+1}/{len(selected)} {path} athlete+{[r["label"] for r in kept]}',flush=True)
-   del inputs,result,found,data,image,array,person_mask,person,foreground
+   del inputs,result,found,data,image,array,prior,person,foreground
  root.joinpath('contour-reports').mkdir(exist_ok=True);(root/'contour-reports'/f'semantic-{args.shard}.json').write_text(json.dumps(report,indent=2))
  print('DINO_REVISION='+revision,flush=True)
 
