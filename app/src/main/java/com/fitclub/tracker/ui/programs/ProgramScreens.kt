@@ -433,7 +433,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             if (photoBusy) Text("Сохраняем фото…", color = Fc.Muted)
             else OutlinedButton(onClick = { vm.save(onClose) }, modifier = Modifier.fillMaxWidth()) { Text("Сохранить программу") }
         }
-        item {
+        if (d.id != 0L) item {
             TextButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Удалить программу", color = Fc.Pink, fontWeight = FontWeight.ExtraBold)
             }

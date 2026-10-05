@@ -29,7 +29,11 @@ class Preview66UiTest {
     private fun screenshot(name: String) {
         rule.waitForIdle()
         rule.runOnIdle {
-            val view = rule.activity.window.decorView
+            val globalClass = Class.forName("android.view.WindowManagerGlobal")
+            val global = globalClass.getDeclaredMethod("getInstance").invoke(null)
+            val viewsField = globalClass.getDeclaredField("mViews").apply { isAccessible = true }
+            val windows = viewsField.get(global) as List<*>
+            val view = (windows.lastOrNull() as? android.view.View) ?: rule.activity.window.decorView
             val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
             view.draw(Canvas(bitmap))
             val output = File("build/ui-preview/$name.png")
@@ -39,7 +43,7 @@ class Preview66UiTest {
         }
     }
     @Test fun longPressSupportsSingleAndMultipleDeletionWithCancel() {
-        rule.setContent { FitClubTheme(lightTheme = true) { AppRoot() } }
+        rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
         rule.onNodeWithText("Программы").performClick()
         waitFor("Фулбоди 3×")
         rule.onNodeWithText("Фулбоди 3×").performTouchInput { longClick() }
@@ -62,7 +66,7 @@ class Preview66UiTest {
         rule.onNodeWithText("Летний рельеф").assertExists()
     }
     @Test fun editorPrioritizesExercisesAndKeepsAppearanceCollapsed() {
-        rule.setContent { FitClubTheme(lightTheme = true) { AppRoot() } }
+        rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
         rule.onNodeWithText("Программы").performClick()
         waitFor("+ Создать программу")
         rule.onNodeWithText("+ Создать программу").performClick()
@@ -75,7 +79,7 @@ class Preview66UiTest {
         rule.onNodeWithText("Выберите группу мышц").assertExists()
     }
     @Test fun plannerShowsPrimaryProgramChoiceAndSecondaryManualAdd() {
-        rule.setContent { FitClubTheme(lightTheme = true) { AppRoot() } }
+        rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
         val date = calendarDate(LocalDate.now().toEpochDay())
         rule.onNodeWithContentDescription("$date, запланировать тренировку").performClick()
         waitFor("Выбрать программу →")
