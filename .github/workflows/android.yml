@@ -90,8 +90,10 @@ jobs:
           python3 scripts/assemble_release_masks.py
           touch app/src/main/assets/exercise_masks/whole-objects-v2
 
-      - name: Verify all released mask hashes
-        run: python3 scripts/validate_exercise_masks.py
+      - name: Verify released mask hashes, dimensions and foreground/background
+        run: |
+          python3 -m pip install Pillow==11.0.0
+          python3 scripts/validate_exercise_masks.py
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5

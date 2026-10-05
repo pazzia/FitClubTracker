@@ -75,24 +75,31 @@ def main():
    predictor.set_image(array)
    prior_path=output/Path(path).with_suffix('.png')
    prior=np.asarray(Image.open(prior_path).convert('L'),dtype=np.float32)/255
-   def segment(box):
+   def segment(box, max_coverage=.98):
     # Never use salient-background pixels as negative prompts: they can be part
     # of the active machine. Segment whole objects independently of old mattes.
     masks,scores,_=predictor.predict(box=box,multimask_output=True)
-    return masks[int(np.argmax(scores))]
+    valid=[i for i,mask in enumerate(masks) if .003 < mask.mean() < max_coverage]
+    return masks[max(valid,key=lambda i:float(scores[i]))] if valid else None
 
-   person=segment(athlete['box']);assert person.mean()>.003,f'No athlete pixels: {path}'
+   person=segment(athlete['box']);assert person is not None,f'No athlete pixels: {path}'
    radius=max(9,round(max(w,h)*.025));near=cv2.dilate(person.astype('uint8'),cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2*radius+1,2*radius+1)))>0
    foreground=person.copy();kept=[]
    for label,maximum in groups.items():
     objects=[]
     possible=sorted([r for r in candidates if label in r['label']],key=lambda r:r['score'],reverse=True)[:8]
     for r in possible:
-     mask=segment(r['box'])
+     # Broad, low-confidence mat detections are often the surrounding floor.
+     if label=='exercise mat':
+      box=r['box'];area=(box[2]-box[0])*(box[3]-box[1])/(w*h)
+      if r['score']<.25 or area>.65:continue
+     mask=segment(r['box'],max_coverage=.65 if label=='exercise mat' else .98)
+     if mask is None:continue
      # Active gear touches the athlete. Objects elsewhere in the gym are rejected.
      contact=int((mask & near).sum());fraction=contact/max(1,int(mask.sum()))
-     if contact>12 and fraction>.004:objects.append((contact*max(.2,r['score']),r,mask))
+     if contact>12 and fraction>.004:objects.append((r['score'] if label=='exercise mat' else contact*max(.2,r['score']),r,mask))
     for _,r,mask in sorted(objects,key=lambda row:row[0],reverse=True)[:maximum]:
+     if (foreground | mask).mean()>=.98:continue
      foreground|=mask;kept.append({'label':label,'box':r['box'].tolist(),'score':r['score']})
    target=output/Path(path).with_suffix('.png');target.parent.mkdir(parents=True,exist_ok=True)
    # Feather only the subpixel boundary; interiors keep the original photo unchanged.
