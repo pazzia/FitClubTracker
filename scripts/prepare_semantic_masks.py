@@ -47,6 +47,7 @@ def main():
  torch.set_num_threads(2)
  revision=model_info('IDEA-Research/grounding-dino-tiny',revision=DINO_REV).sha
  processor=AutoProcessor.from_pretrained('IDEA-Research/grounding-dino-tiny',revision=revision)
+ processor.image_processor.size={'shortest_edge':640,'longest_edge':960}
  detector=AutoModelForZeroShotObjectDetection.from_pretrained('IDEA-Research/grounding-dino-tiny',revision=revision).eval()
  detector.config.disable_custom_kernels=True
  checkpoint=cache/'mobile_sam.pt';download(f'https://raw.githubusercontent.com/ChaoningZhang/MobileSAM/{SAM_REV}/weights/mobile_sam.pt',checkpoint)
@@ -61,7 +62,7 @@ def main():
    data=z.read(f'free-exercise-db-{SOURCE}/exercises/{path}');assert hashlib.sha256(data).hexdigest()==expected
    image=Image.open(io.BytesIO(data)).convert('RGB');array=np.asarray(image);w,h=image.size;groups=prompts(records[path.split('/')[0]])
    text='a person. '+''.join('a '+label+'. ' for label in groups)
-   inputs=processor(images=image,text=text,return_tensors='pt',size={'shortest_edge':640,'longest_edge':960})
+   inputs=processor(images=image,text=text,return_tensors='pt')
    with torch.inference_mode():result=detector(**inputs)
    found=processor.post_process_grounded_object_detection(result,inputs.input_ids,box_threshold=.10,text_threshold=.10,target_sizes=[(h,w)])[0]
    candidates=[]
