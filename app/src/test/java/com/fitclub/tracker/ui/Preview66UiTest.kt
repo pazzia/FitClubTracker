@@ -17,6 +17,12 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.time.LocalDate
+import androidx.test.core.app.ApplicationProvider
+import com.fitclub.tracker.data.model.RepRange
+import com.fitclub.tracker.data.repo.ItemDraft
+import com.fitclub.tracker.data.repo.ScheduledDraft
+import com.fitclub.tracker.ui.workout.WorkoutScreen
+import kotlinx.coroutines.runBlocking
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], qualifiers = "w390dp-h844dp", application = FitApp::class)
@@ -41,6 +47,24 @@ class Preview66UiTest {
             output.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
             bitmap.recycle()
         }
+    }
+    @Test fun workoutShowsOriginalTechniqueCarouselAndResetsForNextExercise() {
+        val app = ApplicationProvider.getApplicationContext<FitApp>()
+        val id = runBlocking { app.container.schedule.save(ScheduledDraft(epochDay = 22001,
+            items = listOf(ItemDraft("bench", 1, RepRange.R8_12, 0), ItemDraft("bbrow", 1, RepRange.R8_12, 0)))) }
+        rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) {
+            WorkoutScreen(id, onClose = {}, onTechnique = {})
+        } }
+        waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
+        rule.onNodeWithTag("exercise-photo-pager").assertIsDisplayed()
+        screenshot("workout-technique-1")
+        rule.onNodeWithText("Фото 2").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithText("2 / 2 · Листайте свайпом").assertExists()
+        screenshot("workout-technique-2")
+        rule.onNodeWithTag("next-exercise").performClick()
+        waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
+        rule.onNodeWithText("1 / 2 · Листайте свайпом").assertExists()
     }
     @Test fun longPressSupportsSingleAndMultipleDeletionWithCancel() {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }

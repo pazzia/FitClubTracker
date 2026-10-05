@@ -44,9 +44,10 @@ class PhotoPresentationTest {
         val result = renderExercisePhoto(source, mask)
         assertEquals(255, Color.alpha(result.getPixel(50, 40)))
         assertEquals(255, Color.alpha(result.getPixel(10, 40))) // equipment outside person bounds
-        assertTrue(Color.alpha(result.getPixel(20, 40)) < 60) // gap between weight and athlete
+        assertTrue(Color.alpha(result.getPixel(20, 40)) <= 64) // gap between weight and athlete
         assertTrue(Color.alpha(result.getPixel(0, 0)) < 60)
         assertEquals(255, Color.alpha(source.getPixel(0, 0)))
+        assertEquals(source.getPixel(50, 40), result.getPixel(50, 40))
     }
 
     @Test fun everyPhotoHasNonEmptyAlignedMaskAndNativePreview() {
@@ -54,7 +55,7 @@ class PhotoPresentationTest {
         val lines = context.assets.open("free_exercise_db/photos.sha256").bufferedReader().use { it.readLines().filter(String::isNotBlank) }
         assertEquals(448, lines.size)
         val examples = listOf("Barbell_Bench_Press_-_Medium_Grip", "Incline_Dumbbell_Press", "Dumbbell_Flyes",
-            "Close-Grip_Barbell_Bench_Press", "Barbell_Deadlift", "Sumo_Deadlift", "Wide-Grip_Lat_Pulldown", "Leg_Press")
+            "Close-Grip_Barbell_Bench_Press", "Barbell_Deadlift", "Sumo_Deadlift", "Wide-Grip_Lat_Pulldown", "Leg_Press", "Machine_Bench_Press", "Dips_-_Chest_Version", "Band_Pull_Apart")
         val output = File("build/contour-qa").apply { mkdirs() }
         val sheets = List(4) { Bitmap.createBitmap(1920, 2100, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.rgb(27, 34, 40)) } }
         val sheetCanvases = sheets.map { Canvas(it) }

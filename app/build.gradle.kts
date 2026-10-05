@@ -73,8 +73,8 @@ android {
         applicationId = "com.fitclub.tracker"
         minSdk = 28
         targetSdk = 34
-        versionCode = 13
-        versionName = "0.6.6-preview"
+        versionCode = 14
+        versionName = "0.6.7-preview"
     }
 
     buildTypes {

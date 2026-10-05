@@ -22,28 +22,66 @@ internal fun trimPhotoPadding(source: Bitmap, reference: Bitmap = source): Bitma
     return Bitmap.createBitmap(source, left, top, right - left + 1, bottom - top + 1)
 }
 
-/** Uses a precomputed, per-pixel foreground matte including the athlete and active equipment.
- * Large photographs and thumbnails share this renderer. No person bounding box is painted. */
+/** Only thumbnails use this renderer. The foreground keeps original pixels and all
+ * apparatus included in its pixel matte; gaps reveal a blurred, quarter-opacity gym. */
 internal fun renderExercisePhoto(source: Bitmap, matte: Bitmap): Bitmap {
-    val scaled = if (matte.width == source.width && matte.height == source.height) matte
-        else Bitmap.createScaledBitmap(matte, source.width, source.height, true)
-    val count = source.width * source.height
-    val pixels = IntArray(count)
-    val mask = IntArray(count)
-    source.getPixels(pixels, 0, source.width, 0, 0, source.width, source.height)
-    scaled.getPixels(mask, 0, source.width, 0, 0, source.width, source.height)
+    val w = source.width; val h = source.height
+    val scaled = if (matte.width == w && matte.height == h) matte
+        else Bitmap.createScaledBitmap(matte, w, h, true)
+    val pixels = IntArray(w * h)
+    val mask = IntArray(pixels.size)
+    source.getPixels(pixels, 0, w, 0, 0, w, h)
+    scaled.getPixels(mask, 0, w, 0, 0, w, h)
+    val blurred = blurPhotoBackground(pixels, w, h, maxOf(2, minOf(w, h) / 65))
+    val result = IntArray(pixels.size)
     for (i in pixels.indices) {
-        val c = pixels[i]
         val subject = Color.red(mask[i]) / 255f
-        val gray = .299f * Color.red(c) + .587f * Color.green(c) + .114f * Color.blue(c)
-        val saturation = .18f + .9f * subject
-        val contrast = .72f + .44f * subject
-        fun channel(value: Int): Int = (((gray + (value - gray) * saturation) - 128f) * contrast + 128f)
-            .roundToInt().coerceIn(0, 255)
-        val opacity = (.20f + .80f * subject) * Color.alpha(c)
-        pixels[i] = Color.argb(opacity.roundToInt().coerceIn(0, 255), channel(Color.red(c)),
-            channel(Color.green(c)), channel(Color.blue(c)))
+        val c = pixels[i]
+        val bg = blurred[i]
+        val gray = .299f * Color.red(bg) + .587f * Color.green(bg) + .114f * Color.blue(bg)
+        val foregroundAlpha = subject * Color.alpha(c) / 255f
+        val backgroundAlpha = .25f * (1f - subject) * Color.alpha(bg) / 255f
+        val alpha = foregroundAlpha + backgroundAlpha
+        fun channel(value: Int, background: Int): Int {
+            val muted = gray + (background - gray) * .18f
+            return if (alpha == 0f) 0 else ((value * foregroundAlpha + muted * backgroundAlpha) / alpha)
+                .roundToInt().coerceIn(0, 255)
+        }
+        result[i] = Color.argb((alpha * 255).roundToInt(), channel(Color.red(c), Color.red(bg)),
+            channel(Color.green(c), Color.green(bg)), channel(Color.blue(c), Color.blue(bg)))
     }
     if (scaled !== matte) scaled.recycle()
-    return Bitmap.createBitmap(pixels, source.width, source.height, Bitmap.Config.ARGB_8888)
+    return Bitmap.createBitmap(result, w, h, Bitmap.Config.ARGB_8888)
+}
+
+/** Sliding separable box blur, three passes: bounded memory and linear work. */
+private fun blurPhotoBackground(source: IntArray, w: Int, h: Int, radius: Int): IntArray {
+    var input = source
+    repeat(3) {
+        val horizontal = IntArray(source.size)
+        val vertical = IntArray(source.size)
+        fun pass(src: IntArray, dst: IntArray, lines: Int, length: Int, step: Int, lineStep: Int) {
+            val size = radius * 2 + 1
+            for (line in 0 until lines) {
+                val offset = line * lineStep
+                var red = 0; var green = 0; var blue = 0
+                fun add(position: Int, sign: Int) {
+                    val color = src[offset + position.coerceIn(0, length - 1) * step]
+                    red += Color.red(color) * sign
+                    green += Color.green(color) * sign
+                    blue += Color.blue(color) * sign
+                }
+                for (position in -radius..radius) add(position, 1)
+                for (position in 0 until length) {
+                    dst[offset + position * step] = Color.rgb(red / size, green / size, blue / size)
+                    add(position - radius, -1)
+                    add(position + radius + 1, 1)
+                }
+            }
+        }
+        pass(input, horizontal, h, w, 1, w)
+        pass(horizontal, vertical, w, h, w, 1)
+        input = vertical
+    }
+    return input
 }

@@ -51,6 +51,10 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                     val options = BitmapFactory.Options().apply { inSampleSize = if (thumbnail) 2 else 1 }
                     context.assets.open(it).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
                         ?.let { decoded ->
+                            if (!thumbnail) {
+                                photoCache.put(cacheKey, decoded)
+                                return@let decoded
+                            }
                             val maskPath = "exercise_masks/" + it.removePrefix("free_exercise_db/").removeSuffix(".jpg") + ".png"
                             val mask = context.assets.open(maskPath).use { stream -> BitmapFactory.decodeStream(stream) }
                                 ?: throw IOException("Missing foreground matte: $maskPath")
