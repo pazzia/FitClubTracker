@@ -30,18 +30,50 @@ jobs:
         id: recipe
         run: |
           if [ -f app/src/main/assets/exercise_masks/whole-objects-v2 ]; then echo 'ready=true' >> "$GITHUB_OUTPUT"; fi
-      - uses: actions/setup-python@v5
+      - name: Check compatibility with previously verified contours
+        id: reuse
         if: steps.recipe.outputs.ready != 'true'
+        shell: bash
+        run: |
+          if [ "$(git hash-object scripts/prepare_semantic_masks.py)" = "646aaaf41a066893ec22e1e4b81694e9a67e84f7" ] &&
+             [ "$(git hash-object scripts/assemble_release_masks.py)" = "1eaf3455f3093839b9c7c899b8308a2e74b988aa" ] &&
+             [ "$(git hash-object scripts/validate_exercise_masks.py)" = "45ae813103eed8823d7c94c6d6921ac8c23d2aee" ] &&
+             [ "$(git hash-object app/src/main/assets/free_exercise_db/photos.sha256)" = "0956503f9f5d767f44781940e8896f9dd25d68e9" ] &&
+             [ "$(git rev-parse HEAD:app/src/main/assets/exercise_masks)" = "afb8bfe4445d5caf7d17f7ab4bb08f0758b6ff1b" ]; then
+            echo 'compatible=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore verified contour shard
+        id: reused_masks
+        if: steps.reuse.outputs.compatible == 'true'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37449786439
+          name: exercise-contours-${{ matrix.shard }}
+          path: app/src/main/assets/exercise_masks/
+      - name: Restore verified shard provenance
+        id: reused_report
+        if: steps.reuse.outputs.compatible == 'true'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37449786439
+          name: contour-report-${{ matrix.shard }}
+          path: contour-reports/
+      - uses: actions/setup-python@v5
+        if: steps.recipe.outputs.ready != 'true' && !(steps.reused_masks.outcome == 'success' && steps.reused_report.outcome == 'success')
         with:
           python-version: '3.11'
       - name: Install pinned segmentation dependencies
-        if: steps.recipe.outputs.ready != 'true'
+        if: steps.recipe.outputs.ready != 'true' && !(steps.reused_masks.outcome == 'success' && steps.reused_report.outcome == 'success')
         run: |
           pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
           pip install transformers==4.44.2 huggingface-hub==0.24.7 numpy==1.26.4 Pillow==11.0.0 opencv-python-headless==4.10.0.84 timm==1.0.9
           pip install git+https://github.com/ChaoningZhang/MobileSAM.git@f706ad9c4eb7f219c00d9050e46328518ffb65d2
       - name: Segment athlete and whole active equipment
-        if: steps.recipe.outputs.ready != 'true'
+        if: steps.recipe.outputs.ready != 'true' && !(steps.reused_masks.outcome == 'success' && steps.reused_report.outcome == 'success')
         run: python3 scripts/prepare_semantic_masks.py --shard ${{ matrix.shard }} --shards 8
       - uses: actions/upload-artifact@v4
         if: steps.recipe.outputs.ready != 'true'
