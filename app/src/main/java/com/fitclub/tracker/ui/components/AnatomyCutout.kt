@@ -54,7 +54,7 @@ internal fun trimAtlasBackdrop(source: IntArray, width: Int, height: Int,
     require(width > 0 && height > 0 && source.size == width * height)
     val pixels = source.copyOf()
     val visited = BooleanArray(pixels.size)
-    val protected = BooleanArray(pixels.size)
+    val protectedPixels = BooleanArray(pixels.size)
     fun isBackdrop(color: Int, tolerance: Int): Boolean = color ushr 24 == 0 ||
         (abs(((color ushr 16) and 255) - 20) <= tolerance &&
             abs(((color ushr 8) and 255) - 25) <= tolerance && abs((color and 255) - 29) <= tolerance)
@@ -71,7 +71,7 @@ internal fun trimAtlasBackdrop(source: IntArray, width: Int, height: Int,
                 if (first < 0) first = x
                 last = x
             }
-            if (first >= 0) for (x in first..last) protected[y * width + x] = true
+            if (first >= 0) for (x in first..last) protectedPixels[y * width + x] = true
         }
     }
     val queue = IntArray(pixels.size)
@@ -81,7 +81,7 @@ internal fun trimAtlasBackdrop(source: IntArray, width: Int, height: Int,
         visited[index] = true
         val color = pixels[index]
         // The source WebP backdrop is #14191D with small compression variations.
-        if (!protected[index] && isBackdrop(color, 18)) {
+        if (!protectedPixels[index] && isBackdrop(color, 18)) {
             pixels[index] = 0
             queue[tail++] = index
         }
