@@ -11,7 +11,7 @@ enum class Muscle(val title: String) {
     TRICEPS("трицепс"),
     FOREARMS("предплечья"),
     QUADS("квадрицепсы"),
-    HAMS("бицепс бедра"),
+    HAMS("задняя поверхность бедра"),
     GLUTES("ягодичные"),
     CALVES("икры"),
     ABS("пресс"),
@@ -32,7 +32,7 @@ enum class MuscleGroup(val title: String, val regions: List<Muscle>, val view: B
     TRICEPS("Трицепс", listOf(Muscle.TRICEPS), BodyView.BACK),
     FOREARMS("Предплечья", listOf(Muscle.FOREARMS), BodyView.FRONT),
     QUADS("Квадрицепсы", listOf(Muscle.QUADS), BodyView.FRONT),
-    HAMSTRINGS("Бицепс бедра", listOf(Muscle.HAMS), BodyView.BACK),
+    HAMSTRINGS("Задняя поверхность бедра", listOf(Muscle.HAMS), BodyView.BACK),
     GLUTES("Ягодицы", listOf(Muscle.GLUTES), BodyView.BACK),
     CALVES("Икры", listOf(Muscle.CALVES), BodyView.BACK),
     CORE("Пресс и кор", listOf(Muscle.ABS), BodyView.FRONT);
@@ -130,3 +130,4 @@ enum class Goal(
         "Добавьте базовое упражнение на каждую крупную группу мышц."
     )
 }
+

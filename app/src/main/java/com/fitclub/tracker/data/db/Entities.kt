@@ -122,7 +122,9 @@ data class WorkoutSessionEntity(
     val epochDay: Long,
     val startedAt: Long,
     val finishedAt: Long?,
-    val scheduleId: Long? = null
+    val scheduleId: Long? = null,
+    @ColumnInfo(defaultValue = "''") val title: String = "",
+    @ColumnInfo(defaultValue = "NULL") val plannedEpochDay: Long? = null
 )
 
 @Entity(
@@ -141,7 +143,11 @@ data class SetLogEntity(
     val weightKg: Float,
     val reps: Int,
     val done: Boolean,
-    @ColumnInfo(defaultValue = "0") val isTimed: Boolean = false
+    @ColumnInfo(defaultValue = "0") val isTimed: Boolean = false,
+    @ColumnInfo(defaultValue = "-1") val exercisePosition: Int = -1,
+    @ColumnInfo(defaultValue = "0") val warmup: Boolean = false,
+    @ColumnInfo(defaultValue = "NULL") val rir: Int? = null,
+    @ColumnInfo(defaultValue = "0") val assisted: Boolean = false
 )
 
 /** Снимок тренировки на конкретную дату: изменения программы не меняют этот план. */
@@ -193,3 +199,6 @@ data class ExerciseLogEntity(
     val completed: Boolean
 )
 
+/** Durable draft independent of the plan: recover after process death. */
+@Entity(tableName = "active_workouts")
+data class ActiveWorkoutEntity(@PrimaryKey val scheduleId: Long, val title: String, val snapshot: String)

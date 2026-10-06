@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.fitclub.tracker.domain.LocalWeightUnits
+import com.fitclub.tracker.data.db.ActiveWorkoutEntity
 import com.fitclub.tracker.AppContainer
 import com.fitclub.tracker.data.db.ExerciseEntity
 import com.fitclub.tracker.data.repo.*
@@ -42,7 +44,8 @@ import java.util.Locale
 data class CalendarState(
     val plans: List<ScheduledDraft> = emptyList(),
     val catalog: Map<String, ExerciseEntity> = emptyMap(),
-    val workouts: List<WorkoutLog> = emptyList()
+    val workouts: List<WorkoutLog> = emptyList(),
+    val active: List<ActiveWorkoutEntity> = emptyList()
 )
 
 class CalendarViewModel(private val c: AppContainer) : ViewModel() {
@@ -53,8 +56,8 @@ class CalendarViewModel(private val c: AppContainer) : ViewModel() {
     fun deleteWorkout(id: Long) { viewModelScope.launch {
         runCatching { c.fitness.deleteWorkout(id) }.onFailure { error.value = "Не удалось удалить: ${it.message}" }
     } }
-    val state = combine(c.schedule.observeAll(), c.exercises.observeAll(), c.fitness.observeWorkouts()) { p, e, w ->
-        CalendarState(p, e.associateBy { it.id }, w)
+    val state = combine(c.schedule.observeAll(), c.exercises.observeAll(), c.fitness.observeWorkouts(), c.fitness.observeActive()) { p, e, w, a ->
+        CalendarState(p, e.associateBy { it.id }, w, a)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarState())
 }
 
@@ -68,6 +71,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
     onEditPlan: (Long, Long) -> Unit = { date, _ -> onPlan(date) }, onResult: (Long) -> Unit = {}) {
     val vm = appViewModel { CalendarViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
+    val units = LocalWeightUnits.current
     val today = LocalDate.now()
     var selectedEpoch by rememberSaveable { mutableLongStateOf(today.toEpochDay()) }
     var monthValue by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
@@ -84,9 +88,9 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
         }) { Text("Удалить", color = Fc.Pink) } },
         dismissButton = { TextButton(onClick = { deleting = null }) { Text("Отмена") } })
     val logs = state.workouts.filter { it.session.epochDay == selectedEpoch }
-    val completed = state.workouts.map { it.session.epochDay }.toSet()
+    val completed = state.workouts.filter { it.completedSets > 0 }.map { it.session.epochDay }.toSet()
     val planned = state.plans.associateBy { it.epochDay }
-    val doneThisMonth = state.workouts.count { YearMonth.from(LocalDate.ofEpochDay(it.session.epochDay)) == month }
+    val doneThisMonth = state.workouts.filter { it.completedSets > 0 }.count { YearMonth.from(LocalDate.ofEpochDay(it.session.epochDay)) == month }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
@@ -125,8 +129,8 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                                 val selected = epoch == selectedEpoch
                                 val done = epoch in completed
                                 val hasPlan = epoch in planned
-                                val color = when { selected -> Fc.Lime; done -> Color(0xFF234536); hasPlan -> Fc.LimeSoft; else -> Color.Transparent }
-                                Column(Modifier.weight(1f).aspectRatio(1f).padding(2.dp)
+                                val color = when { selected -> Fc.Lime; done -> Fc.LimeSoft; hasPlan -> Fc.LimeSoft; else -> Color.Transparent }
+                                Column(Modifier.weight(1f).heightIn(min = 48.dp).padding(2.dp)
                                     .background(color, RoundedCornerShape(10.dp))
                                     .then(if (date == today && !selected) Modifier.border(1.dp, Fc.Lime, RoundedCornerShape(10.dp)) else Modifier)
                                     .semantics { contentDescription = calendarDate(epoch) + when { done -> ", выполнено"; hasPlan -> ", тренировка запланирована"; else -> ", запланировать тренировку" } }
@@ -134,7 +138,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("$number", color = if (selected) Fc.Bg else if (hasPlan || done) Fc.Lime else Fc.Text,
                                         style = MaterialTheme.typography.bodyMedium, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Normal)
-                                    if (done || hasPlan) Box(Modifier.padding(top = 3.dp).size(4.dp).background(if (selected) Fc.Bg else if (done) Color(0xFF69C7A4) else Fc.Lime, CircleShape))
+                                    if (done || hasPlan) Box(Modifier.padding(top = 3.dp).size(4.dp).background(if (selected) Fc.Bg else if (done) Fc.Lime else Fc.Lime, CircleShape))
                                 }
                             }
                         }
@@ -142,11 +146,18 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("● План", color = Fc.Lime, style = MaterialTheme.typography.labelSmall)
-                    Text("● Выполнено: $doneThisMonth", color = Color(0xFF69C7A4), style = MaterialTheme.typography.labelSmall)
+                    Text("● Выполнено: $doneThisMonth", color = Fc.Lime, style = MaterialTheme.typography.labelSmall)
                     TextButton(onClick = { monthValue = YearMonth.now().toString(); selectedEpoch = today.toEpochDay() }, contentPadding = PaddingValues(0.dp)) { Text("Сегодня", color = Fc.Muted, style = MaterialTheme.typography.labelSmall) }
                 }
             }
         }
+        state.active.forEach { draft -> item(key = "active-${draft.scheduleId}") {
+            FcCard(border = Fc.Lime) {
+                Text("Незавершённая тренировка", color = Fc.Lime)
+                Text(draft.title, color = Fc.Text)
+                ActionButton("Продолжить тренировку", { onStart(draft.scheduleId) })
+            }
+        } }
         item { Text(calendarDate(selectedEpoch) + if (selectedDate == today) " · сегодня" else "", color = Fc.Text, style = MaterialTheme.typography.titleMedium) }
         if (plans.isEmpty() && logs.isEmpty()) item {
             FcCard {
@@ -173,6 +184,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                     ActionButton("Начать тренировку", { onStart(plan.id) })
                     Spacer(Modifier.height(8.dp))
                     ActionButton("Изменить план", { onEditPlan(selectedEpoch, plan.id) }, outlined = true)
+                    TextButton(onClick = { deleting = false to plan.id }) { Text("Удалить план", color = Fc.Pink) }
                 }
             }
         }
@@ -180,13 +192,14 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
             item(key = "log-${log.session.id}") {
                 FcCard(modifier = Modifier.fillMaxWidth().combinedClickable(
                     onClick = { onResult(log.session.id) }, onLongClick = { deleting = true to log.session.id })) {
-                    Pill("Выполнено", Fc.LimeSoft, Fc.Lime)
-                    Text(state.plans.firstOrNull { it.id == log.session.scheduleId }?.title ?: "Тренировка",
+                    Pill(log.status, Fc.LimeSoft, Fc.Lime)
+                    Text(log.session.title.ifBlank { "Тренировка" },
                         color = Fc.Text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
                     Text("${log.completedSets} подходов · ${log.durationMin} мин", color = Fc.Muted, modifier = Modifier.padding(vertical = 8.dp))
-                    Text("Общий тоннаж: ${log.volumeKg.toInt()} кг", color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
+                    Text("Общий тоннаж: ${units.format(log.volumeKg)}", color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(12.dp))
                     ActionButton("Посмотреть результат", { onResult(log.session.id) }, outlined = true)
+                    TextButton(onClick = { deleting = true to log.session.id }) { Text("Удалить результат", color = Fc.Pink) }
                 }
             }
         }
@@ -195,9 +208,10 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
             FcCard {
                 Text("Результат за этот день", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
                 Text("${logs.sumOf { it.completedSets }} подходов · ${logs.sumOf { it.durationMin }} мин", color = Fc.Muted)
-                Text("Общий тоннаж: ${logs.sumOf { it.volumeKg.toDouble() }.toInt()} кг", color = Fc.Lime)
+                Text("Общий тоннаж: ${units.format(logs.sumOf { it.volumeKg.toDouble() }.toFloat())}", color = Fc.Lime)
             }
         }
         if (error != null) item { Text(error.orEmpty(), color = Fc.Pink) }
     }
 }
+

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -124,7 +125,7 @@ fun <T> Segmented(
             Row(
                 Modifier
                     .weight(1f)
-                    .height(height)
+                    .heightIn(min = height.coerceAtLeast(48.dp))
                     .clip(RoundedCornerShape(9.dp))
                     .background(if (on) selectedBg else Color.Transparent)
                     .semantics { this.selected = on }
@@ -134,7 +135,7 @@ fun <T> Segmented(
             ) {
                 leading(opt, on)
                 Text(
-                    label(opt), style = MaterialTheme.typography.labelLarge, maxLines = 1,
+                    label(opt), style = MaterialTheme.typography.labelLarge,
                     color = if (on) selectedFg else Fc.Muted, textAlign = TextAlign.Center
                 )
                 trailing(opt, on)
@@ -147,7 +148,7 @@ fun <T> Segmented(
 fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Fc.Lime, textColor: Color = foregroundFor(color)) {
     Surface(
         onClick = onClick, color = color, shape = RoundedCornerShape(16.dp),
-        modifier = modifier.fillMaxWidth().height(56.dp)
+        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(text, style = MaterialTheme.typography.titleMedium, color = textColor)
@@ -226,13 +227,14 @@ val DefaultBorder = BorderStroke(1.dp, Color(0xFF26262F))
 fun ActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier,
     outlined: Boolean = false, enabled: Boolean = true) {
     val shape = RoundedCornerShape(16.dp)
-    val size = modifier.fillMaxWidth().height(56.dp)
+    val size = modifier.fillMaxWidth().heightIn(min = 56.dp)
     if (outlined) androidx.compose.material3.OutlinedButton(onClick = onClick, enabled = enabled,
         modifier = size, shape = shape, border = BorderStroke(1.dp, Fc.Line),
         colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Fc.Lime)) {
-        Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, maxLines = 2)
+        Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
     } else androidx.compose.material3.Button(onClick = onClick, enabled = enabled, modifier = size, shape = shape,
         colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Fc.Lime, contentColor = foregroundFor(Fc.Lime))) {
-        Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, maxLines = 2)
+        Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
     }
 }
+

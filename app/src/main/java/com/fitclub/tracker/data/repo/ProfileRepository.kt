@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 data class ProfileSettings(
-    val name: String = "Алекс Ким",
+    val name: String = "Мой профиль",
     val sex: Sex = Sex.MALE,
     val level: Int = 2,
     val unitsKg: Boolean = true,
@@ -22,7 +22,7 @@ class ProfileRepository(context: Context) {
     val settings: StateFlow<ProfileSettings> = _settings.asStateFlow()
 
     private fun load() = ProfileSettings(
-        name = prefs.getString("name", "Алекс Ким") ?: "Алекс Ким",
+        name = prefs.getString("name", "Мой профиль") ?: "Мой профиль",
         sex = runCatching { Sex.valueOf(prefs.getString("sex", Sex.MALE.name)!!) }.getOrDefault(Sex.MALE),
         level = prefs.getInt("level", 2), unitsKg = prefs.getBoolean("kg", true),
         reminders = prefs.getBoolean("reminders", true),
@@ -44,3 +44,4 @@ class ProfileRepository(context: Context) {
 
 internal fun normalizedTheme(name: String?): String = if (name == "White Day" || name == "Светлая") "Светлая" else "Темная"
 internal fun themeAccent(name: String): Long = if (name == "Светлая") 0xFF236B9D else 0xFF69B7FF
+

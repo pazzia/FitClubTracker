@@ -43,6 +43,7 @@ fun ExerciseThumbnail(exercise: ExerciseEntity, modifier: Modifier = Modifier) {
 fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modifier, thumbnail: Boolean = false) {
     val context = LocalContext.current
     val cacheKey = "$path:$thumbnail"
+    var loading by remember(cacheKey) { mutableStateOf(true) }
     val bitmap by produceState<Bitmap?>(photoCache.get(cacheKey), cacheKey) {
         value = photoCache.get(cacheKey)
         value = withContext(Dispatchers.IO) {
@@ -82,12 +83,15 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                 }
             } catch (_: IOException) { null }
         }
+        loading = false
     }
-    val layout = if (thumbnail) modifier else modifier.fillMaxWidth().aspectRatio(bitmap?.let { it.width.toFloat() / it.height } ?: 1.5f)
+    LaunchedEffect(bitmap, cacheKey) { if (bitmap != null || path == null) loading = false }
+    val layout = if (thumbnail) modifier else modifier.fillMaxWidth().aspectRatio(1.5f)
     Box(layout.background(Fc.Surface2).semantics { contentDescription = description },
         contentAlignment = Alignment.Center) {
         bitmap?.let {
             Image(it.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
-        } ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Fc.Muted)
+        } ?: Text(if (loading) "Загрузка…" else "Фото недоступно", color = Fc.Muted)
     }
 }
+

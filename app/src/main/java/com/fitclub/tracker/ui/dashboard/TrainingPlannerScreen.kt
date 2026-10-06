@@ -81,6 +81,7 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
     val workouts by vm.workouts.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val saving by vm.saving.collectAsStateWithLifecycle()
+    var replacing by remember { mutableStateOf<Pair<ProgramDraft, Int>?>(null) }
     var picker by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var confirmBack by rememberSaveable { mutableStateOf(false) }
@@ -109,11 +110,18 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
     LaunchedEffect(selectedProgramId, programs, draft.id) {
         if (selectedProgramId != 0L) {
             programs.firstOrNull { it.id == selectedProgramId }?.let { selected ->
-                vm.update { it.fromProgram(selected, 0) }
+                if (draft.items.isNotEmpty()) replacing = selected to 0 else vm.update { it.fromProgram(selected, 0) }
                 onSelectionConsumed()
             }
         }
     }
+    if (replacing != null) AlertDialog(onDismissRequest = { replacing = null }, title = { Text("Заменить текущие упражнения?") },
+        text = { Text("Название и упражнения будут заменены выбранным днём программы. Можно добавить упражнения к текущему плану.") },
+        confirmButton = { TextButton(onClick = { replacing?.let { (p, day) -> vm.update { it.fromProgram(p, day) } }; replacing = null }) { Text("Заменить") } },
+        dismissButton = { Column {
+            TextButton(onClick = { replacing?.let { (p, day) -> vm.update { it.copy(items = it.items + p.days[day].items) } }; replacing = null }) { Text("Добавить к плану") }
+            TextButton(onClick = { replacing = null }) { Text("Отмена") }
+        } })
     var time by rememberSaveable(draft.id) { mutableStateOf(scheduleTime(draft.startMinute)) }
     val minute = parseScheduleTime(time)
     val canSave = draft.canSave && minute != null && !saving
@@ -127,11 +135,11 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
             if (completed) Pill("Выполнено · результат в календаре", Fc.LimeSoft, Fc.Lime)
         }
         item {
-            OutlinedTextField(draft.title, { text -> vm.update { it.copy(title = text) } }, label = { Text("Название") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(draft.title, { text -> vm.update { it.copy(title = text) } }, label = { Text("Название") }, singleLine = true, isError = draft.title.isBlank(), supportingText = { if (draft.title.isBlank()) Text("Введите название") }, modifier = Modifier.fillMaxWidth())
         }
         item {
             OutlinedTextField(time, { text -> time = text; parseScheduleTime(text)?.let { m -> vm.update { it.copy(startMinute = m) } } },
-                label = { Text("Время · ЧЧ:ММ") }, singleLine = true, isError = minute == null, modifier = Modifier.fillMaxWidth())
+                label = { Text("Время · ЧЧ:ММ") }, singleLine = true, isError = minute == null, supportingText = { if (minute == null) Text("Введите время от 00:00 до 23:59") }, modifier = Modifier.fillMaxWidth())
         }
         item {
             FcCard {
@@ -143,7 +151,7 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
                 if (program != null && program.days.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     Segmented(program.days.indices.toList(), draft.dayPosition ?: 0,
-                        { day -> vm.update { it.fromProgram(program, day) } }, { "День ${'A' + it}" }, selectedBg = Fc.Lime)
+                        { day -> if (day != draft.dayPosition) { if (draft.items.isNotEmpty()) replacing = program to day else vm.update { it.fromProgram(program, day) } } }, { "День ${'A' + it}" }, selectedBg = Fc.Lime)
                 }
                 Spacer(Modifier.height(10.dp))
                 Text("План на эту дату можно настроить независимо от программы.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
@@ -167,6 +175,5 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
         }
     }
 }
-
 
 

@@ -68,12 +68,16 @@ class ForkPreviewUiTest {
         screenshot("fork-overview")
         rule.onNodeWithText("Жим штанги лёжа").performClick()
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 1")
+        rule.onNodeWithTag("workout-list").performScrollToNode(hasTestTag("weight-0"))
+        rule.onNodeWithTag("weight-0").performTextReplacement("60")
+        rule.onNodeWithTag("done-0").performClick()
         rule.onNodeWithTag("complete-exercise").performClick()
         waitFor("Упражнение завершено")
-        val left = rule.onNodeWithText("Назад").fetchSemanticsNode().boundsInRoot
+        val left = rule.onNodeWithText("Все упражнения").fetchSemanticsNode().boundsInRoot
         val right = rule.onNodeWithTag("next-exercise").fetchSemanticsNode().boundsInRoot
         assertEquals(left.height, right.height, 1f)
         assertEquals(left.width, right.width, 1f)
         screenshot("fork-completed-exercise")
     }
 }
+

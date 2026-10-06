@@ -120,16 +120,25 @@ data class WorkoutLog(
     val sets: List<SetLogEntity>,
     val exercises: List<ExerciseLogEntity> = emptyList()
 ) {
-    val volumeKg: Float get() = sets.filter { it.done && !it.isTimed }.sumOf { (it.weightKg * it.reps).toDouble() }.toFloat()
+    val volumeKg: Float get() = sets.filter { it.done && !it.isTimed && !it.assisted }.sumOf { (it.weightKg * it.reps).toDouble() }.toFloat()
     val completedSets: Int get() = sets.count { it.done }
+    val status: String get() = when {
+        completedSets == 0 -> "Без выполненных подходов"
+        exercises.isNotEmpty() && exercises.all { it.completed } -> "Выполнено"
+        else -> "Частично выполнено"
+    }
     val durationMin: Int get() = (((session.finishedAt ?: session.startedAt) - session.startedAt) / 60_000L).toInt().coerceAtLeast(1)
 }
 
 data class CompletedExercise(val exerciseId: String, val position: Int, val durationMillis: Long, val completed: Boolean)
 
-data class CompletedSet(val exerciseId: String, val setIndex: Int, val weightKg: Float, val reps: Int, val isTimed: Boolean = false)
+data class CompletedSet(val exerciseId: String, val setIndex: Int, val weightKg: Float, val reps: Int, val isTimed: Boolean = false, val exercisePosition: Int = -1, val warmup: Boolean = false, val rir: Int? = null, val assisted: Boolean = false)
 
 class FitnessRepository(private val db: AppDatabase) {
+    fun observeActive() = db.workoutDao().observeActive()
+    suspend fun getActive(id: Long) = db.workoutDao().getActive(id)
+    suspend fun saveActive(id: Long, title: String, snapshot: String) = db.workoutDao().saveActive(com.fitclub.tracker.data.db.ActiveWorkoutEntity(id, title, snapshot))
+
     fun observeMeasurements(): Flow<List<BodyMeasurementEntity>> = db.measurementDao().observeAll()
 
     fun observeWorkouts(): Flow<List<WorkoutLog>> = combine(
@@ -154,9 +163,19 @@ class FitnessRepository(private val db: AppDatabase) {
         db.workoutDao().updateSession(session.copy(startedAt = startedAt, finishedAt = finishedAt))
         db.workoutDao().deleteSets(sessionId)
         db.workoutDao().insertSets(sets.map { it.copy(id = 0, sessionId = sessionId) })
+        val old = db.workoutDao().getExercises(sessionId)
+        db.workoutDao().deleteExercises(sessionId)
+        db.workoutDao().insertExercises(sets.groupBy { it.exerciseId to it.exercisePosition }.map { (key, rows) ->
+            val previous = old.firstOrNull { it.exerciseId == key.first && it.position == key.second }
+            ExerciseLogEntity(sessionId = sessionId, exerciseId = key.first, position = key.second,
+                durationMillis = previous?.durationMillis ?: 0, completed = rows.any { it.done })
+        })
     }
 
     suspend fun addMeasurement(weight: Float?, waist: Float?, fat: Float?, chest: Float?, arm: Float?) {
+        require(listOf(weight, waist, fat, chest, arm).any { it != null })
+        require(listOf(weight, waist, chest, arm).all { it == null || (it.isFinite() && it > 0) })
+        require(fat == null || (fat.isFinite() && fat in 0f..100f))
         db.measurementDao().insert(
             BodyMeasurementEntity(
                 epochDay = java.time.LocalDate.now().toEpochDay(), weightKg = weight, waistCm = waist,
@@ -167,25 +186,27 @@ class FitnessRepository(private val db: AppDatabase) {
 
     suspend fun finishWorkout(programId: Long?, day: Int?, startedAt: Long, sets: List<CompletedSet>,
         scheduleId: Long? = null, epochDay: Long = java.time.LocalDate.now().toEpochDay(),
-        exercises: List<CompletedExercise> = emptyList()): Long =
+        exercises: List<CompletedExercise> = emptyList(), title: String = "", plannedEpochDay: Long? = null): Long =
         db.withTransaction {
+            require(sets.all { it.weightKg.isFinite() && it.weightKg >= 0 && it.reps > 0 && (it.rir == null || it.rir in 0..10) })
             val now = System.currentTimeMillis()
             val id = db.workoutDao().insertSession(
                 WorkoutSessionEntity(
                     programId = programId, dayPosition = day, epochDay = epochDay,
-                    startedAt = startedAt, finishedAt = now, scheduleId = scheduleId
+                    startedAt = startedAt, finishedAt = now, scheduleId = scheduleId, title = title, plannedEpochDay = plannedEpochDay
                 )
             )
             db.workoutDao().insertSets(sets.map {
                 SetLogEntity(
                     sessionId = id, exerciseId = it.exerciseId, setIndex = it.setIndex,
-                    weightKg = it.weightKg, reps = it.reps, done = true, isTimed = it.isTimed
+                    weightKg = it.weightKg, reps = it.reps, done = true, isTimed = it.isTimed, exercisePosition = it.exercisePosition, warmup = it.warmup, rir = it.rir, assisted = it.assisted
                 )
             })
             db.workoutDao().insertExercises(exercises.map {
                 ExerciseLogEntity(sessionId = id, exerciseId = it.exerciseId, position = it.position,
                     durationMillis = it.durationMillis.coerceAtLeast(0), completed = it.completed)
             })
+            if (scheduleId != null) db.workoutDao().deleteActive(scheduleId)
             id
         }
 }
@@ -212,12 +233,11 @@ object SamplePrograms {
             )
         ),
         ProgramDraft(
-            name = "Летний рельеф", goal = Goal.ENDURANCE, colorArgb = 0xFFFFB23F, icon = ProgramIcons.FLAME, freqPerWeek = 2,
+            name = "Учебный пример: ошибки программы", goal = Goal.ENDURANCE, colorArgb = 0xFFFFB23F, icon = ProgramIcons.FLAME, freqPerWeek = 2,
             days = listOf(
                 DayDraft(listOf(i("bench", 5, RepRange.R3_5, 180), i("deadlift", 4, RepRange.R3_5, 180), i("ohp", 4, RepRange.R3_5, 150), i("bbcurl", 3, RepRange.R6_8, 120)))
             )
         )
     )
 }
-
 
