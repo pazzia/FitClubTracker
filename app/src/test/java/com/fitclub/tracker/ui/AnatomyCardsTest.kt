@@ -72,7 +72,7 @@ class AnatomyCardsTest {
                 result
             }
             for (light in listOf(true, false)) {
-                val board = Bitmap.createBitmap(720, 1890, Bitmap.Config.ARGB_8888)
+                val board = Bitmap.createBitmap(720, 1920, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(board)
                 canvas.drawColor(if (light) Color.WHITE else Color.rgb(14, 19, 23))
                 val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -93,7 +93,7 @@ class AnatomyCardsTest {
                     val scale = maxOf(imageWindow.width() / image.width, imageWindow.height() / image.height)
                     val scaledWidth = image.width * scale; val scaledHeight = image.height * scale
                     val left = imageWindow.centerX() - scaledWidth / 2
-                    val top = imageWindow.centerY() - scaledHeight / 2
+                    val top = if (index == 10) imageWindow.top else imageWindow.centerY() - scaledHeight / 2
                     canvas.drawBitmap(image, Rect(0, 0, image.width, image.height),
                         RectF(left, top, left + scaledWidth, top + scaledHeight), paint)
                     canvas.restore()

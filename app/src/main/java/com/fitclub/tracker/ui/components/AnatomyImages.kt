@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -36,13 +37,14 @@ fun anatomyIndex(group: MuscleGroup): Int = when (group) {
 }
 
 @Composable
-fun GroupImage(sex: Sex, group: MuscleGroup, modifier: Modifier = Modifier, scale: ContentScale = ContentScale.Fit) {
+fun GroupImage(sex: Sex, group: MuscleGroup, modifier: Modifier = Modifier, scale: ContentScale = ContentScale.Fit,
+    alignment: Alignment = Alignment.Center) {
     val resource = (if (sex == Sex.FEMALE) femaleGroups else maleGroups)[anatomyIndex(group)]
     val resources = LocalContext.current.resources
     val bitmap = remember(resources, resource) { AnatomyCutouts.get(resources, resource).asImageBitmap() }
     Box(modifier.clipToBounds().background(Fc.AnatomyBackground)) {
         Image(bitmap, contentDescription = "${group.title}, ${sex.title.lowercase()} атлас",
-            contentScale = scale, modifier = Modifier.fillMaxSize())
+            contentScale = scale, alignment = alignment, modifier = Modifier.fillMaxSize())
     }
 }
 

@@ -28,7 +28,8 @@ fun MuscleCategoryRow(groups: List<MuscleGroup>, sex: Sex, counts: Map<MuscleGro
         groups.forEach { group ->
             Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(Fc.AnatomyLabel)
                 .border(1.dp, Fc.Line, RoundedCornerShape(16.dp)).clickable(role = Role.Button) { onGroup(group) }) {
-                GroupImage(sex, group, Modifier.fillMaxWidth().aspectRatio(4f / 3f), scale = ContentScale.Crop)
+                GroupImage(sex, group, Modifier.fillMaxWidth().aspectRatio(4f / 3f), scale = ContentScale.Crop,
+                    alignment = if (group == MuscleGroup.CALVES) Alignment.TopCenter else Alignment.Center)
                 Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(group.title, color = Fc.Text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     Text("${counts[group] ?: 0} →", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
