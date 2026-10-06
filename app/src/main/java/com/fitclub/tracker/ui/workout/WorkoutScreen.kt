@@ -75,7 +75,7 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
     fun installPlan(plan: ScheduledDraft) {
         if (editedPlan == null) { editedPlan = plan; tokens.addAll(plan.items.map { nextToken++ }) }
     }
-    fun overview() { pauseExercise(); inOverview = true }
+    fun overview() { pauseExercise(); inOverview = true; error = null }
     fun addExercise(id: String) {
         val p = editedPlan ?: return
         editedPlan = p.copy(items = p.items + ItemDraft(id, 3, RepRange.R8_12, 90))
@@ -216,7 +216,7 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
         activeIndex = null
     }
     fun moveTo(index: Int) {
-        inOverview = false; pauseExercise(); exerciseIndex = index; summaryIndex = if (completed[index] == true) index else null
+        error = null; inOverview = false; pauseExercise(); exerciseIndex = index; summaryIndex = if (completed[index] == true) index else null
         startExercise()
     }
     fun completeExercise() {
@@ -259,10 +259,11 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
                 persistJob?.cancelAndJoin()
                 c.fitness.finishWorkout(plan.programId, plan.dayPosition, startedAt, sets, plan.id,
                     java.time.Instant.ofEpochMilli(startedAt).atZone(java.time.ZoneId.systemDefault()).toLocalDate().toEpochDay(), exercises,
-                    title = plan.title, plannedEpochDay = plan.epochDay, planSnapshot = snapshot())
+                    title = plan.title, plannedEpochDay = plan.epochDay, planSnapshot = snapshot(),
+                    elapsedMillis = elapsedBase + (android.os.SystemClock.elapsedRealtime() - sessionRealtime).coerceAtLeast(0))
             }
                 .onSuccess { saved = true; onSaved() }
-                .onFailure { error = "Не удалось сохранить тренировку: ${it.message}"; startExercise() }
+                .onFailure { error = "Не удалось сохранить тренировку: ${it.message}"; if (!inOverview) startExercise() }
             finishing = false
             if (!saved) startPersistence()
         }
@@ -352,7 +353,7 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
             if (summary) {
                 item {
                     FcCard(border = Fc.Lime.copy(.45f)) {
-                        Text(if (doneRows.size < item.sets) "Упражнение выполнено частично" else "Упражнение завершено", color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
+                        Text(if (doneRows.count { !it.warmup } < item.sets) "Упражнение выполнено частично" else "Упражнение завершено", color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
                         Text("Подходов: ${doneRows.size}", color = Fc.Text)
                         if (item.reps == RepRange.TIME) Text("Выполнено: ${doneRows.sumOf { it.reps.toInt() }} сек.", color = Fc.Text)
                         else Text("Тоннаж: ${number(displayWeight(volume, vm.draftUnitsKg))} $units", color = Fc.Text)

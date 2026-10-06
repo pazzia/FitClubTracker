@@ -84,10 +84,9 @@ fun ProgressScreen(onProfile: () -> Unit) {
     val completedSets = s.workouts.sumOf { it.completedSets }
     val latest = s.measurements.lastOrNull { it.weightKg != null }
     val first = s.measurements.firstOrNull { it.weightKg != null }
-    val monday = LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
-    val weekDates = (weeksBack - 1 downTo 0).map { monday.minusWeeks(it.toLong()) }
-    val weekly = weekDates.map { date -> s.workouts.filter { it.session.epochDay in date.toEpochDay()..date.plusDays(6).toEpochDay() }
-        .sumOf { it.volumeKg.toDouble() }.toFloat() }
+    val weekData = com.fitclub.tracker.domain.weeklyVolume(s.workouts, LocalDate.now(), weeksBack)
+    val weekDates = weekData.map { it.monday }
+    val weekly = weekData.map { it.volumeKg }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item {

@@ -65,6 +65,7 @@ class Preview66UiTest {
         rule.onNodeWithTag("exercise-photo-pager").assertDoesNotExist()
         rule.onNodeWithContentDescription("Жим штанги лёжа — миниатюра техники").assertIsDisplayed()
         rule.onNodeWithText("Техника выполнения →").performClick()
+        waitFor("Техника")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("exercise-photo-pager"))
         rule.onNodeWithTag("exercise-photo-pager").assertIsDisplayed()
         screenshot("workout-technique-1")
@@ -77,6 +78,7 @@ class Preview66UiTest {
         rule.onNodeWithTag("next-exercise").performClick()
         waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
         rule.onNodeWithText("Техника выполнения →").performClick()
+        waitFor("Техника")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("exercise-photo-pager"))
         rule.onNodeWithText("1 / 2 · Листайте свайпом").assertExists()
     }

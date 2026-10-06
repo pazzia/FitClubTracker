@@ -67,6 +67,13 @@ class ReviewRegressionTest {
         assertEquals(1000L, updated.exercises.first().durationMillis)
         assertEquals(0L, updated.exercises.last().durationMillis)
     }
+    @Test fun editingLegacyGroupedSetsRetainsAggregatedExerciseTime() = runBlocking {
+        val id = repo.finishWorkout(null, null, 1, listOf(CompletedSet("bench", 0, 60f, 8)),
+            exercises = listOf(CompletedExercise("bench", 0, 1000, true), CompletedExercise("bench", 2, 2000, true)))
+        val log = repo.observeWorkouts().first().single()
+        repo.updateWorkout(id, 1, 10000, log.sets)
+        assertEquals(3000L, repo.observeWorkouts().first().single().exercises.single().durationMillis)
+    }
     @Test fun timedAndAssistedSetsAreExcludedFromTonnageButWarmupIsRecorded() = runBlocking {
         repo.finishWorkout(null, null, 1, listOf(CompletedSet("bench", 0, 20f, 10, warmup = true, rir = 5), CompletedSet("pullup", 0, 40f, 10, assisted = true), CompletedSet("plank", 0, 10f, 60, true)))
         val log = repo.observeWorkouts().first().single()
@@ -82,6 +89,21 @@ class ReviewRegressionTest {
         assertTrue(repo.observeMeasurements().first().isEmpty())
         repo.addMeasurement(80f, null, 0f, null, null)
         assertEquals(0f, repo.observeMeasurements().first().single().fatPercent!!, 0f)
+    }
+    @Test fun weeklyGraphSeparatesYearsAndKeepsChronologicalEmptyWeeks() = runBlocking {
+        suspend fun record(date: String, weight: Float) = repo.finishWorkout(null, null, 1,
+            listOf(CompletedSet("bench", 0, weight, 10)), epochDay = java.time.LocalDate.parse(date).toEpochDay())
+        record("2021-12-31", 90f); record("2022-12-31", 10f); record("2023-01-01", 20f); record("2023-01-02", 30f)
+        val series = com.fitclub.tracker.domain.weeklyVolume(repo.observeWorkouts().first(), java.time.LocalDate.parse("2023-01-16"), 4)
+        assertEquals(listOf("2022-12-26", "2023-01-02", "2023-01-09", "2023-01-16"), series.map { it.monday.toString() })
+        assertEquals(listOf(300f, 300f, 0f, 0f), series.map { it.volumeKg })
+    }
+    @Test fun recordedMonotonicDurationTakesPrecedenceOverWallClockDifference() = runBlocking {
+        repo.finishWorkout(null, null, 1, emptyList(), elapsedMillis = 120000)
+        val log = repo.observeWorkouts().first().single()
+        assertEquals(2, log.durationMin)
+        repo.updateWorkout(log.session.id, log.session.startedAt, log.session.finishedAt!!, emptyList())
+        assertEquals(2, repo.observeWorkouts().first().single().durationMin)
     }
     @Test fun repetitionDefaultsFollowPlan() {
         assertEquals(3, RepRange.R1_3.defaultCount()); assertEquals(5, RepRange.R3_5.defaultCount())

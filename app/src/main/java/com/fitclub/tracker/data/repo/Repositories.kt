@@ -127,7 +127,7 @@ data class WorkoutLog(
         exercises.isNotEmpty() && exercises.all { it.completed } -> "Выполнено"
         else -> "Частично выполнено"
     }
-    val durationMin: Int get() = (((session.finishedAt ?: session.startedAt) - session.startedAt) / 60_000L).toInt().coerceAtLeast(1)
+    val durationMin: Int get() = ((if (session.durationMillis >= 0) session.durationMillis else (session.finishedAt ?: session.startedAt) - session.startedAt) / 60_000L).toInt().coerceAtLeast(1)
 }
 
 data class CompletedExercise(val exerciseId: String, val position: Int, val durationMillis: Long, val completed: Boolean)
@@ -158,15 +158,18 @@ class FitnessRepository(private val db: AppDatabase) {
 
     suspend fun updateWorkout(sessionId: Long, startedAt: Long, finishedAt: Long, sets: List<SetLogEntity>) = db.withTransaction {
         require(finishedAt >= startedAt)
-        require(sets.all { it.weightKg.isFinite() && it.weightKg >= 0 && it.reps > 0 })
+        require(sets.all { it.weightKg.isFinite() && it.weightKg >= 0 && it.reps > 0 && (it.rir == null || it.rir in 0..10) })
         val session = requireNotNull(db.workoutDao().getSession(sessionId))
-        db.workoutDao().updateSession(session.copy(startedAt = startedAt, finishedAt = finishedAt))
+        db.workoutDao().updateSession(session.copy(startedAt = startedAt, finishedAt = finishedAt, durationMillis = if (startedAt == session.startedAt && finishedAt == session.finishedAt) session.durationMillis else finishedAt - startedAt))
         db.workoutDao().deleteSets(sessionId)
         db.workoutDao().insertSets(sets.map { it.copy(id = 0, sessionId = sessionId) })
         val old = db.workoutDao().getExercises(sessionId)
         db.workoutDao().deleteExercises(sessionId)
         db.workoutDao().insertExercises(sets.groupBy { it.exerciseId to it.exercisePosition }.map { (key, rows) ->
-            val previous = old.firstOrNull { it.exerciseId == key.first && it.position == key.second }
+            val previous = if (key.second == -1) {
+                val legacy = old.filter { it.exerciseId == key.first }
+                legacy.firstOrNull()?.copy(position = -1, durationMillis = legacy.sumOf { it.durationMillis }, completed = legacy.all { it.completed })
+            } else old.firstOrNull { it.exerciseId == key.first && it.position == key.second }
             ExerciseLogEntity(sessionId = sessionId, exerciseId = key.first, position = key.second,
                 durationMillis = previous?.durationMillis ?: 0, completed = (previous?.completed ?: true) && rows.isNotEmpty() && rows.all { it.done })
         })
@@ -186,14 +189,14 @@ class FitnessRepository(private val db: AppDatabase) {
 
     suspend fun finishWorkout(programId: Long?, day: Int?, startedAt: Long, sets: List<CompletedSet>,
         scheduleId: Long? = null, epochDay: Long = java.time.LocalDate.now().toEpochDay(),
-        exercises: List<CompletedExercise> = emptyList(), title: String = "", plannedEpochDay: Long? = null, planSnapshot: String = ""): Long =
+        exercises: List<CompletedExercise> = emptyList(), title: String = "", plannedEpochDay: Long? = null, planSnapshot: String = "", elapsedMillis: Long = -1): Long =
         db.withTransaction {
             require(sets.all { it.weightKg.isFinite() && it.weightKg >= 0 && it.reps > 0 && (it.rir == null || it.rir in 0..10) })
             val now = System.currentTimeMillis()
             val id = db.workoutDao().insertSession(
                 WorkoutSessionEntity(
                     programId = programId, dayPosition = day, epochDay = epochDay,
-                    startedAt = startedAt, finishedAt = now, scheduleId = scheduleId, title = title, plannedEpochDay = plannedEpochDay, planSnapshot = planSnapshot
+                    startedAt = startedAt, finishedAt = now, scheduleId = scheduleId, title = title, plannedEpochDay = plannedEpochDay, planSnapshot = planSnapshot, durationMillis = elapsedMillis
                 )
             )
             db.workoutDao().insertSets(sets.map {
