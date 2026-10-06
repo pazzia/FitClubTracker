@@ -1,14 +1,19 @@
 package com.fitclub.tracker.ui.dashboard
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -143,8 +148,22 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
         }
         item {
             FcCard {
-                Text("Основа тренировки", color = Fc.Text, style = MaterialTheme.typography.titleSmall)
-                Text("Выберите программу и день — упражнения появятся в плане.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                var helpVisible by remember { mutableStateOf(false) }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Основа тренировки", color = Fc.Text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Box {
+                        IconButton(onClick = { helpVisible = !helpVisible }, modifier = Modifier.size(48.dp)
+                            .semantics { contentDescription = "Что такое основа тренировки?" }) {
+                            Box(Modifier.size(22.dp).border(1.5.dp, Fc.Muted, CircleShape), contentAlignment = Alignment.Center) {
+                                Text("?", color = Fc.Muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.clearAndSetSemantics { })
+                            }
+                        }
+                        DropdownMenu(expanded = helpVisible, onDismissRequest = { helpVisible = false }, modifier = Modifier.widthIn(max = 280.dp)) {
+                            Text("Выберите программу и день — их упражнения появятся в плане. Затем измените план на эту дату: исходная программа останется прежней.",
+                                color = Fc.Text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                        }
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
                 ActionButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу →", onChooseProgram)
                 val program = programs.firstOrNull { it.id == draft.programId }
@@ -153,8 +172,6 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
                     Segmented(program.days.indices.toList(), draft.dayPosition ?: 0,
                         { day -> if (day != draft.dayPosition) { if (draft.items.isNotEmpty()) replacing = program to day else vm.update { it.fromProgram(program, day) } } }, { "День ${'A' + it}" }, selectedBg = Fc.Lime)
                 }
-                Spacer(Modifier.height(10.dp))
-                Text("План на эту дату можно настроить независимо от программы.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
             }
         }
         item { Text("${draft.items.size} упражнений · ${draft.items.sumOf { it.sets }} подходов", color = Fc.Muted) }
@@ -175,5 +192,4 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
         }
     }
 }
-
 
