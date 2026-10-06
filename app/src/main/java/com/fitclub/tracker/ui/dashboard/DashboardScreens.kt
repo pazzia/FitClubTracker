@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -31,6 +32,7 @@ import androidx.lifecycle.viewModelScope
 import com.fitclub.tracker.BuildConfig
 import com.fitclub.tracker.domain.LocalWeightUnits
 import com.fitclub.tracker.domain.WeightUnits
+import com.fitclub.tracker.domain.bestWorkingSet
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import com.fitclub.tracker.AppContainer
@@ -139,20 +141,26 @@ fun ProgressScreen(onProfile: () -> Unit) {
                     allIds.forEach { id -> DropdownMenuItem(text = { Text(s.exercises[id]?.name ?: id) }, onClick = { selectedExercise = id; exerciseMenu = false }) }
                 }
             }
-            val byExercise = s.workouts.filter { it.session.epochDay >= weekDates.first().toEpochDay() }.flatMap { it.sets }.filter { it.done && !it.warmup && !it.assisted && (selectedExercise.isBlank() || selectedExercise == it.exerciseId) }.groupBy { it.exerciseId }.entries.sortedByDescending { it.value.maxOfOrNull { x -> x.weightKg } ?: 0f }
-            if (byExercise.isEmpty()) Text("Завершите первую тренировку — здесь появятся рабочие веса.", color = Fc.Muted, modifier = Modifier.padding(vertical = 14.dp))
-            byExercise.forEach { (id, sets) ->
-                val best = sets.maxWithOrNull(compareBy<com.fitclub.tracker.data.db.SetLogEntity> { if (it.isTimed) it.reps.toFloat() else it.weightKg }.thenBy { it.reps })!!
-                FcCard(Modifier.padding(top = 8.dp)) {
+            val periodWorkouts = s.workouts.filter { it.session.epochDay in weekDates.first().toEpochDay()..weekDates.last().plusDays(6).toEpochDay() }
+            val byExercise = periodWorkouts.flatMap { it.sets }
+                .filter { it.done && !it.warmup && !it.assisted && (selectedExercise.isBlank() || selectedExercise == it.exerciseId) }
+                .groupBy { it.exerciseId to it.isTimed }.entries
+                .sortedWith(compareBy({ s.exercises[it.key.first]?.name ?: it.key.first }, { it.key.second }))
+            if (byExercise.isEmpty()) Text("Завершите первую тренировку — здесь появятся результаты упражнений.", color = Fc.Muted, modifier = Modifier.padding(vertical = 14.dp))
+            byExercise.forEach { (key, sets) ->
+                val (id, timed) = key
+                val best = bestWorkingSet(sets, id, timed)!!
+                FcCard(Modifier.padding(top = 8.dp).testTag("progress-$id-$timed")) {
                     Text(s.exercises[id]?.name ?: id, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
-                    Text(if (best.isTimed) "Самое долгое удержание: ${best.reps} сек." else "Самый тяжёлый подход: ${units.format(best.weightKg)} × ${best.reps}", color = Fc.Muted)
+                    Text(if (timed) "На время · секунды" else "С повторениями · ${units.label}", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+                    Text(if (timed) "Самое долгое удержание: ${best.reps} сек." else "Самый тяжёлый подход: ${units.format(best.weightKg)} × ${best.reps}", color = Fc.Muted)
                     Text("${sets.size} подходов за выбранный период", color = Fc.Muted)
                     TextButton(onClick = { selectedExercise = id }) { Text("История упражнения", color = Fc.Lime) }
-                    if (selectedExercise == id) s.workouts.filter { it.session.epochDay >= weekDates.first().toEpochDay() }.sortedBy { it.session.startedAt }.forEach { log ->
-                        val performed = log.sets.filter { it.done && it.exerciseId == id && !it.warmup && !it.assisted }
+                    if (selectedExercise == id) periodWorkouts.sortedBy { it.session.startedAt }.forEach { log ->
+                        val performed = log.sets.filter { it.done && it.exerciseId == id && it.isTimed == timed && !it.warmup && !it.assisted }
                         if (performed.isNotEmpty()) {
                             Text(calendarDate(log.session.epochDay), color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
-                            performed.forEach { row -> Text(if (row.isTimed) "${row.reps} сек." else "${units.format(row.weightKg)} × ${row.reps}", color = Fc.Text) }
+                            performed.forEach { row -> Text(if (timed) "${row.reps} сек." else "${units.format(row.weightKg)} × ${row.reps}", color = Fc.Text) }
                         }
                     }
                 }
@@ -269,5 +277,4 @@ fun ProfileScreen(onBack: () -> Unit) {
 private fun num(s: String) = s.replace(',', '.').toFloatOrNull()
 private fun fmt(v: Float) = if (v == v.roundToInt().toFloat()) v.roundToInt().toString() else "%.1f".format(Locale.US, v).replace('.', ',')
 private fun signed(v: Float) = (if (v > 0) "+" else "") + fmt(v)
-
 

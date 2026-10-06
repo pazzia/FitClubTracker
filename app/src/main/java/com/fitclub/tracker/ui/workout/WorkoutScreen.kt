@@ -46,6 +46,7 @@ import kotlinx.coroutines.cancelAndJoin
 import com.fitclub.tracker.domain.WeightUnits
 import com.fitclub.tracker.domain.defaultCount
 import com.fitclub.tracker.domain.previousWorkingSet
+import com.fitclub.tracker.domain.bestWorkingSet
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
@@ -327,9 +328,8 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
     val units = if (vm.draftUnitsKg) "кг" else "фунт."
     val doneRows = rows.filter { it.done }
     val heaviest = doneRows.filter { !it.warmup && !it.assisted }.maxWithOrNull(compareBy<SetEntry> { if (item.reps == RepRange.TIME) (it.reps.toIntOrNull() ?: 0).toFloat() else weightKg(it.weight, vm.draftUnitsKg) }.thenBy { it.reps.toIntOrNull() ?: 0 })
-    val previousBest = history.filter { it.session.startedAt < vm.startedAt }.flatMap { it.sets }
-        .filter { it.done && !it.warmup && !it.assisted && it.exerciseId == item.exerciseId && it.isTimed == (item.reps == RepRange.TIME) }
-        .maxWithOrNull(compareBy<com.fitclub.tracker.data.db.SetLogEntity> { if (it.isTimed) it.reps.toFloat() else it.weightKg }.thenBy { it.reps })
+    val previousBest = bestWorkingSet(history.filter { it.session.startedAt < vm.startedAt }.flatMap { it.sets },
+        item.exerciseId, item.reps == RepRange.TIME)
     val volume = if (item.reps == RepRange.TIME) 0f else doneRows.filter { !it.assisted }.sumOf { (weightKg(it.weight, vm.draftUnitsKg) * it.reps.toInt()).toDouble() }.toFloat()
     val summary = vm.summaryIndex != null
     var details by remember(index) { mutableStateOf(false) }
@@ -359,8 +359,8 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
                         if (item.reps == RepRange.TIME) Text("Выполнено: ${doneRows.sumOf { it.reps.toInt() }} сек.", color = Fc.Text)
                         else Text("Тоннаж: ${number(displayWeight(volume, vm.draftUnitsKg))} $units", color = Fc.Text)
                         Text("Время упражнения: ${time(vm.duration(index) / 1000)}", color = Fc.Text)
-                        Text((if (item.reps == RepRange.TIME) "Самое долгое удержание: " else "Самый тяжёлый подход: ") + (heaviest?.let { "${number(displayWeight(weightKg(it.weight, vm.draftUnitsKg), vm.draftUnitsKg))} $units × ${it.reps}${if (item.reps == RepRange.TIME) " сек." else ""}" } ?: "нет выполненных подходов"), color = Fc.Text)
-                        Text("Рекорд за всю историю до этой тренировки: " + (previousBest?.let { "${number(displayWeight(it.weightKg, vm.draftUnitsKg))} $units × ${it.reps}${if (it.isTimed) " сек." else ""}" } ?: "первый результат"), color = Fc.Muted)
+                        Text((if (item.reps == RepRange.TIME) "Самое долгое удержание: " else "Самый тяжёлый подход: ") + (heaviest?.let { if (item.reps == RepRange.TIME) "${it.reps} сек." else "${number(displayWeight(weightKg(it.weight, vm.draftUnitsKg), vm.draftUnitsKg))} $units × ${it.reps}" } ?: "нет выполненных подходов"), color = Fc.Text)
+                        Text("Рекорд за всю историю до этой тренировки: " + (previousBest?.let { if (it.isTimed) "${it.reps} сек." else "${number(displayWeight(it.weightKg, vm.draftUnitsKg))} $units × ${it.reps}" } ?: "первый результат"), color = Fc.Muted)
                         if (heaviest != null && previousBest != null) {
                             if (item.reps == RepRange.TIME) {
                                 val delta = heaviest.reps.toInt() - previousBest.reps
