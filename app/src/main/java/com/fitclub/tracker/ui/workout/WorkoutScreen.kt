@@ -237,6 +237,9 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
             }
         }
     }
+    internal fun completedExercises(plan: ScheduledDraft): List<CompletedExercise> = plan.items.mapIndexed { index, item ->
+        CompletedExercise(item.exerciseId, index, duration(index), logs[index].orEmpty().count { it.done && !it.warmup } >= item.sets)
+    }
     fun saveForLater(onSaved: () -> Unit) {
         if (finishing || saved) return
         pauseExercise(); inOverview = true; finishing = true
@@ -251,9 +254,7 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
         if (finishing || saved) return
         pauseExercise()
         val sets = completedSets(plan, unitsKg)
-        val exercises = plan.items.mapIndexed { index, item ->
-            CompletedExercise(item.exerciseId, index, duration(index), completed[index] == true && logs[index].orEmpty().any { it.done })
-        }
+        val exercises = completedExercises(plan)
         finishing = true
         viewModelScope.launch {
             runCatching {

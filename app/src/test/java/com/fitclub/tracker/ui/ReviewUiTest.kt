@@ -101,6 +101,9 @@ class ReviewUiTest {
             assertEquals("3", restored.logs[0]!!.first().rir)
             assertEquals(vm.draftUnitsKg, restored.draftUnitsKg)
             assertEquals(2, restored.tokens.size)
+            // Finishing directly from the header still recognises all recorded work sets.
+            assertFalse(restored.completedExercises(restored.editedPlan!!)[0].completed)
+            assertTrue(restored.completedExercises(restored.editedPlan!!)[1].completed)
         }
     }
 }
