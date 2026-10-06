@@ -73,15 +73,11 @@ android {
         applicationId = "com.fitclub.tracker"
         minSdk = 28
         targetSdk = 34
-        versionCode = 16
-        versionName = "0.7.0-fork"
+        versionCode = 17
+        versionName = "0.7.0"
     }
 
     buildTypes {
-        debug {
-            applicationIdSuffix = ".experimental"
-            resValue("string", "app_name", "FitClub · Тест")
-        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
