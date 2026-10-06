@@ -106,6 +106,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
                     }
                     Spacer(Modifier.height(12.dp))
                     if (editing) {
+                        Text("Вес, кг · ${if (rows.firstOrNull { it.first.exerciseId == id }?.first?.isTimed == true) "время, сек." else "повторы"}", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                         rows.forEachIndexed { index, pair -> if (pair.first.exerciseId == id) {
                             SetRow(index, pair.second, true, onDone = { done -> rows[index] = pair.first to pair.second.copy(done = done) },
                                 onRemove = { rows.removeAt(index) }, allowCompletedRemoval = true) { weight, reps -> rows[index] = pair.first to pair.second.copy(weight = weight, reps = reps) }

@@ -44,6 +44,7 @@ class PlanningUiTest {
         waitFor("Изменить план")
         rule.onNodeWithText("Фулбоди 3× · день A").assertExists()
         rule.onNodeWithContentDescription("$date, тренировка запланирована").performClick()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Изменить план"))
         rule.onNodeWithText("Изменить план").performClick()
         waitFor("Тренировка")
         rule.onNodeWithText("Фулбоди 3× · день A").assertExists()

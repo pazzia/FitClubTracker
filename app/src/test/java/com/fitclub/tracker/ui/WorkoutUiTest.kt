@@ -38,7 +38,7 @@ class WorkoutUiTest {
         rule.onNodeWithTag("finish-workout").assertIsEnabled().performClick()
         waitFor("Завершить и сохранить")
         rule.onNodeWithText("Завершить и сохранить").performClick()
-        rule.waitUntil(15_000) { runBlocking { app.container.fitness.observeWorkouts().first().isNotEmpty() } }
+        rule.waitUntil(15_000) { rule.waitForIdle(); runBlocking { app.container.fitness.observeWorkouts().first().isNotEmpty() } }
         assertEquals(0, runBlocking { app.container.fitness.observeWorkouts().first().first().completedSets })
     }
     @Test fun completedExerciseShowsStatsAndNextExerciseRemainsReachable() {

@@ -86,7 +86,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
     val logs = state.workouts.filter { it.session.epochDay == selectedEpoch }
     val completed = state.workouts.map { it.session.epochDay }.toSet()
     val planned = state.plans.associateBy { it.epochDay }
-    val doneThisMonth = completed.count { YearMonth.from(LocalDate.ofEpochDay(it)) == month }
+    val doneThisMonth = state.workouts.count { YearMonth.from(LocalDate.ofEpochDay(it.session.epochDay)) == month }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {

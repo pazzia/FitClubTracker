@@ -45,7 +45,7 @@ class WorkoutFlowTest {
         val id = runBlocking { app.container.schedule.save(draft()) }
         rule.setContent { FitClubTheme { WorkoutScreen(id, {}, {}) } }
         waitFor("Тяга штанги в наклоне")
-        rule.onNodeWithTag("drag-exercise-1").performTouchInput {
+        rule.onNodeWithTag("drag-exercise-1", useUnmergedTree = true).performTouchInput {
             down(center); advanceEventTime(650); moveBy(androidx.compose.ui.geometry.Offset(0f, -350f)); up()
         }
         rule.waitForIdle()

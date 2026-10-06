@@ -50,7 +50,9 @@ class ExerciseMediaUiTest {
         rule.setContent { FitClubTheme {
             ExercisePhoto("free_exercise_db/Split_Squat_with_Dumbbells/0.jpg", "Вертикальное фото техники", Modifier.width(200.dp))
         } }
+        rule.waitForIdle()
         rule.waitUntil(10_000) {
+            rule.waitForIdle()
             val bounds = rule.onNodeWithContentDescription("Вертикальное фото техники").fetchSemanticsNode().boundsInRoot
             kotlin.math.abs(bounds.height / bounds.width - 1.5f) < .03f
         }
@@ -81,3 +83,4 @@ class ExerciseMediaUiTest {
         rule.onNodeWithText("широчайшие", substring = true).assertDoesNotExist()
     }
 }
+
