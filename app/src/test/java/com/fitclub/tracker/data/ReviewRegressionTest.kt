@@ -105,6 +105,15 @@ class ReviewRegressionTest {
         repo.updateWorkout(log.session.id, log.session.startedAt, log.session.finishedAt!!, emptyList())
         assertEquals(2, repo.observeWorkouts().first().single().durationMin)
     }
+    @Test fun weightSuggestionsDoNotMixAssistanceWarmupAndTimedResults() = runBlocking {
+        repo.finishWorkout(null, null, 1000, listOf(CompletedSet("bench", 0, 20f, 10, warmup = true), CompletedSet("bench", 1, 60f, 8)))
+        repo.finishWorkout(null, null, 2000, listOf(CompletedSet("bench", 0, 80f, 8, assisted = true)))
+        repo.finishWorkout(null, null, 3000, listOf(CompletedSet("bench", 0, 30f, 45, isTimed = true)))
+        val history = repo.observeWorkouts().first()
+        assertEquals(60f, com.fitclub.tracker.domain.previousWorkingSet(history, "bench", false, 0)!!.weightKg, 0f)
+        assertEquals(30f, com.fitclub.tracker.domain.previousWorkingSet(history, "bench", true, 0)!!.weightKg, 0f)
+        assertNull(com.fitclub.tracker.domain.previousWorkingSet(history, "bench", false, 1))
+    }
     @Test fun repetitionDefaultsFollowPlan() {
         assertEquals(3, RepRange.R1_3.defaultCount()); assertEquals(5, RepRange.R3_5.defaultCount())
         assertEquals(12, RepRange.R12_15.defaultCount()); assertEquals(45, RepRange.TIME.defaultCount())

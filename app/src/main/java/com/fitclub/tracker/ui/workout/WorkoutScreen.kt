@@ -45,6 +45,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import com.fitclub.tracker.domain.WeightUnits
 import com.fitclub.tracker.domain.defaultCount
+import com.fitclub.tracker.domain.previousWorkingSet
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
@@ -317,8 +318,7 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
     val exercise = source.catalog[item.exerciseId]
     val rows = vm.logs.getOrPut(index) {
         mutableStateListOf<SetEntry>().apply { repeat(item.sets) { rowIndex ->
-            val previous = history.firstOrNull { log -> log.sets.any { it.exerciseId == item.exerciseId && it.isTimed == (item.reps == RepRange.TIME) && it.done && !it.warmup } }
-                ?.sets?.filter { it.exerciseId == item.exerciseId && it.done && !it.warmup }?.getOrNull(rowIndex)
+            val previous = previousWorkingSet(history, item.exerciseId, item.reps == RepRange.TIME, rowIndex)
             add(SetEntry(previous?.let { number(displayWeight(it.weightKg, unitsKg)) } ?: suggestedWeight(item.exerciseId), item.reps.defaultCount().toString()))
         } }
     }
