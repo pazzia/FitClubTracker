@@ -25,8 +25,8 @@ class ProgramEditorUiTest {
     private fun editor() {
         rule.setContent { FitClubTheme { AppRoot() } }
         rule.onNodeWithText("Программы").performClick()
-        waitFor("+  Создать программу")
-        rule.onNodeWithText("+  Создать программу").performClick()
+        waitFor("+ Создать программу")
+        rule.onNodeWithText("+ Создать программу").performClick()
         waitFor("Название программы")
     }
     @Test fun categoriesComeFirstAndCommentSurvivesProgramSaveAndReopen() {
@@ -47,11 +47,13 @@ class ProgramEditorUiTest {
         rule.onNodeWithContentDescription("Жим штанги лёжа — миниатюра техники").assertExists()
         rule.onNodeWithTag("exercise-comment-bench").performTextInput("Без рывков")
         rule.onAllNodesWithText("Соответствие цели «Масса»").assertCountEquals(0)
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Разбор программы +"))
+        rule.onNodeWithText("Разбор программы +").performClick()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("program-fit-conclusion"))
         rule.onNodeWithText("Итог для цели «Масса»").assertExists()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить программу"))
         rule.onNodeWithText("Сохранить программу").performClick()
-        waitFor("+  Создать программу")
+        waitFor("+ Создать программу")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Личный план"))
         rule.onNodeWithText("Личный план").performClick()
         waitFor("Название программы")
@@ -60,6 +62,8 @@ class ProgramEditorUiTest {
     }
     @Test fun cameraButtonOffersPhotoSourcesAndGalleryRequiresConsent() {
         editor()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Оформление программы +"))
+        rule.onNodeWithText("Оформление программы +").performClick()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasContentDescription("Фото обложки"))
         rule.onNodeWithContentDescription("Фото обложки").performClick()
         rule.onNodeWithText("Сделать фото").assertExists()
@@ -84,3 +88,4 @@ class ProgramEditorUiTest {
         rule.onNodeWithText("Название программы").assertExists()
     }
 }
+

@@ -34,7 +34,7 @@ private val photoCache = object : LruCache<String, Bitmap>(12 * 1024 * 1024) {
 
 @Composable
 fun ExerciseThumbnail(exercise: ExerciseEntity, modifier: Modifier = Modifier) {
-    ExercisePhoto(FreeExerciseCatalog.media[exercise.id]?.images?.firstOrNull(),
+    ExercisePhoto(FreeExerciseCatalog.media[exercise.id]?.images?.let { it.getOrNull(1) ?: it.firstOrNull() },
         "${exercise.name} — миниатюра техники", modifier.clip(RoundedCornerShape(11.dp)), thumbnail = true)
 }
 
@@ -49,11 +49,33 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
             photoCache.get(cacheKey) ?: try {
                 path?.let {
                     val options = BitmapFactory.Options().apply { inSampleSize = if (thumbnail) 2 else 1 }
+                    if (thumbnail) {
+                        val preparedPath = "exercise_thumbnails/" + it.removePrefix("free_exercise_db/")
+                        val prepared = try {
+                            context.assets.open(preparedPath).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
+                        } catch (_: IOException) { null }
+                        if (prepared != null) {
+                            val result = trimPhotoPadding(prepared)
+                            if (result !== prepared) prepared.recycle()
+                            photoCache.put(cacheKey, result)
+                            return@let result
+                        }
+                    }
                     context.assets.open(it).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
                         ?.let { decoded ->
-                            val trimmed = trimPhotoPadding(decoded)
-                            if (thumbnail) value = trimmed
-                            val result = if (thumbnail) emphasizeExerciseThumbnail(trimmed) else trimmed
+                            if (!thumbnail) {
+                                photoCache.put(cacheKey, decoded)
+                                return@let decoded
+                            }
+                            val maskPath = "exercise_masks/" + it.removePrefix("free_exercise_db/").removeSuffix(".jpg") + ".png"
+                            val mask = context.assets.open(maskPath).use { stream -> BitmapFactory.decodeStream(stream) }
+                                ?: throw IOException("Missing foreground matte: $maskPath")
+                            // Process before trimming so matte coordinates remain aligned at both sample sizes.
+                            val processed = renderExercisePhoto(decoded, mask)
+                            mask.recycle()
+                            val result = trimPhotoPadding(processed, decoded)
+                            decoded.recycle()
+                            if (result !== processed) processed.recycle()
                             photoCache.put(cacheKey, result)
                             result
                         }
@@ -65,11 +87,7 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
     Box(layout.background(Fc.Surface2).semantics { contentDescription = description },
         contentAlignment = Alignment.Center) {
         bitmap?.let {
-            val portraitThumbnail = thumbnail && it.height > it.width
-            if (portraitThumbnail) Image(it.asImageBitmap(), null, Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop, alpha = .14f)
-            Image(it.asImageBitmap(), null, Modifier.fillMaxSize(),
-                contentScale = if (thumbnail && !portraitThumbnail) ContentScale.Crop else ContentScale.Fit)
+            Image(it.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         } ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Fc.Muted)
     }
 }

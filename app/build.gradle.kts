@@ -73,8 +73,8 @@ android {
         applicationId = "com.fitclub.tracker"
         minSdk = 28
         targetSdk = 34
-        versionCode = 11
-        versionName = "0.6.4"
+        versionCode = 15
+        versionName = "0.6.8"
     }
 
     buildTypes {
@@ -103,7 +103,6 @@ android {
 }
 
 dependencies {
-    implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta6")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
@@ -131,3 +130,4 @@ dependencies {
 tasks.withType<Test>().configureEach {
     systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
 }
+

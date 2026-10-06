@@ -20,7 +20,7 @@ import com.fitclub.tracker.ui.components.FcCard
 import com.fitclub.tracker.ui.theme.Fc
 
 @Composable
-internal fun ExerciseMediaCard(exerciseId: String, name: String, media: ExerciseMedia) {
+internal fun ExerciseMediaCard(exerciseId: String, name: String, media: ExerciseMedia, showVideo: Boolean = true) {
     val context = LocalContext.current
     key(exerciseId) {
         val pager = rememberPagerState(pageCount = { media.images.size })
@@ -42,7 +42,7 @@ internal fun ExerciseMediaCard(exerciseId: String, name: String, media: Exercise
                         label = { Text("Фото ${index + 1}") })
                 }
             }
-            media.videoUrl?.let { url ->
+            media.videoUrl?.takeIf { showVideo }?.let { url ->
                 OutlinedButton(onClick = {
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                     catch (_: ActivityNotFoundException) {

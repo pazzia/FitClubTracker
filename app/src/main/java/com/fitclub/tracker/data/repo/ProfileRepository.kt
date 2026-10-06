@@ -12,8 +12,8 @@ data class ProfileSettings(
     val level: Int = 2,
     val unitsKg: Boolean = true,
     val reminders: Boolean = true,
-    val theme: String = "Volt Night",
-    val accent: Long = 0xFFD4FF3A
+    val theme: String = "Темная",
+    val accent: Long = 0xFF69B7FF
 )
 
 class ProfileRepository(context: Context) {
@@ -26,11 +26,13 @@ class ProfileRepository(context: Context) {
         sex = runCatching { Sex.valueOf(prefs.getString("sex", Sex.MALE.name)!!) }.getOrDefault(Sex.MALE),
         level = prefs.getInt("level", 2), unitsKg = prefs.getBoolean("kg", true),
         reminders = prefs.getBoolean("reminders", true),
-        theme = prefs.getString("theme", "Volt Night") ?: "Volt Night",
-        accent = prefs.getLong("accent", 0xFFD4FF3A)
+        theme = normalizedTheme(prefs.getString("theme", null)),
+        accent = themeAccent(normalizedTheme(prefs.getString("theme", null)))
     )
 
-    fun update(value: ProfileSettings) {
+    fun update(requested: ProfileSettings) {
+        val theme = normalizedTheme(requested.theme)
+        val value = requested.copy(theme = theme, accent = themeAccent(theme))
         _settings.value = value
         prefs.edit().putString("name", value.name).putString("sex", value.sex.name)
             .putInt("level", value.level).putBoolean("kg", value.unitsKg)
@@ -38,3 +40,7 @@ class ProfileRepository(context: Context) {
             .putLong("accent", value.accent).apply()
     }
 }
+
+
+internal fun normalizedTheme(name: String?): String = if (name == "White Day" || name == "Светлая") "Светлая" else "Темная"
+internal fun themeAccent(name: String): Long = if (name == "Светлая") 0xFF236B9D else 0xFF69B7FF

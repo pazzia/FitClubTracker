@@ -1,0 +1,2249 @@
+{
+  "source_revision": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+  "dino_revision": "a2bb814dd30d776dcf7e30523b00659f4f141c71",
+  "sam_revision": "f706ad9c4eb7f219c00d9050e46328518ffb65d2",
+  "sam_sha256": "6dbb90523a35330fedd7f1d3dfc66f995213d81b29a5ca8108dbcdd4e37d6c2f",
+  "photos": [
+    {
+      "path": "Ab_Crunch_Machine/0.jpg",
+      "source_sha256": "5072e495268201939f171a0ea2a038f7bae5f3a75f9972397a99f9c8696c6b84",
+      "mask_sha256": "5a3b6f283e7fcef3c5760fc4f35171984b38c5acd24c377bf87a9ebc83a44318"
+    },
+    {
+      "path": "Ab_Crunch_Machine/1.jpg",
+      "source_sha256": "fb435de8360740438f7097e29afe5329e2f5b2d3a8b73d14cea259583013fd58",
+      "mask_sha256": "f9700335372ce029c3dc7b0db81dffe8ed6937a9f9a1f183960097cc5ba1c714"
+    },
+    {
+      "path": "Ab_Roller/0.jpg",
+      "source_sha256": "ee135be474621be286a5d376b2f16cf5feda7ae50e919225b809eee1c5d8e597",
+      "mask_sha256": "611aa8faee53f3dd66e2bc912fcfc6ab7340beaf6e3e1ebaaf862bd78917fdec"
+    },
+    {
+      "path": "Ab_Roller/1.jpg",
+      "source_sha256": "f310ffb7672316ef29c1932ef8d530fb6e7615d6a04c2274a29fd276823c0a07",
+      "mask_sha256": "7c3e6884c0c44aa02ab3285ad83717852882659f22fca6445f38f75af217c861"
+    },
+    {
+      "path": "Air_Bike/0.jpg",
+      "source_sha256": "cb5b85122109ca335d96a0041864dab12afc260a6851591f92203409c13dd33f",
+      "mask_sha256": "c94a9a6a46b7546e5a9f298465b39956b62e9f04830c4df7d81c76a0586b8360"
+    },
+    {
+      "path": "Air_Bike/1.jpg",
+      "source_sha256": "8a6f4a03370c60591236c404ca587cffcc99dc9043197efcb6ad13afe1ba75b5",
+      "mask_sha256": "bd1d4ff27f2231ba279bb1c6c62ad53dc4877aad3235b081b690767a1088462f"
+    },
+    {
+      "path": "Alternate_Hammer_Curl/0.jpg",
+      "source_sha256": "ba832f1ce6e855060ccbcec1bde3545298c322fbb82ea27be5fbd49892009754",
+      "mask_sha256": "74bce285e56a20cfb1310d6cb805160321b0e2b09449064a91a4b8d042ecadfd"
+    },
+    {
+      "path": "Alternate_Hammer_Curl/1.jpg",
+      "source_sha256": "9aee7afaf1ef6014673988ffbdfc12209fbb20b18925de0a4df87df31b719879",
+      "mask_sha256": "f3b08d449c50330a4407eee9f283675be146696d4c0f9d8acf3f0dd8757eda88"
+    },
+    {
+      "path": "Alternate_Heel_Touchers/0.jpg",
+      "source_sha256": "fc92981d33d1d9848d8fab691ad2fe317a75c8ef07f9f4245cdbb199d8058f87",
+      "mask_sha256": "31522966678b6513c67b9f5b4d0a45bd25d48ee64bd27eaf331f815fa9219d2c"
+    },
+    {
+      "path": "Alternate_Heel_Touchers/1.jpg",
+      "source_sha256": "a31b1c713c82e6fee05538cd050a731ffe21674c08e60a98753f1975470a71a3",
+      "mask_sha256": "222764b45f24c0b0716c3e45389b5fb7fdc62dc36912b38d6b6777e3ad076e34"
+    },
+    {
+      "path": "Alternate_Incline_Dumbbell_Curl/0.jpg",
+      "source_sha256": "1a0e534d6408c13cbc4702c97d83dfa1fb365e14c220063156d65871aeaeeaf0",
+      "mask_sha256": "9b7959c45223cb1c210279afa5d6d63013f8c7a5d9fcfdd6110356edd186f8df"
+    },
+    {
+      "path": "Alternate_Incline_Dumbbell_Curl/1.jpg",
+      "source_sha256": "a57042c3ed7eaaaa006a7e671f6cfa7474787a5b055b3cdb3b863b8e12d5fa2f",
+      "mask_sha256": "c4297dd792999c5c2218eef2423612a945e2b5fba8d4351c47d708b16ec2510c"
+    },
+    {
+      "path": "Arnold_Dumbbell_Press/0.jpg",
+      "source_sha256": "44d9a18abcc9f21038e82b574e9ef600b302c80806e284ea16642410670ad568",
+      "mask_sha256": "a16a94c404dcf6bc8bee3cca0e7eed5926ae64468c26ecb7c45c1bfafbf9537d"
+    },
+    {
+      "path": "Arnold_Dumbbell_Press/1.jpg",
+      "source_sha256": "9a59d4eb25dbaf14ff5c5a193a890ff9c976c386cc5605dcabd5b9243da35ff4",
+      "mask_sha256": "fe543184f8d21b0f7cf6de57d4af3dd750cd22c247819fb500c7244ece6afe33"
+    },
+    {
+      "path": "Balance_Board/0.jpg",
+      "source_sha256": "99de09be076d8fde4e6601e2aab13c81b300e359ed4fa5c36e95db8fda5aad68",
+      "mask_sha256": "325750015f2b8b89dac91a2e300eca19760dd8c29333d8ac2d34478998791216"
+    },
+    {
+      "path": "Balance_Board/1.jpg",
+      "source_sha256": "5a9d63aec21123d1bb7cf64ce9eedf9c0bd886e975ab00c71cbe328e104dada6",
+      "mask_sha256": "48bce475cf1ee2199a9984fac87b27fdfd61c02af4392f9bfd576172d9c22caa"
+    },
+    {
+      "path": "Ball_Leg_Curl/0.jpg",
+      "source_sha256": "bce5fadf2f8ec76d36af22244ad81be092a5bd61b97d7a8ff3b4f0f3a9caef9c",
+      "mask_sha256": "684f2a262e0d266f7f65c2a54ff52407addd12352fd3cc95f9a630664704c004"
+    },
+    {
+      "path": "Ball_Leg_Curl/1.jpg",
+      "source_sha256": "95fba1c19a8851853288b3ff2f7b89a55eeafb715cd57c16df5704ba56f8ce6b",
+      "mask_sha256": "ddae7083de6498301a6222533ea907ff3fecf65b5fc32c96492a1f7985edf8f2"
+    },
+    {
+      "path": "Band_Assisted_Pull-Up/0.jpg",
+      "source_sha256": "7af060c6c064e6e8a074add38c950dc59f93801ecd54b7d652172bd9800b034d",
+      "mask_sha256": "ec6de4644aea7c8b15a6a6f3f7aadbb43eaae86e90b2cdbbaa8daf17802d3199"
+    },
+    {
+      "path": "Band_Assisted_Pull-Up/1.jpg",
+      "source_sha256": "edc82e3a48ec624be2b920262d99399d055b96333850579b22fefa7375768a30",
+      "mask_sha256": "6f239fee79f4d8df6603a8b6a5db611293a901ffdb9cbd724db35b1b4af3b8e0"
+    },
+    {
+      "path": "Band_Good_Morning/0.jpg",
+      "source_sha256": "e84e33b0e6f57adf01a57e550e6b97188dccaf1ee2d64889fb0d8266c695ce3b",
+      "mask_sha256": "0d6eac46f5d55c31d4a156ddc4ab19584ec5d736ca3c06e83f0bab648a6fed00"
+    },
+    {
+      "path": "Band_Good_Morning/1.jpg",
+      "source_sha256": "014c059d4aa6e45b6f57dfa0a3cbf0639182d9139eea7d33b0011712ebe16bab",
+      "mask_sha256": "c0d506205777cf064f2fa006deafefc6905f1fdb1a492e17795f28d08540ebb8"
+    },
+    {
+      "path": "Band_Pull_Apart/0.jpg",
+      "source_sha256": "6cacd32e6ea091ad8627ec8416dd129d16219ca23f39513b89eca3b720d9331f",
+      "mask_sha256": "fdc6882cc3d692ead48e60e28ba09218c120a42f3cf5d71637d1e7b727a1094c"
+    },
+    {
+      "path": "Band_Pull_Apart/1.jpg",
+      "source_sha256": "7c15e495d007835da36e17a671a048a31a56d0cfd9da2beab85a234e1493133b",
+      "mask_sha256": "4c4221be64c81140ac4045de5d86665203bf288625a4b34f4965ebb9355b730e"
+    },
+    {
+      "path": "Band_Skull_Crusher/0.jpg",
+      "source_sha256": "96094529fe698463c40603fce3e5f0048b6c8190b243db8996500b1fdc17501e",
+      "mask_sha256": "d6f77067425da9833afe0193529615a84c543f8f75194198efe55f170c18d540"
+    },
+    {
+      "path": "Band_Skull_Crusher/1.jpg",
+      "source_sha256": "0981454f029833fddf5cd89f7a8e4ed62cff9c31d3111fa81b0b4008ec40e665",
+      "mask_sha256": "414028c4bf36f83f93d03b5a16d71e57abc9c9d7bfbd85475ac1577a899b6172"
+    },
+    {
+      "path": "Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+      "source_sha256": "44ba81b3ea124f625c555ae812b37263f82ae460749bbc9ebbeb55a6309f6663",
+      "mask_sha256": "5a27e341920b98c44acdce6b2a80e6780542496abf07722a19866a173dd41821"
+    },
+    {
+      "path": "Barbell_Bench_Press_-_Medium_Grip/1.jpg",
+      "source_sha256": "5056475ae5def865dbe52882d30d2730142de2b03231bda304f82fd0b088f608",
+      "mask_sha256": "e67bdfc0a42700911f9034d1646fddf94b1711525cfa6f9f3fb17ea044410676"
+    },
+    {
+      "path": "Barbell_Curl/0.jpg",
+      "source_sha256": "eb409ec1cced4d85c91c41920e66d8b2f0e4736dee43c01eab953fdcbeace673",
+      "mask_sha256": "26c254bcb0726b8a6cd290c29b68cacb279bd6b15f5cf21bed21d21233c59f34"
+    },
+    {
+      "path": "Barbell_Curl/1.jpg",
+      "source_sha256": "27474187c68680520d3c6dbd3a452bb11f1e77b5474d9143517f43d02f5d8c0e",
+      "mask_sha256": "f67979c993fe301a1f33784f48327944603b7d50ab73871d27778a2cb67e1270"
+    },
+    {
+      "path": "Barbell_Deadlift/0.jpg",
+      "source_sha256": "f032a7e4566eb3e73258580add64bf2756cb465bfcee22fdfffbed0f43f1eae6",
+      "mask_sha256": "408dbbdcd9eec119753e68fe4b1dbd7c29d3b9cd2d66d0d0b0b9a2b3375d45c7"
+    },
+    {
+      "path": "Barbell_Deadlift/1.jpg",
+      "source_sha256": "cf206d0738830af831872cfb054c7cf91a43b435f4cc20f4fdb00a2664654e90",
+      "mask_sha256": "57c6da12518f1fc585c4a0ee5415bdbf65904c2c6fe323719960325497ce7269"
+    },
+    {
+      "path": "Barbell_Glute_Bridge/0.jpg",
+      "source_sha256": "d1df1bd592523e68881b59a9f7530227401ecf641be8510ca2560b0c30d96b85",
+      "mask_sha256": "cfa4139f8e7e3f313b1332484cf08381ebd89fc8ea0a5117128c78a333e92fd2"
+    },
+    {
+      "path": "Barbell_Glute_Bridge/1.jpg",
+      "source_sha256": "c6028b123f187e350d30bbfaab48f0a41f2c928557424504ca49d31eec6fd8ee",
+      "mask_sha256": "45f5d5c63b67f13a24e3526cbdd8a883027d60bd49e4a0eeeabea528f1434893"
+    },
+    {
+      "path": "Barbell_Hack_Squat/0.jpg",
+      "source_sha256": "5f88db8ea171cc094f4d155f3ce3eec69036aa2067ea4fe4101cea34cad7f5d5",
+      "mask_sha256": "c102a99ec300f57bdb8dbf9f9d1fc3d7767355d84323b58b3602fa683edccd8e"
+    },
+    {
+      "path": "Barbell_Hack_Squat/1.jpg",
+      "source_sha256": "6160d5fae8d00a17b8093a920e519b1094779958bfd8c719427f4556c5f9f53d",
+      "mask_sha256": "59707b156b769986f408fac524d4471bf0daa3fa9e11a6043290f92a67bf9975"
+    },
+    {
+      "path": "Barbell_Hip_Thrust/0.jpg",
+      "source_sha256": "b2c82d4647df0621e2b0568f383d14e9577f2baa458668233c86d2f738efd4c1",
+      "mask_sha256": "25880fae447713773499ed55b14cc61b23ab4230ef199d124e1767ce6f17d393"
+    },
+    {
+      "path": "Barbell_Hip_Thrust/1.jpg",
+      "source_sha256": "de1a6390ff4b2720750ed3380c3c9b0c4c1fb5ae811810291b62d8a1fd726ad6",
+      "mask_sha256": "ecaaaf1021aad74287f8417bb3511886eaf13f99351397bf88b9157e8c0b1a9d"
+    },
+    {
+      "path": "Barbell_Incline_Bench_Press_-_Medium_Grip/0.jpg",
+      "source_sha256": "4a306bb94d93afc0356252001b24e9f7defc13ab85e3c55fc3dbcb678247ffb9",
+      "mask_sha256": "db4e901654e164a07cc87a84dc84c13215216baaf610a997c347ace8fa93fd52"
+    },
+    {
+      "path": "Barbell_Incline_Bench_Press_-_Medium_Grip/1.jpg",
+      "source_sha256": "f803aa1a085cbeea3ab1d11865ab239c243f6f2ccb3e90aad91cce50f349909d",
+      "mask_sha256": "335973bc99169a68b51ad4d3b094cb0b3e1959f22cc6890955c0761c2fd365d9"
+    },
+    {
+      "path": "Barbell_Lunge/0.jpg",
+      "source_sha256": "344bfb904d401611dc38c5021a95ee1d149da086e79e2eb4377f9a93c4d52c37",
+      "mask_sha256": "22bb0710e6aaf2ac60f3310daf12555059bac56454590cd6112b43b342f46624"
+    },
+    {
+      "path": "Barbell_Lunge/1.jpg",
+      "source_sha256": "220fbd64f2da7317603c5d8b40ba2d294c04b77348cfb576af650af31ec41e27",
+      "mask_sha256": "30c4dc8f7d2b44a6989081aed4f487092f4c55a6ac34c7865703d80d53734ea3"
+    },
+    {
+      "path": "Barbell_Seated_Calf_Raise/0.jpg",
+      "source_sha256": "d674d57f3a6bef02fb7916b5c635ff87b95d2e41d971c2db24d83aa3fc029a7d",
+      "mask_sha256": "e607cdad49cf2408249c599ff78abc9510fdcab24b53ad7d24fef4e49ea0548a"
+    },
+    {
+      "path": "Barbell_Seated_Calf_Raise/1.jpg",
+      "source_sha256": "d0a2841d94553d27e044315358a2f0c68c24e647355f49e05c228c6702f05232",
+      "mask_sha256": "918f93e80d93c15a43e3d1a75ccf13adba1982a8284c2f351558fc8bb3232e11"
+    },
+    {
+      "path": "Barbell_Shrug/0.jpg",
+      "source_sha256": "3ab3561fcb372ee7c92be8974c6fc2f9488a15bcfe2b40f261ff4531a9fe4e83",
+      "mask_sha256": "e277c976f7e9de30f7da21945afe44bf6f62e2feadeb9b0acaa82fbff2157a7c"
+    },
+    {
+      "path": "Barbell_Shrug/1.jpg",
+      "source_sha256": "0ada57b816f6994399fce6a6b80d194bcafd0976b4006b255383432b99fe7ee7",
+      "mask_sha256": "da3835cae846ee928c820b301919ec1a494cee3ad15ab391e65b56a476e73ba3"
+    },
+    {
+      "path": "Barbell_Squat/0.jpg",
+      "source_sha256": "469a3c5a6eb35b88c45cda9fa7f9086032976fa3d45f5d844a0cc09a95574db5",
+      "mask_sha256": "288f7b43eda3b3deadab9d260f1b6113322bb2bb4460e0735e8a2e10529a9cfc"
+    },
+    {
+      "path": "Barbell_Squat/1.jpg",
+      "source_sha256": "8663a34f2d0a0a33d3d39b505cf3cdd38e282c1c9020d39d5587976e8d8a3020",
+      "mask_sha256": "2e24eb260b8e64ba308b22e12b5d2327e7979cf4072d44f7f116c4bdb359177f"
+    },
+    {
+      "path": "Barbell_Step_Ups/0.jpg",
+      "source_sha256": "aea3ae14b4b6d5c24d12db9750d1d3be11f210c0b53c29ca339044c4974d3f36",
+      "mask_sha256": "1b85117f6bd8f44cf579ea850a4163672b2e636c92659c9dc1507426ef32a873"
+    },
+    {
+      "path": "Barbell_Step_Ups/1.jpg",
+      "source_sha256": "630057ccd90a8e7b8fd59b29d52fcf1338f361e520da8eb97aae915c96374ffc",
+      "mask_sha256": "945afa4665416ca1ed25ce7414175328c0b03f02d6ebc7195ab522c811c8ecb2"
+    },
+    {
+      "path": "Barbell_Walking_Lunge/0.jpg",
+      "source_sha256": "4320e3392c98ef3e1c536294a5bf2651c20c7838d1dc2b4b15c5e9ad181a5c94",
+      "mask_sha256": "62204f389aabf6ef2aaefe85c3e52f5cf93eb098c2bfe53c2ec651bf8f0efc4c"
+    },
+    {
+      "path": "Barbell_Walking_Lunge/1.jpg",
+      "source_sha256": "2bc0b2eddc6d9855c46fa4f0a8453e3d9a25f53d9ab9ba6ad50e53c753d320bc",
+      "mask_sha256": "91c4ae6d90053b12ff3e0523f7e42290306077a420ceebe7cbdd6d70fe03b009"
+    },
+    {
+      "path": "Bench_Dips/0.jpg",
+      "source_sha256": "82b17762ad761df959b69cb6d46239ee82f24d666de4719dfd2bc9ba0ca1d528",
+      "mask_sha256": "05859ddf01c4280fae69457c33c0d61f22d19b8e6f0aedcc334d8f1d3e2e377b"
+    },
+    {
+      "path": "Bench_Dips/1.jpg",
+      "source_sha256": "d34b8ba2e2c45eca8ab77b514bc156b436b220e8c3fc414ae0ea48ccb1cf6fa0",
+      "mask_sha256": "50d17d045e0bdbadb7be84b0759ca54184b648086f0eda89237def85b9de9b96"
+    },
+    {
+      "path": "Bent_Over_Barbell_Row/0.jpg",
+      "source_sha256": "09abbeb2fca7006d0e072bdc802158b34acf7923bd3069bb835951e49a95de41",
+      "mask_sha256": "34659cbf9d70bd4f4dcece04637e1ae07a343924f059f5932457ac3bf839666c"
+    },
+    {
+      "path": "Bent_Over_Barbell_Row/1.jpg",
+      "source_sha256": "3c323601573df29cc9c6343765e0d21e7cd99a2dc830105099ac95ecba2cea72",
+      "mask_sha256": "41f152a1a9b7aa4efdc99866444006e73abc95c02a845ca3a3d028714c124ee1"
+    },
+    {
+      "path": "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench/0.jpg",
+      "source_sha256": "96474831b0193198bc920d9035596805495485e79ae9b6e68e476bedd5a24ca4",
+      "mask_sha256": "ffc8f2315aad7b4ed7490da955c816c2bfc9734f4734d85ebc59b7fda5055b59"
+    },
+    {
+      "path": "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench/1.jpg",
+      "source_sha256": "8bbea1e8187d0296fe3b46523e7cb8773dc2421eb19cecb609b6d03e8687b29f",
+      "mask_sha256": "d5191f7082794e53891e7ccda46dd47216bb5d845c36a2bddac5fa2bc93368c3"
+    },
+    {
+      "path": "Bodyweight_Squat/0.jpg",
+      "source_sha256": "85715b9b75afe568ef7cb1863005be532a2457bf7e340802da0cd5cc06914b62",
+      "mask_sha256": "eb7ddd4e13b1500b0ea451f13b0f00f56f23e93152e64a2458a0359384c01fc2"
+    },
+    {
+      "path": "Bodyweight_Squat/1.jpg",
+      "source_sha256": "3fa6886632674f02308cdee53ce32649fd648774701fbd20ee280d63be40e5a4",
+      "mask_sha256": "9ab3a72b2a1a3c57848a2b4f56bd936c552943962a68610d83185b2def2afa55"
+    },
+    {
+      "path": "Bodyweight_Walking_Lunge/0.jpg",
+      "source_sha256": "42421cd13040cc61a810d591af1b9fd85648063098057a8275b6451c73f74c6d",
+      "mask_sha256": "6ff3e0ebb85b737e7c737787cf2d4121324e4ea2b8c5fcf1929c8768dcb010e0"
+    },
+    {
+      "path": "Bodyweight_Walking_Lunge/1.jpg",
+      "source_sha256": "0d1273e80ffb41c2dade4721b8b1721e3e269b28e7824a526543670021499a74",
+      "mask_sha256": "ac10c87e081ee1b22220154f3e192fc17a73bdc860372a1c9f7dc8005e9d8ce4"
+    },
+    {
+      "path": "Box_Squat/0.jpg",
+      "source_sha256": "89263ed6b18d4b0ae7081ad400b9b849ac860ef5318e8a1e248cd2f9e4980b26",
+      "mask_sha256": "125e6d7f5ae8a5ca4b47472dd118b0e9e94900de2930f4f675dc1a329c9b0ad7"
+    },
+    {
+      "path": "Box_Squat/1.jpg",
+      "source_sha256": "70421109dfa11937eb49acae05cc48e00ea88f10c1e960eb77f50717d5e0bfc4",
+      "mask_sha256": "8c7a07d525223cf9d14da5662e2a6d4b29081b15f0cae9d398a315a4f41b94ca"
+    },
+    {
+      "path": "Butt_Lift_Bridge/0.jpg",
+      "source_sha256": "f74f6813fc43cd5f60e6779ec182049a2ddb3ed9dc5777389dd4ab1880392d5c",
+      "mask_sha256": "6cffc4d157f647c51b6ccfb0ba8c2758cd0f2c4f1da665e8117af177f088c910"
+    },
+    {
+      "path": "Butt_Lift_Bridge/1.jpg",
+      "source_sha256": "3eacd0851b56e3e1ea29a0a73c596b0d10e4bc746dd64afaed50d7255eae0819",
+      "mask_sha256": "0a184143dc0b0d49a84e4f8fefd8fb0b44b5ab582ec8c37bb2e5df69e0c5a429"
+    },
+    {
+      "path": "Butterfly/0.jpg",
+      "source_sha256": "8819cc3e699ff1d0b5d18c21a411a0e380fc0f316e83d9dcaa1207617f78ea23",
+      "mask_sha256": "e371e897ef0ef14c6a8acc66181dc3156da1b5a998e48fa44491d0adaff10e74"
+    },
+    {
+      "path": "Butterfly/1.jpg",
+      "source_sha256": "7f471857324312b07e14f3fe73dd783d2ecd3a3ff15f9f52e9813390cda314db",
+      "mask_sha256": "570a7dcec5d324f99b53fc9c33caa09cae641e8c6f8e52a555d8223aa699db68"
+    },
+    {
+      "path": "Cable_Crossover/0.jpg",
+      "source_sha256": "a0d37cf03da0a31acb010620ed4203498fbe83b82e4af298cd28b7fe4435144b",
+      "mask_sha256": "2672fb689107af899b870e93c9b020bde504c2768b5b8006b9d60076340f8904"
+    },
+    {
+      "path": "Cable_Crossover/1.jpg",
+      "source_sha256": "ebaf5aa26a4c7502364fcd5c64d8af8d9ba368f190914eee14ec445f9adef2ca",
+      "mask_sha256": "dbc4d212f2dc561458844b04f47ae1709ac9eac45ccccaffe96832a6fb7f1b45"
+    },
+    {
+      "path": "Cable_Crunch/0.jpg",
+      "source_sha256": "196cc4cb510ecafec24c1648c851aa160d4652917d7c0137b4cf7fb1eeb9c668",
+      "mask_sha256": "0764a9fc89b13c59888d88da8b685990e100fc9f86910bd5673a276a976fe5e2"
+    },
+    {
+      "path": "Cable_Crunch/1.jpg",
+      "source_sha256": "e65fc1effc632eb78d8cda09ef95bf89c4bb235b15757e9a33306ca61a78f606",
+      "mask_sha256": "e8c701cd58cda08cc92292a82b1563a9168b804029674e125cbd79abc9665b93"
+    },
+    {
+      "path": "Cable_Hammer_Curls_-_Rope_Attachment/0.jpg",
+      "source_sha256": "109ca8df56a461172bd57dcfd1816bad744efdc624bfc567d2de83de9c9aff29",
+      "mask_sha256": "029b35059d9d5030465d6c595579e69e5c192d5c5bb0666c5f42c0451c622111"
+    },
+    {
+      "path": "Cable_Hammer_Curls_-_Rope_Attachment/1.jpg",
+      "source_sha256": "314dceefe8a5a37d8824b069a1340a215ee5248fee3c9db11a3bb3a93dfaaa0c",
+      "mask_sha256": "ad9710803657020997977fb2c8dcc352a17000e95ad5f74d22317adbdff02ee8"
+    },
+    {
+      "path": "Cable_Incline_Triceps_Extension/0.jpg",
+      "source_sha256": "9516042fca9f3c561300749d618de6978968e0f45ba6254a431346b4cb9b8f06",
+      "mask_sha256": "1d791658dc43a88fd93bb48a8387da09c7dcd7a361989aa68d416b499ce3e2f4"
+    },
+    {
+      "path": "Cable_Incline_Triceps_Extension/1.jpg",
+      "source_sha256": "b900dcc53ac5c166f5838df874e771fc4d4208d3e949a1d7cdb51b63b04f24e7",
+      "mask_sha256": "17b5dbb5b94f436721040b816c849d09df5bfbe411f9b0d90f7cc6120b855ae7"
+    },
+    {
+      "path": "Cable_Lying_Triceps_Extension/0.jpg",
+      "source_sha256": "bf82e48128aa4897bb94a763e92b697e7e01ca8c8f5044e27fe36930d01ceaba",
+      "mask_sha256": "15326a33b6fba7d47b17f17d2931be77069f0d55bc363160d427500170152aa0"
+    },
+    {
+      "path": "Cable_Lying_Triceps_Extension/1.jpg",
+      "source_sha256": "f59fe17e1e872d16afa634f7434bd6039287f2d220f0ef758f993faede245631",
+      "mask_sha256": "e1b4e401ce67513047e5b5efe966cd745fae536d58d3d2db8db5df34a88179ed"
+    },
+    {
+      "path": "Cable_One_Arm_Tricep_Extension/0.jpg",
+      "source_sha256": "c8bb4d856df4156ec9f0d6c9b76dd085cb511162c3702b6ef53e285dfda4fc6d",
+      "mask_sha256": "59143215bc0d21b9614b914d449a16653659aba9d7c826335f034f159e5befbc"
+    },
+    {
+      "path": "Cable_One_Arm_Tricep_Extension/1.jpg",
+      "source_sha256": "7bb90f0ffaf45d5264f8d25925fd12214f2723dca57b56bf350e91cbe67927c6",
+      "mask_sha256": "3552e7cd79a480dd9ce6c2f5e321a9d29165ec5738834a40f048c0a16f109191"
+    },
+    {
+      "path": "Cable_Preacher_Curl/0.jpg",
+      "source_sha256": "5f5e7df6bc746d797dd1cfaa80c72994c7612edc526e28b693e488c637fd5c57",
+      "mask_sha256": "d2e5b418b41aa0552d1d86f0ed7a5b071407dee36fe48625af6889b7a4135751"
+    },
+    {
+      "path": "Cable_Preacher_Curl/1.jpg",
+      "source_sha256": "2802249da09be59139e1907f74d10a8e02b2af263354af395e3d6cccd409ad15",
+      "mask_sha256": "81db25263e0927b58b318c1da087aa89ed3ab2fcbe96e4400b15cd501757db72"
+    },
+    {
+      "path": "Cable_Rear_Delt_Fly/0.jpg",
+      "source_sha256": "2769f255555468289f0ca34b942e44f02b035d2cf9e93ce6e58c0b9bc5aeb800",
+      "mask_sha256": "c0be02ee666a90365aab2e5bf9453547d880dcb1bbba81d9dce66c32a971c856"
+    },
+    {
+      "path": "Cable_Rear_Delt_Fly/1.jpg",
+      "source_sha256": "f7c935718b4335ae422847b8cd6e11d6d7ff748cac8978c4b26faf4a261e8f84",
+      "mask_sha256": "c517c532d14c42e5383ab6309f8e65fb550b286dfb4f7dc700b28a1955fabde1"
+    },
+    {
+      "path": "Cable_Rope_Overhead_Triceps_Extension/0.jpg",
+      "source_sha256": "206683ce757bedf841689cb8382e0576c81934ca736d3866a034155b518f3e9b",
+      "mask_sha256": "42f85ea51e16d5c7fba3058c7b850ca0c9d8d497432a918fd9e512bd8d419779"
+    },
+    {
+      "path": "Cable_Rope_Overhead_Triceps_Extension/1.jpg",
+      "source_sha256": "7f2b439eff6d30be27e06e87b14733ee345bf1ec33ebf8c316e1552f341a06a1",
+      "mask_sha256": "4e55d1958a0b07d70b78b8e64134c891941d151b3c1ba9c52624c0adf5dd4b40"
+    },
+    {
+      "path": "Cable_Seated_Lateral_Raise/0.jpg",
+      "source_sha256": "11357e31f4536329cc0c38e77b4360426ce730a659bbf2c81607865701d51be2",
+      "mask_sha256": "4220e53f5d2e0cc300c7696c6494132c99e5e9da307b9baaaabffaf2ad8158a4"
+    },
+    {
+      "path": "Cable_Seated_Lateral_Raise/1.jpg",
+      "source_sha256": "d162b1f2d78c2613e6f7a129a27e48e0c336132215e8d6776cada54f628dcb8e",
+      "mask_sha256": "20c1e2750500af7ba16df67a1991c8404e6b55034dc53daecec39d46d47cdb6b"
+    },
+    {
+      "path": "Cable_Wrist_Curl/0.jpg",
+      "source_sha256": "af2214f3c033b6365210d238227efbb0416d2715f7b26c91836b6e748e721f42",
+      "mask_sha256": "4ec606371283ad8d8108a965c5d84f0e8a30b6b6e6cb8488fbeff24f04cb49eb"
+    },
+    {
+      "path": "Cable_Wrist_Curl/1.jpg",
+      "source_sha256": "7e12e3ffc307bfd880dd6b14bbc37a80c8f5be9ee4b1c3914f4a9daca3280ff7",
+      "mask_sha256": "e7401da0fa2a386a0768651c126ff8587c653f71a6bea657ae82c3520a7110c5"
+    },
+    {
+      "path": "Calf_Press/0.jpg",
+      "source_sha256": "e44be5c8a0eaa702b36216a606683deba3b00522d27fbaded512e28f03264191",
+      "mask_sha256": "7f7bd69133cadd1fcd5dab0ead4d14619083d700c791e310ac34a00f1d16e750"
+    },
+    {
+      "path": "Calf_Press/1.jpg",
+      "source_sha256": "4e29394d20ace4cbeb06c2a4306ca1cf000eb2c4ff420d48a0d586d11b44f4d2",
+      "mask_sha256": "06d4e929662221cdce3646365bd0987120b68dccb9defbb8176e2abc16574c55"
+    },
+    {
+      "path": "Calf_Press_On_The_Leg_Press_Machine/0.jpg",
+      "source_sha256": "c4cdfd6876c2346b8185c0781a91efa7e22bf9427358244bf894de0b32f47249",
+      "mask_sha256": "cd88122c52e96c38804e499e7099b6d6196ab6078c0ea647485538188cc28703"
+    },
+    {
+      "path": "Calf_Press_On_The_Leg_Press_Machine/1.jpg",
+      "source_sha256": "31f5eae2d3af103967a15fa5aa619fdfe52a892f5efd66c805e0493e1643794a",
+      "mask_sha256": "62992b0443e186672d0bfbd284262163ae2dbfb5e0aca465fede54c9e07bf888"
+    },
+    {
+      "path": "Calf_Raise_On_A_Dumbbell/0.jpg",
+      "source_sha256": "a239b8aff5b4f11c1d7e65cb3244154967390ce35fc38ad1fb38e09056ae49e7",
+      "mask_sha256": "e462d8d09b809248c1cb8e39ac25ec6ee7b3923fb29ccf6ab08b9651dd15849d"
+    },
+    {
+      "path": "Calf_Raise_On_A_Dumbbell/1.jpg",
+      "source_sha256": "c75b9604194a223de18f06c464074bbfce6b1ce3d88a5b5045e3cd4582d4d7a9",
+      "mask_sha256": "ec5362cdc996c66340ccddece222c0211c9bb5f975ebe82b51d2c3864c0a0ad9"
+    },
+    {
+      "path": "Calf_Raises_-_With_Bands/0.jpg",
+      "source_sha256": "191de322712de217e8f5e84cf59544eb977b8a14d35483e23b4f5c20001a6c16",
+      "mask_sha256": "b2efb39cf89be3c83eb52a8dc7c34baef1a5bfdcdbeaab9919c158d122ceaf25"
+    },
+    {
+      "path": "Calf_Raises_-_With_Bands/1.jpg",
+      "source_sha256": "68e9867158ad41af96bdf35491635b2ea52583a4149145b7391b6ee6530683b5",
+      "mask_sha256": "f80a2032fffe574a0e661849106c80f2904e62aa863a038f70fcabffcde85713"
+    },
+    {
+      "path": "Calf_Stretch_Elbows_Against_Wall/0.jpg",
+      "source_sha256": "356b3438f1aa5be654d7c930e193e1cb63ac0e345bb5d68b1be056bf9a0e89e2",
+      "mask_sha256": "50c03b99ffed339a1d5faac50abc9fcd2acd550584ab9f9c6a4e082bb2064aca"
+    },
+    {
+      "path": "Calf_Stretch_Elbows_Against_Wall/1.jpg",
+      "source_sha256": "57a28316fa9c753df83c27f2fe0525c7290591c4823d7ae5b23689905dcf282d",
+      "mask_sha256": "342c1053b10f795c8b50036c008e3e0fecf474a04d3f9cb917e89ea4958691a8"
+    },
+    {
+      "path": "Calf_Stretch_Hands_Against_Wall/0.jpg",
+      "source_sha256": "1db1df14541bf3aa2d425d6843c204ba1e315b5159ad34083ba244f667532615",
+      "mask_sha256": "eb3ff57823d6414575f8996a2d4b2dcaf819be97f25318eb81636dd1593da43e"
+    },
+    {
+      "path": "Calf_Stretch_Hands_Against_Wall/1.jpg",
+      "source_sha256": "89e2c1af87f286f5c3bccabc4dc378d294ad9dd503b19ba1a7d8d458152f7f65",
+      "mask_sha256": "791a497a3b3ae1c6ce2e2c895d0692458e5ed4c34121f8faa5186d265d00e5cf"
+    },
+    {
+      "path": "Chin-Up/0.jpg",
+      "source_sha256": "efab20da5a0916eeef22e6fbc58040c688d1e63120681455f4c72c3a20faf6a0",
+      "mask_sha256": "fa1ec47efe2d47ca1d37bb9cd689e82ff8a60c995c07f2553edadbf6c5ef72cb"
+    },
+    {
+      "path": "Chin-Up/1.jpg",
+      "source_sha256": "b31bd59a44e6c7dfceca64e4232871327b9249d6fda9143149f1d35782fc97a3",
+      "mask_sha256": "acad1a1fe0656b28fa61396dc8cdddd8917532a7a1889fc8d3dd319b45830f6c"
+    },
+    {
+      "path": "Close-Grip_Barbell_Bench_Press/0.jpg",
+      "source_sha256": "3a428440c0f95ee87234a260ca80cc1dfa205e3db8f8fa6098b7eeb2afb2cde8",
+      "mask_sha256": "3fe97debea54327b17b3df47829020f2aab733582cf0c5ec5798ca6ad63edbd7",
+      "reviewed_override": "Working barbell outline restored from fine matte"
+    },
+    {
+      "path": "Close-Grip_Barbell_Bench_Press/1.jpg",
+      "source_sha256": "108a66dc2dcb09d184157eb81b7fafba5f898b00654c39cb2f0c7f8bdfec5ceb",
+      "mask_sha256": "cf8c48b3c9fdb8ce5d55ba6c72bba849d8efed76a7548bf76b16854022c5c173"
+    },
+    {
+      "path": "Close-Grip_Dumbbell_Press/0.jpg",
+      "source_sha256": "5ed8de71ca7e37e9e6ea98eca171c96c23892474603779b684dd8cf76a1e277c",
+      "mask_sha256": "10653d0ecc3e75dcc3e6e509847ca197a989b439f54074628de75a4bfec45cf8"
+    },
+    {
+      "path": "Close-Grip_Dumbbell_Press/1.jpg",
+      "source_sha256": "7d1135c6a6357563f7baef5ac6963a51823c4fdc648f206742d86410c4f428df",
+      "mask_sha256": "c7929adc9f80ecdbcf3ebcec2bea2beaac318363cb30eb0e26e4442dd04af191"
+    },
+    {
+      "path": "Close-Grip_Standing_Barbell_Curl/0.jpg",
+      "source_sha256": "a3ec3359a1de66524450c75e11d3c75f4ba6b03e3f0cfb6f71c266c79cf718b9",
+      "mask_sha256": "cc74bee27ab106243d1f119132522123de10e0735d61d7b09d6833c637cbb2c3"
+    },
+    {
+      "path": "Close-Grip_Standing_Barbell_Curl/1.jpg",
+      "source_sha256": "753f1c4be0cbca3e9e9f26d5738dc8279e2573fa57e5a2bc219c32e90f4fe0ec",
+      "mask_sha256": "05aa34ddef85fe87e450e907bc28b9a30d71e7e69d3168cd0c1e6ff4f149a76e"
+    },
+    {
+      "path": "Concentration_Curls/0.jpg",
+      "source_sha256": "4df9977b0e85a1ecbe07cca6846d3a2049e3e65a3e899eddccfd562f56eceadc",
+      "mask_sha256": "e366df302a493a8db9fba2b24432a907d1d8729637d5bd2f0c643f02666e37c0"
+    },
+    {
+      "path": "Concentration_Curls/1.jpg",
+      "source_sha256": "6100592cce16715066143efdf0ebaeb93b8a57e0141910700b924d1abde71774",
+      "mask_sha256": "d51fa80c07091dee1f2634e109372e536a0d93bb90529439de6ff4712236f381"
+    },
+    {
+      "path": "Cross_Body_Hammer_Curl/0.jpg",
+      "source_sha256": "c7bc74edb93ce00a6c93e66c940836c69f6b01d71159c69a19ae04e4013dc32b",
+      "mask_sha256": "960505b465f2c8e7a82e2a898ed56481f499b484a1285b4db448859f11cc0b96"
+    },
+    {
+      "path": "Cross_Body_Hammer_Curl/1.jpg",
+      "source_sha256": "9e6ac998bdec65aa178fefc158f5d839416dd2957504c8cad3bad591633ce5ae",
+      "mask_sha256": "72b50ce573fbb1aee6df15f1aff318456d1578351fe9188df1fad86403f127af"
+    },
+    {
+      "path": "Crunches/0.jpg",
+      "source_sha256": "8b424d42b3196b9b6fdd70c86db60ba6fdae7a337710e8c01c278a6ea5c4220a",
+      "mask_sha256": "be8a0f45f71b18495d7eb09b129201030c60a53459106a305ceb855c9a52817d"
+    },
+    {
+      "path": "Crunches/1.jpg",
+      "source_sha256": "84df8957fcc20c051475a2d28fedb0c1a3b3e63b00913ae4acec1ed0dc150d22",
+      "mask_sha256": "32a65885155ff7bfc325e778bcc922304c01b666d73422a72c1f3e6a3335497b"
+    },
+    {
+      "path": "Dead_Bug/0.jpg",
+      "source_sha256": "8b4e3e357c201d3752ce4fe97a0f1d00b00e7479cd702f8846791fdf5df66220",
+      "mask_sha256": "680d5d2bfacfd3fd8f489e0740d1c027fca6b56c26c914151f45a169b1a632c6"
+    },
+    {
+      "path": "Dead_Bug/1.jpg",
+      "source_sha256": "8de0d54e4c41433b809b045a82832c6632c35102bee945cd3caf522f054d6730",
+      "mask_sha256": "0bdc18ed72ec5d58520bff32b46d428982690194ccaf4e9f5cd329ee2a87a311"
+    },
+    {
+      "path": "Decline_Barbell_Bench_Press/0.jpg",
+      "source_sha256": "3ab81fce71c90d2f7787eebe198a667816ecd791ac7982c6729359c2fe61db19",
+      "mask_sha256": "0e1836650093d972baa10ef0eb6ecc77f5731cfc4723717e1794c5bdbf7d7eee"
+    },
+    {
+      "path": "Decline_Barbell_Bench_Press/1.jpg",
+      "source_sha256": "b6fcac67f252e3e360d9b3dec9d7ebdde3f05c3e1e0316de4a1b959722738d2c",
+      "mask_sha256": "29f5af4981cb014db0d1f7961e0bf88c6c98a1b3aaaf592dc686cf0e01ed4aa2"
+    },
+    {
+      "path": "Decline_Crunch/0.jpg",
+      "source_sha256": "d3c4eb45a9cdedba91f1566d405df118157a81448fe5c5e7aed1e426e2790056",
+      "mask_sha256": "d0187af5f0d8770b4ac58ccbe21de2610c698bad776934c8525339a3d46f7c76"
+    },
+    {
+      "path": "Decline_Crunch/1.jpg",
+      "source_sha256": "9c1563b656936bbaf7a130bd0ce24b294fa645dd302e865b5acd42658bdbc7cc",
+      "mask_sha256": "3f10c0732bfb18d8ebe643be28c0a9c84ffb292967198a62b4484b79f9fed923"
+    },
+    {
+      "path": "Decline_Dumbbell_Bench_Press/0.jpg",
+      "source_sha256": "83223795ce827088c1aebbebb5bb61b45c370c362af5f61a068bc54ca123c786",
+      "mask_sha256": "19ec4c326e3d79d9d4b932cccda86e0194e030aa4dc0a865b7927ec48c2ed080"
+    },
+    {
+      "path": "Decline_Dumbbell_Bench_Press/1.jpg",
+      "source_sha256": "5b58e2173ecc01fcb2044867779897522f30372c96d1d579d962d3ccd13526c0",
+      "mask_sha256": "295cfd018813b386a3261893a18666880cf1bcfca811335acaa7582482512557"
+    },
+    {
+      "path": "Dip_Machine/0.jpg",
+      "source_sha256": "99e9aa29576ab01b528bcdfc1f3f2b88937e44f46a3616cc9454b05b6e510e41",
+      "mask_sha256": "51872b3e54d146ac9c4c7f94dfaea488b656369ac1b6e35c82b106a0b4e599d7"
+    },
+    {
+      "path": "Dip_Machine/1.jpg",
+      "source_sha256": "07b6b394bcb6e5cdd1f17ff10c4b9a8bc8e4815f54274a9297cad525bd4d3cdf",
+      "mask_sha256": "0503c45deb1adc8d8df6fe91dc7f49c02a7faa68f59b0928bd1b979e06188554"
+    },
+    {
+      "path": "Dips_-_Chest_Version/0.jpg",
+      "source_sha256": "4140a8932a82e7437e10894369a0205d6f35ba333715fffd5a64de77c2c92e34",
+      "mask_sha256": "869a2b659ee71fe2626ee24565038281fa0f8535e0738299fccf87214e1f71cf"
+    },
+    {
+      "path": "Dips_-_Chest_Version/1.jpg",
+      "source_sha256": "3d537e22cb97304c0c2068c5209e8db5fec69be86e0465799e1a1b502f6e992f",
+      "mask_sha256": "3459ff55476c4dc63fe13f67e1f1f521705cebdb41f8650cfa971b1c2ac4093d"
+    },
+    {
+      "path": "Dips_-_Triceps_Version/0.jpg",
+      "source_sha256": "e724b6def4bc6299c937ddfdc92081fc260a7ac4680340705de16fdd0c00c8e3",
+      "mask_sha256": "edc4a51a2f677d596895b717900d95d48210c0564d9fcd770181cf9eb8f6ee0e"
+    },
+    {
+      "path": "Dips_-_Triceps_Version/1.jpg",
+      "source_sha256": "5de1f351e7dff44ca13d00c19bff082e6613725141cbe7ab38d9248e3c476f52",
+      "mask_sha256": "6aa6b5b5b14e0dd3a2440d5d4bb3d5a82d589bffaf5b22d653c16f79265527a1"
+    },
+    {
+      "path": "Donkey_Calf_Raises/0.jpg",
+      "source_sha256": "171ceb7f01c95c8953c5b1fc82efbd8cc7600fe51b23b9c330dadff2af4c76e1",
+      "mask_sha256": "fbea66ba193fbf9895a20e76b5418db74ee410cb3a86ae35487f40d9acd9f268"
+    },
+    {
+      "path": "Donkey_Calf_Raises/1.jpg",
+      "source_sha256": "d47d7ab19e96f378a91f745d153f0e0e5e8364bf9c0d8b2f14fd096b32b94941",
+      "mask_sha256": "0b5c723c567d7fad733758b548ab758289efb34e45cf4e43c520c7c5a6678c6a"
+    },
+    {
+      "path": "Downward_Facing_Balance/0.jpg",
+      "source_sha256": "7fad50d050faf82803467c9a5c4372f16585e71c8c5b81a706a8861cc69e1b72",
+      "mask_sha256": "776c08ba90418422795752678f1f6f56d5b7d4d0310f8f641cbb2f5ea7040fe1"
+    },
+    {
+      "path": "Downward_Facing_Balance/1.jpg",
+      "source_sha256": "c0b09e4d104d3b20df6e2793a0136199513c27198fa8841713acb80864275d9e",
+      "mask_sha256": "4f563544e3b475e259a28e6f91070deac84ae53795303d231fa2b9117207476a"
+    },
+    {
+      "path": "Drag_Curl/0.jpg",
+      "source_sha256": "d3940287e4946b4d2f4beeac6a1cfcf3ce6ef71263c0de513c76f05700461799",
+      "mask_sha256": "120afd832043846e627597d7bfbc1688f36cca26210c97c0ec0696ac4f56610f"
+    },
+    {
+      "path": "Drag_Curl/1.jpg",
+      "source_sha256": "82347aeff38a8fe097be949465542571c888886ac294a6259b4d79470d4445ad",
+      "mask_sha256": "0c1602f4f4e1e8043c9a0c72f30243139d37e1b2b1cfd416f153902ea202e45b"
+    },
+    {
+      "path": "Dumbbell_Alternate_Bicep_Curl/0.jpg",
+      "source_sha256": "c5ba13ac557289b65f31ce8508b498c4455ab7b8d34f034de469c8c6e02a2838",
+      "mask_sha256": "70bbd5d9e2ef9f97e465724e33e319b05057670d066a844cd5c8f57e5268d214"
+    },
+    {
+      "path": "Dumbbell_Alternate_Bicep_Curl/1.jpg",
+      "source_sha256": "c66302e68c51b5c9d3f8a8c198b58697c590ad61b0fa14c1153e7ecd6e79eb53",
+      "mask_sha256": "3e7adfedb0379ada8bf78b3fe4b9730567135e3a72a9c5c1893b6c4df466ad1d"
+    },
+    {
+      "path": "Dumbbell_Bench_Press/0.jpg",
+      "source_sha256": "06494fc5d679283ad7de10fd60149e543396bbd9ba65b0821937de317ce9e001",
+      "mask_sha256": "ab3b8345df9ffdace7a9dd992ccd0bf570015adc77c9078abebd4307af349c8b"
+    },
+    {
+      "path": "Dumbbell_Bench_Press/1.jpg",
+      "source_sha256": "29ce1d1335b10ae5e92b208c512f4f562493379a9c49bafb249f945c5b702299",
+      "mask_sha256": "78314a346e26987c008b563de6789d836fe739cdeec5adefcdb02d7c710f4c5c"
+    },
+    {
+      "path": "Dumbbell_Bench_Press_with_Neutral_Grip/0.jpg",
+      "source_sha256": "18c2f927a4a070b4702db0cf623526cb304bce687b321f9bc14302945ded3e73",
+      "mask_sha256": "b7cac3fafac9e92c59e4c0a7bacd19f2c7111e209e973e6749c2bed64b5eb2a1"
+    },
+    {
+      "path": "Dumbbell_Bench_Press_with_Neutral_Grip/1.jpg",
+      "source_sha256": "e4c01b6340d39dc92c33e732830a470fb73b6164ab30aae35b6004f8343c93ab",
+      "mask_sha256": "1620f8d5cd9db4b26b5cf878983456c627b3ee6873141d640a802e4217e18e4b"
+    },
+    {
+      "path": "Dumbbell_Bicep_Curl/0.jpg",
+      "source_sha256": "fad8458c2f70c39e1abb0a9554bba280da5abf9f8dc2d76f7c0be44ffdbfc99b",
+      "mask_sha256": "958bddd07f9830b61fe04b7e1b9b8bebae67a479d4aeae935c0f685c624347bf"
+    },
+    {
+      "path": "Dumbbell_Bicep_Curl/1.jpg",
+      "source_sha256": "ec2c3a539aa80ea911a85e00ca9fb74502407e8ef0d8a4526e3b076a5a52b30a",
+      "mask_sha256": "14d2c224d4bbdbb4d3a0e1937ba33df105d50b6b30ac19daab9d43d4ab0a5d3e"
+    },
+    {
+      "path": "Dumbbell_Flyes/0.jpg",
+      "source_sha256": "215bef04ad13e1629033f6d7333aeb6c66e9174b8fd13ece559e22aa351448f4",
+      "mask_sha256": "2a6ca6d5154823e8f308a6f361507a00a278e06a5e382467d7d5d00802955477"
+    },
+    {
+      "path": "Dumbbell_Flyes/1.jpg",
+      "source_sha256": "009abc57d77c47eb29fb8f92aeb170d4005d1e9ded5f619dd6ba8fb912d1af8b",
+      "mask_sha256": "8de03870bfc5809b22fad6f6b7e116668ac86eff8fcf09886c8b1a5c3b82ac49"
+    },
+    {
+      "path": "Dumbbell_Incline_Row/0.jpg",
+      "source_sha256": "6bdf4dd4c46fd9d50abe73802d49c87f3714dfd05774595e902a5b1765b45d46",
+      "mask_sha256": "2c61489881a79d3162b2c9b57ad4f082a238bf3731e7beed932db527f9b5404c"
+    },
+    {
+      "path": "Dumbbell_Incline_Row/1.jpg",
+      "source_sha256": "8c0cc8f09e194825429a0e7b6c96d9a2a85a5ac6005cf25d31ab65b04adfe739",
+      "mask_sha256": "63cb72432147a77fb9c3c9e51012285171e91d2eebbe0e65aeb694ee6f11741f"
+    },
+    {
+      "path": "Dumbbell_Lunges/0.jpg",
+      "source_sha256": "ab3d56b0b44e82d189dfd88de2838220445cb245fae8a0f1586daa67355604d4",
+      "mask_sha256": "c23fe8d89bf58abacb4fa599859938e419afa8f4814d5611d3ee4af978447110"
+    },
+    {
+      "path": "Dumbbell_Lunges/1.jpg",
+      "source_sha256": "138a08303cb955b1f4867cf6eaeab1664c32079dcbd7fac871eccf7d9597d671",
+      "mask_sha256": "c9f61c9290ed6b106e3c233020116106d307979ad465c7752b6952740cf917b8"
+    },
+    {
+      "path": "Dumbbell_Lying_Pronation/0.jpg",
+      "source_sha256": "cf7aee916d9869c7ebcfce72a3805d8307b1dfdaf043ce706a5144cd5b0d64c0",
+      "mask_sha256": "e6d1af8d1dd8756db2706805d5f46e7bef8da117a2e3c62408e1f01c53ac6efa"
+    },
+    {
+      "path": "Dumbbell_Lying_Pronation/1.jpg",
+      "source_sha256": "4f0c6243fc4238eceb8ffd9c347416b0957f0589ef23d4eead3bfd588a147250",
+      "mask_sha256": "ad84d231b2a84b326b7acdc819d37a9263fd8bf6e4bfe1dde56eeb940e9b23f8"
+    },
+    {
+      "path": "Dumbbell_Lying_Supination/0.jpg",
+      "source_sha256": "a95d32213f2f2b52a64e11c345d2a1d025e113b9fd8adf3e6cfa49b32edcd0a9",
+      "mask_sha256": "aa216d0bed5094cd05598ec406550bd2e0788f3222e82f4a9a90b441d5b6a987"
+    },
+    {
+      "path": "Dumbbell_Lying_Supination/1.jpg",
+      "source_sha256": "d21ae5c9071502c9d7400e250cd75e53b43930c6891cf757f141543cb5dbee28",
+      "mask_sha256": "2c9233c16d6625acb7f69928e27a0c7dc9c564ad221b4c1a29193bd686129600"
+    },
+    {
+      "path": "Dumbbell_One-Arm_Shoulder_Press/0.jpg",
+      "source_sha256": "0a158a261801d982a288f59a69299d08a347a593b770e2d12f342131af7eae6a",
+      "mask_sha256": "e0e12dfc4feef57f363a18c47287f4deb80c1091d4267dee654d815a6c1dfb46"
+    },
+    {
+      "path": "Dumbbell_One-Arm_Shoulder_Press/1.jpg",
+      "source_sha256": "fb47b91cfd5406ae6d1396ee89b1cc81eff4c45c3286e943c9f29ddc0842f374",
+      "mask_sha256": "dea849191f723863b47cade6cdca5a523f38339ad81929e26cf805fa363d3a09"
+    },
+    {
+      "path": "Dumbbell_One-Arm_Triceps_Extension/0.jpg",
+      "source_sha256": "6ea82cfd76fc41fccc19d335875ff29877b05f768af09951ac17d86c723bbd9a",
+      "mask_sha256": "40e0356e7b76adcbc14a32beb74a5d7b8e5c1a0cc6c9e0c878238d16e8296983"
+    },
+    {
+      "path": "Dumbbell_One-Arm_Triceps_Extension/1.jpg",
+      "source_sha256": "5fe5cbcc718339a2ff6b7e203e57999a8db865507c7dc8385368a1f271289c60",
+      "mask_sha256": "4a5293ad5fa2cf7b41380e16a9abd1667284757430cda8d79d3a681a11515e26"
+    },
+    {
+      "path": "Dumbbell_Prone_Incline_Curl/0.jpg",
+      "source_sha256": "c29461bbfb8446c7a42aea47787901e6754a503eb211fd73edf593e010885ccf",
+      "mask_sha256": "53b9bf07a681d28350770531c360a83930b0461c8e7ca40e81b7b63903f75010"
+    },
+    {
+      "path": "Dumbbell_Prone_Incline_Curl/1.jpg",
+      "source_sha256": "78f3208abd6db53191c20a23370225ccf291da9c2aa7172a50f62046feb92314",
+      "mask_sha256": "177a05e8a08cb84c04820b1002a5b794e9dee2c343810ede6688bb1f5eca9d08"
+    },
+    {
+      "path": "Dumbbell_Rear_Lunge/0.jpg",
+      "source_sha256": "c89ef2d68e66077a7c416c8ae634a9772b138ab387ba93742ba097dc1596ada4",
+      "mask_sha256": "b891a7976d3ab55bee1090b7f95cc970776743d5539e188110911b6b9a877ac5"
+    },
+    {
+      "path": "Dumbbell_Rear_Lunge/1.jpg",
+      "source_sha256": "e095d56b39fbae3789abcc56bdda9f278147e45a9da777186ff3d7f686bf8a3b",
+      "mask_sha256": "bf49a1564feb17767f9e37355ab24faa96ebc3bc111d8b8e6605c6e1f5a6d1db"
+    },
+    {
+      "path": "Dumbbell_Seated_One-Leg_Calf_Raise/0.jpg",
+      "source_sha256": "8a1d0067293d2c96e7a5b20c2ab8bcdaec77648154a744871ae666193e79ab6b",
+      "mask_sha256": "80262ceeead1433ac6fd6faaf672016cdb489b5674e6e8bbadac4dea8d6415bc"
+    },
+    {
+      "path": "Dumbbell_Seated_One-Leg_Calf_Raise/1.jpg",
+      "source_sha256": "678fcfa770ac3adc959fec45e3c26d44aecf98ab40ac77e664e57e6d009974d3",
+      "mask_sha256": "e019318f7fab4fe7e801f9686afb988372093c0b08151fd6341d9e946bdd3f90"
+    },
+    {
+      "path": "Dumbbell_Shrug/0.jpg",
+      "source_sha256": "c3ab8024bdb710e8d4798f03ce15b5eba02e2e670797d61a09dc9b3e2f7c817b",
+      "mask_sha256": "07c0a33f0afb94348fae8df9c6d270dbc9c10d1066536dd373305d184fc36496"
+    },
+    {
+      "path": "Dumbbell_Shrug/1.jpg",
+      "source_sha256": "5ca8b29dd52214250c26ebfddab5bf25b5d0af3c0eede92d46e02e32684dc824",
+      "mask_sha256": "27202c4b0110139582f34ea2ecdff1681e2989e488836dd7d2faea6263832d48"
+    },
+    {
+      "path": "Dumbbell_Squat/0.jpg",
+      "source_sha256": "04bfaa45a505214f4909392022edf361cb0ff65529bc0d289870adbb8b259b02",
+      "mask_sha256": "cba09275704337d4b7cd06424fe6ee2b638abfd4efdfeccf8a88bee7419b8912"
+    },
+    {
+      "path": "Dumbbell_Squat/1.jpg",
+      "source_sha256": "8ece837174f84fae7650f5bd74634898e6262679641f3b24198ddc78ebc2fd7a",
+      "mask_sha256": "7644144bc8a36421a1a55cae27cc3356c12f4bf656c3e134b38f27b3b576951e"
+    },
+    {
+      "path": "Dumbbell_Step_Ups/0.jpg",
+      "source_sha256": "581f4f8eb98680a738ec97c1b9666fd2dac04d6a68a456632aaf1accbaa88118",
+      "mask_sha256": "b4f479527011a7df4072a6173fdb36e41f4ec02b4fd3289edcbe5c7fd5196179"
+    },
+    {
+      "path": "Dumbbell_Step_Ups/1.jpg",
+      "source_sha256": "8fd899686805d4165937628846ebf2a6499ea1636623579d8e88234b4a1aa64c",
+      "mask_sha256": "c7cf720d1a39fcbc28d171412a154186281419f0e38dfc2daf40be825b244652"
+    },
+    {
+      "path": "EZ-Bar_Curl/0.jpg",
+      "source_sha256": "b4c9b00a033014b6095bb37047d0c735ad95a8753a2d8df6729bb51a106d57e4",
+      "mask_sha256": "d0919be544cebe8281d2a114a829a1b3b570dae7c31e30c373189f417f454cdd"
+    },
+    {
+      "path": "EZ-Bar_Curl/1.jpg",
+      "source_sha256": "68010ec67ee0f9f6d2ec6c8ff6ae85790390988629691dd82217c3f42693c1e5",
+      "mask_sha256": "ecaa30776e8db95b472a83bbb4e6304535e7918af6e7cc19e62688b8b8980856"
+    },
+    {
+      "path": "EZ-Bar_Skullcrusher/0.jpg",
+      "source_sha256": "5ea3eb7db1b5f1e2f8af80d6dbfcc68831d4dea78f2ebf62e5950d80a27bcf56",
+      "mask_sha256": "73a490ec4ec26cc2556a355fc0739813c0a529b077fb8e2528da47d8e6c18802"
+    },
+    {
+      "path": "EZ-Bar_Skullcrusher/1.jpg",
+      "source_sha256": "af4a3c804320429b94c646daea6a11c5681674cc553dde3027fd8d6b89595621",
+      "mask_sha256": "f63326c9106753692c25167d55c4f5e96894ea888f4db46df3e244a3c5c064a3"
+    },
+    {
+      "path": "Exercise_Ball_Crunch/0.jpg",
+      "source_sha256": "b9f465c14da07b060969a4bc8b92128732130599f29fbff338829205091690f0",
+      "mask_sha256": "8f6e8426af6ab409606dc8fd38070ae515cad3096db5ec4bb35f68badef4ac9b"
+    },
+    {
+      "path": "Exercise_Ball_Crunch/1.jpg",
+      "source_sha256": "590bd557f78cdda70d766955250d44ca5ea68325fc875c598488b76fbf9ac457",
+      "mask_sha256": "306edf0f3ab6f98a5d0fe29eea8746f87b87164460201d6a12cf5abf3c8730cf"
+    },
+    {
+      "path": "Face_Pull/0.jpg",
+      "source_sha256": "a184e981e8cc261a5cc1856b92d897894691d83e27929aae7e89bc9d8aa1d444",
+      "mask_sha256": "45f5e39f89fc9eb33d402468ec7eeb4ee3cefaccfb5ed5ca4a69f743a331bb85"
+    },
+    {
+      "path": "Face_Pull/1.jpg",
+      "source_sha256": "1aeee744a027983d58328e68a258ee17ba2db85c1d16ba1bad00b4f2511dde2b",
+      "mask_sha256": "74d60aa1c5980c4e561018db816ea5e402dafb63c5717055456dfba684685ffb"
+    },
+    {
+      "path": "Farmers_Walk/0.jpg",
+      "source_sha256": "e07a10c235963ea155d9504b91736f4dc1e8865b5aa3b7c744765a56bf3e2b05",
+      "mask_sha256": "f94ea76ca9a1c189c93bf16705181f965c6db6786ab5c4c92cd4d231b8f6a641"
+    },
+    {
+      "path": "Farmers_Walk/1.jpg",
+      "source_sha256": "5a55e8adf33bea01078ad420e8b43d2b844bb64679a3029eab165b485096fd70",
+      "mask_sha256": "7b81578723c8a46ccd8b0a1b492fad24641527c0918ab2a19aee5ae861883c69"
+    },
+    {
+      "path": "Finger_Curls/0.jpg",
+      "source_sha256": "6ab1e5c6fca0982d91cbdcc8b2b97aabb3b110759317fdf6f81ab0acdd1c41f4",
+      "mask_sha256": "5a638d8aa6b020c43f7ea2087221106713e950e20d972fabd7ae4bafc67d3dbe"
+    },
+    {
+      "path": "Finger_Curls/1.jpg",
+      "source_sha256": "f89a55fbf901a80f2f5c3eb1c9183188e6a2632fc4a0c8150ac9512c093c382b",
+      "mask_sha256": "b1afdc6d33d2d5073cc8f58511ed6e050d30d0ecc2d5866950afdf1240194e8d"
+    },
+    {
+      "path": "Flat_Bench_Lying_Leg_Raise/0.jpg",
+      "source_sha256": "87691104bd0accc790d4928d0cd7e5fb06d131c20918b2dcb7aa0e64244870f0",
+      "mask_sha256": "16068876bc4676a191e4793bc67f9659c0b2d7aa35dd9dc79cec4b7fe01f51d1"
+    },
+    {
+      "path": "Flat_Bench_Lying_Leg_Raise/1.jpg",
+      "source_sha256": "9bebcd1c5d9095a66b173a135b93bba266f0a18b939b44a30b9fb514ae7c6a29",
+      "mask_sha256": "57ff944cf63bd9daba40e7912953964ab61dbb93f16ed35a9dc4e7128f8752d7"
+    },
+    {
+      "path": "Floor_Glute-Ham_Raise/0.jpg",
+      "source_sha256": "0113df0fba4e98cf8391218301393b6b99601a5352c20e2597d35ced8b73ed0e",
+      "mask_sha256": "b1d4685df9a7b02b515d70e7240d5245ef00630d4c14ef0bc691176cabf85c27"
+    },
+    {
+      "path": "Floor_Glute-Ham_Raise/1.jpg",
+      "source_sha256": "e7b9d0c38cb50571c8b773579ac9d95265b47d81b8409c54dff3758d2fbd83c2",
+      "mask_sha256": "8eb8a80ce938218037c370b65bb9e901f01c20285f748ab02dd31ac0d77b94b7"
+    },
+    {
+      "path": "Front_Barbell_Squat/0.jpg",
+      "source_sha256": "f8a366b6913bd5af3072080720ba3ab7a74a7ef5754d1a39c200800cd6461f92",
+      "mask_sha256": "c00b20ad3c717e437ce5cb8e6316eec306816a2a382ed89d4c8522c37a503478"
+    },
+    {
+      "path": "Front_Barbell_Squat/1.jpg",
+      "source_sha256": "6bb5c5eee794bd13d411271f0ad1cdeabdfecf5cdeb471727996555d07ff43fb",
+      "mask_sha256": "dfa8afed4870f59f4e8fe2e530638550aa0d52482a0c5c42e2ec7a220a830813"
+    },
+    {
+      "path": "Front_Cable_Raise/0.jpg",
+      "source_sha256": "e76c418fb9de5eb3fe37d2f8aed68ebfc41dd54360dd85da04d5a967335cff8a",
+      "mask_sha256": "8df93e68a1a2c64d65251f1809c85fa3a8288278c4424511cb63b3576a792471"
+    },
+    {
+      "path": "Front_Cable_Raise/1.jpg",
+      "source_sha256": "69a7ae4bc2b49e21319292400e6196986926a999dd4a95f2c02cf3ddab3223cf",
+      "mask_sha256": "79724a80f1f635c3f038623a5cff9d98fbdbe4acda303114444a69587d766f3e"
+    },
+    {
+      "path": "Front_Dumbbell_Raise/0.jpg",
+      "source_sha256": "0b12ff0413688bed00bc39c2e7af118c6cf13877f1eb49983a961a64ae487a6b",
+      "mask_sha256": "64e7edf1a466219049149a7d91123aec6db1e31be4be34aa28ee169981225708"
+    },
+    {
+      "path": "Front_Dumbbell_Raise/1.jpg",
+      "source_sha256": "17e600ed721cc2a6c20c5d5e43a00b2959661574ab84afa4db655891d36736dc",
+      "mask_sha256": "dcb83d08fd9b8771598cefc29e2a04a0603a32af9886bd11eb2faae330f817b4"
+    },
+    {
+      "path": "Front_Plate_Raise/0.jpg",
+      "source_sha256": "2627eaa3d61d807e817a4d6c7c632141d23de0a2cb112ec2b81a1f9d11fbaf14",
+      "mask_sha256": "98de1892e0e35d73947d17f7e4f95256db014838b34d9fa8a5887a55708f85ba"
+    },
+    {
+      "path": "Front_Plate_Raise/1.jpg",
+      "source_sha256": "7e2afe3a0f4dfa3c12347467d067e9700ea16341f31977c01bfd55e127323382",
+      "mask_sha256": "cdf4fa32859b50f5bd05d668548c16976a6705c8fb03ba80dcec0c0e50b53025"
+    },
+    {
+      "path": "Glute_Ham_Raise/0.jpg",
+      "source_sha256": "0056f7c5fcfd9bf11b8a2da697b735bdf4dc5ded66cf1edd929e62fa52a939f4",
+      "mask_sha256": "fc07a58ca61322d5e200a137ca49f81b690d0cc36ec091e575759dd5e1efddc6"
+    },
+    {
+      "path": "Glute_Ham_Raise/1.jpg",
+      "source_sha256": "5e4add29994c8664b8675f17233e289ddcf11fe12e8d53cd449af1f4a501e859",
+      "mask_sha256": "1f9ae3ed99db5cf68aa1131bfee763712004a7fce88fee2b62e6bd04149ba13d"
+    },
+    {
+      "path": "Glute_Kickback/0.jpg",
+      "source_sha256": "e0a72e4dbcc763adba600044ae94060c92798684ac51924ab485398664ce5a1e",
+      "mask_sha256": "3be130ee47d29a191b2c2763c56f00d3d798df169c1cf5e26e3529f3cb5470f7"
+    },
+    {
+      "path": "Glute_Kickback/1.jpg",
+      "source_sha256": "daae648a3c6f51d1d1c497694cb7280d6b2b7ed8c1b34287c6663362873659cb",
+      "mask_sha256": "7bab1a987c93ade6c1df1f95672f25af50c198e35c65ee600f3b947830d497ea"
+    },
+    {
+      "path": "Goblet_Squat/0.jpg",
+      "source_sha256": "342ea87afb9fa03d9b1ac9c28c269f9ad2536d40b5a73b0bfb1ea25c9d605d02",
+      "mask_sha256": "2229f7597f8272cd3f84ea33d4d99306c4171c3635c810f839d2f174825fe5eb"
+    },
+    {
+      "path": "Goblet_Squat/1.jpg",
+      "source_sha256": "49d5facb019c3be9302134edf1e4b786cc88fbe25413ee7ba3e8d278952ded85",
+      "mask_sha256": "4fa25ae60d84269924a51ef6793619a6a89abf3e3151e142d952c6f80ec6fff3"
+    },
+    {
+      "path": "Good_Morning/0.jpg",
+      "source_sha256": "e85711c454e0cc433ba1628386e886da621f07e698bd58a421d867e44e3b5807",
+      "mask_sha256": "77ff3ebff6d57a449deb4c40608a8c59b25be097e2208b019fc0c5ace1752d5b"
+    },
+    {
+      "path": "Good_Morning/1.jpg",
+      "source_sha256": "d58742f191821aa45cc3162a07b449805bc990b6c282c7943aae32ae3bf75bff",
+      "mask_sha256": "ca4c1798143a9d997d126a1adaaeca7fba4ec2a12734488a1fa0b51d8854b2fb"
+    },
+    {
+      "path": "Good_Morning_off_Pins/0.jpg",
+      "source_sha256": "b9d488e66101b9f4f4f55f30c8427e8d34bb444fd43b9210f69a3c4f247fe0f3",
+      "mask_sha256": "40404e56d3b246b28f82c0529d6b1e71131ba23512696a123c05785d6e3a7cc3"
+    },
+    {
+      "path": "Good_Morning_off_Pins/1.jpg",
+      "source_sha256": "08461ac5d9afd8437a3f514c14315877e94d3a0468a1e70a4e2cdc6ce0e9b587",
+      "mask_sha256": "a2f9f29cd8abd1e3078e83c3aecc92edfad05fa56c8437602c3c667660167757"
+    },
+    {
+      "path": "Hack_Squat/0.jpg",
+      "source_sha256": "f8721b7d75025f29d6a733a6f5571577f541e38891b2da4f152ac88d3f6e957a",
+      "mask_sha256": "93dfb586487f84f602ad6cc6d5d2f41f0b310583ffa6905fe9b9e9f6a74eeccd"
+    },
+    {
+      "path": "Hack_Squat/1.jpg",
+      "source_sha256": "ecd48b616f38fefe802b7adc12a9f0c5520fe579a59152ebc96c7e39ce4bcd35",
+      "mask_sha256": "97bea7615fe56471f700ec52dc440967fa5f5e8cdd245573485b58e5b82cbc13"
+    },
+    {
+      "path": "Hammer_Curls/0.jpg",
+      "source_sha256": "f3c330d75545bed1cc325a4abf84940109db64fa5ab967b1963ecccccd3b2fe8",
+      "mask_sha256": "002db687de946791e0265625d18d4bb87432796d86198bfac5a3115b02216d7c"
+    },
+    {
+      "path": "Hammer_Curls/1.jpg",
+      "source_sha256": "42adf0d1577528fdfab45b360918320394a5017b082d2502ab3a00600622907e",
+      "mask_sha256": "3a5eaa535e2b795873d1f3d13defcb7b652d6702716fcc597642c790473b23d1"
+    },
+    {
+      "path": "Hanging_Leg_Raise/0.jpg",
+      "source_sha256": "c166cd61aec9cd4cd3881a17602f7a6afd80df51329ea6a143e6ffcf9bebb2af",
+      "mask_sha256": "2e02329c7305edfdd24be1adf0ec6257fafb36ecd4ca2fe9292b9422d8f96169"
+    },
+    {
+      "path": "Hanging_Leg_Raise/1.jpg",
+      "source_sha256": "c623bd4bb6848367407ddbc7c39d1611acf9c5001fe9a61360a580b78d86fa60",
+      "mask_sha256": "616b422e5613f80f853459ebb90e8b2d6a5a31e0ffe880a17dca0a9052bacdec"
+    },
+    {
+      "path": "High_Cable_Curls/0.jpg",
+      "source_sha256": "5031f9a35d76111f22838475d0dc0f99a6efcf02a506974e195384034e1168d7",
+      "mask_sha256": "148b2ee57116150b64f054d5a0814ac8f8a5dbbf149244b245e9cda7b11e6055"
+    },
+    {
+      "path": "High_Cable_Curls/1.jpg",
+      "source_sha256": "3aa148abde25b0828bfce24004034923855b468787997c3605e1599bc1a5280f",
+      "mask_sha256": "3fa5b1051eec67ce2d51f3c99e71c371b83353a5549d0ac517a1cbab293c59ae"
+    },
+    {
+      "path": "Hip_Extension_with_Bands/0.jpg",
+      "source_sha256": "b198d99056439be178480b7b92d3c047b9e425df3a87095725624bf3cb45e19a",
+      "mask_sha256": "1c5312c35ef1458808818d95289422847166f7e9ee0fbc5612b9af6ff7574b7d"
+    },
+    {
+      "path": "Hip_Extension_with_Bands/1.jpg",
+      "source_sha256": "5b58e2152cc379d56b4b26ce3ab71301afcac942b2fede85408a6e3e9766ffbe",
+      "mask_sha256": "e65811ac14e36076a3e99ec1e09d3c4034b94789f5e47870222e6270347d09c2"
+    },
+    {
+      "path": "Hip_Lift_with_Band/0.jpg",
+      "source_sha256": "4a339a7f59c2186ab373f9fd2f2e021e633db8eaf9a0d3398f63f4319e30635a",
+      "mask_sha256": "9cca24a226cb3f11eac45a9d8b33b8787361cc543c424f3144470e875593d491"
+    },
+    {
+      "path": "Hip_Lift_with_Band/1.jpg",
+      "source_sha256": "448bfd0838aaf46f3edfe2d70e4e818777d834d123ac7f2718d5a2bd924aa6ab",
+      "mask_sha256": "1bf58686ff35f8dfceaa8c4dc51fd1a978980f5fea4184a0c48c71531f7bd9df"
+    },
+    {
+      "path": "Hyperextensions_Back_Extensions/0.jpg",
+      "source_sha256": "48f077fe32d2b839a2cff82450d36f50141559a8008d562495df2e6a21f8aa37",
+      "mask_sha256": "f5ab61b61acd32c7f1989cf9b77004bb1bd1b1770adeca4ea438f4313d1374f9"
+    },
+    {
+      "path": "Hyperextensions_Back_Extensions/1.jpg",
+      "source_sha256": "1e1d6c7131444657b0c53ca9ef05449fc7a10600af9b73a18b67d0379d97c867",
+      "mask_sha256": "64670acdd967fc5d5826198c5f6d15fe12b37d705de2ff13866e18e40fc2804a"
+    },
+    {
+      "path": "Incline_Dumbbell_Curl/0.jpg",
+      "source_sha256": "49f16679de110156cda5caf7b68f277374102100bb9f09341bb8a802cbd6d8f7",
+      "mask_sha256": "f07d1a461e6165ba99402a8f100f97f2d0415ddfa8b6a29a8ea6780e3072e66b"
+    },
+    {
+      "path": "Incline_Dumbbell_Curl/1.jpg",
+      "source_sha256": "b4580e1c4716ccf44d20ea183656ce7372d7a07e8aee24666ed63b7f733a9fc2",
+      "mask_sha256": "94f81ede0eef7d1433b3fb0944f713ad57c205b092fdc6cdbeeb422c37f197c1"
+    },
+    {
+      "path": "Incline_Dumbbell_Flyes/0.jpg",
+      "source_sha256": "4e5380dee95375c4873ae2f50e94633d48c32db4d83a99001a55dd602a1c9b1d",
+      "mask_sha256": "8b49ba2814da84a35e1c0862a1e1a13dba5d31ed36f83738696e4cfc457f603a"
+    },
+    {
+      "path": "Incline_Dumbbell_Flyes/1.jpg",
+      "source_sha256": "2f4d476d9b1d00732eef2c4abc3797bd8da3b47f187a3cc848526e208a4b3259",
+      "mask_sha256": "e20c198b744f03b4467fbb7589446230c161104ecf708020fc2226d91ffc5c35"
+    },
+    {
+      "path": "Incline_Dumbbell_Press/0.jpg",
+      "source_sha256": "5128af58efedb66e5d3e2454c7a1e3c7f9353b573e97c8430e37cb638da8882e",
+      "mask_sha256": "90cb469fe74324948e5f7d5e56d61ac23128a231197d480260d5557d4789c6d8"
+    },
+    {
+      "path": "Incline_Dumbbell_Press/1.jpg",
+      "source_sha256": "7e4cd389cd0c537911da937657333f33118102e69f050c36906a6d49ae3f921f",
+      "mask_sha256": "c546f1212c0f7ca2771f6aff5f35bdcd6fed932151457d92f8535e63d02d1bf0"
+    },
+    {
+      "path": "Incline_Push-Up/0.jpg",
+      "source_sha256": "07a34cfa5ba05bd7d87f00531ccec45a7db5e9412eafd49fe269cfe4e4bb03e9",
+      "mask_sha256": "e384bc68cb48031e8e76b2fbebf60dd99f5cadf8608da146f244e07419847989"
+    },
+    {
+      "path": "Incline_Push-Up/1.jpg",
+      "source_sha256": "3f9119875b57305c7e932fe9d222c5568def33da1bd38df7d5aa982c27e24541",
+      "mask_sha256": "bb8dbbfac4187924c8c30c2686bcb58232fb22bcf90413fbec9dafda8d0aae98"
+    },
+    {
+      "path": "Inverted_Row/0.jpg",
+      "source_sha256": "cab05c22ab07eb560c05cfe0e56029b25d4222092201fb00557ac190c64a1657",
+      "mask_sha256": "dfd1fc3edd8b22d8a7c1036ae0a34ca589da969a2343505b5da2abab22a209dd"
+    },
+    {
+      "path": "Inverted_Row/1.jpg",
+      "source_sha256": "c4c44d1ceeee8ae86a0c14fe82e4d9990f245054d9915f92cbcc94492053ef0b",
+      "mask_sha256": "85579c987ccef9f4d10644edbf4d7e099f44edbdeaab7ecdfe0578c58c687ae2"
+    },
+    {
+      "path": "Kettlebell_One-Legged_Deadlift/0.jpg",
+      "source_sha256": "f796a6b337fa3825af48e339eda70c4f34a03881bfd37e8d856fbe07ffdd1ff4",
+      "mask_sha256": "9d0133dea0faa78748cf90cfefe807df311087b54a3fcc99a62b01159d5d3cd7"
+    },
+    {
+      "path": "Kettlebell_One-Legged_Deadlift/1.jpg",
+      "source_sha256": "ae1cff14ecbdaf1d3f12b9ce065fc472c84663c9db033f56be80117f9d9bb49f",
+      "mask_sha256": "1f32bf2749750848056a346586309a408fd8f74c2327f91e903fb0a6548cd951"
+    },
+    {
+      "path": "Knee_Hip_Raise_On_Parallel_Bars/0.jpg",
+      "source_sha256": "8868e6c297198b6e8dc3e90353dc30c826e8ba0051b0c33ef3b9a2fa7e2c5f43",
+      "mask_sha256": "68c4da1565eb701ff5928cac7d289bfdde5cc9c31e44fa559ea58d489c434e65"
+    },
+    {
+      "path": "Knee_Hip_Raise_On_Parallel_Bars/1.jpg",
+      "source_sha256": "e6c934371252c5fe43ea6581217740cd1e73e5fa12bc6f94598276c5f6d6b023",
+      "mask_sha256": "00ea2a45aad370dff0970d94d848818c7e326eb05b092ad960db67874515747e"
+    },
+    {
+      "path": "Kneeling_Squat/0.jpg",
+      "source_sha256": "2dc8bd6782bbd6c2e9fd565a39702c77cc066894c30bebc854b5be568619d7a4",
+      "mask_sha256": "fb9feebf1d621789f9b1c2290a5d0da9cc9b15a9379602ab899958d7aa471492"
+    },
+    {
+      "path": "Kneeling_Squat/1.jpg",
+      "source_sha256": "873fb42dbaaedaee7bc5ee53036ddc8a4209f2eee2b2983b7575a564846126c6",
+      "mask_sha256": "40ba28ebfe4f1e4e812d0bd62184ec9697534e8cc6f6d1ef6da1c6da4bd4cd11"
+    },
+    {
+      "path": "Lateral_Raise_-_With_Bands/0.jpg",
+      "source_sha256": "19168b746d0e2e250401e050462ec06f01ef85ca304594f6f598db1b1ac8d4ed",
+      "mask_sha256": "a3b63acfaf8065b7311129444b8069d422c51436abbf880cce4883735cd667f7"
+    },
+    {
+      "path": "Lateral_Raise_-_With_Bands/1.jpg",
+      "source_sha256": "57e6a6b69fe004784a5da689311ceb6e4e1461b6b5abf6675f7ca96800207a8f",
+      "mask_sha256": "4395fd7f37a5d1af0a7cb729e727dadae8b6567d442159cc28b01e645839382c"
+    },
+    {
+      "path": "Leg_Extensions/0.jpg",
+      "source_sha256": "54fd46441d63459e3cdd26f26b826ad049e835fb7f1984b42398fdfbdefb5bfa",
+      "mask_sha256": "30c4ff7e1b72f9cda8a0d90a4ea48914693cc416baf5b86696e1330670e5cf68"
+    },
+    {
+      "path": "Leg_Extensions/1.jpg",
+      "source_sha256": "9e04d0e306d8fee608305766b14a56df1d1312956d374152f58dcbf267d591a9",
+      "mask_sha256": "4f4cf33287c2e31eaea86eadcef908cf9faacdd11fa10fe04230bec34eeb1325"
+    },
+    {
+      "path": "Leg_Lift/0.jpg",
+      "source_sha256": "ba802b17e621fa319575f55d287e0259f704a7a7e4b94cb19fe4ebfdb36095ba",
+      "mask_sha256": "cc50b315a14828b7df9376559fc18305b321c2223c0c5187a258d468a1b56470"
+    },
+    {
+      "path": "Leg_Lift/1.jpg",
+      "source_sha256": "71e728894fcb4b96ec4c15874b1097c4498f0a77dedee59e2ddebcf95015bbbb",
+      "mask_sha256": "35628a42206e5571269f394f5aa88f25710a8d9af02f172c451f7a4489a42493"
+    },
+    {
+      "path": "Leg_Press/0.jpg",
+      "source_sha256": "55079d514ae8d4dbc526731bb5120748e74a084ebcd546eaa890fa273427f0dc",
+      "mask_sha256": "51bb9ba04cac54e1e248510b2b0a4c4e16a079abd60a5b8de3c16aa04cf5003d"
+    },
+    {
+      "path": "Leg_Press/1.jpg",
+      "source_sha256": "f4e08d4ad4e6542f5dd923bbfabe9a28bf6c960bed02b1b9d65f6bafd6ceb051",
+      "mask_sha256": "27fe29388f727515994e0ace1201b989167e8614a3b27a43375ff38aab22eebe"
+    },
+    {
+      "path": "Low_Cable_Crossover/0.jpg",
+      "source_sha256": "275181283b0ae4ce334326c9485a98b3e381170e5478b2c6dc67e70466a59a1e",
+      "mask_sha256": "3ac74f96fd34add59a29f216c32485be256b3eee7bd6fcba7dfa1ffb65a9d64d"
+    },
+    {
+      "path": "Low_Cable_Crossover/1.jpg",
+      "source_sha256": "64b4848cc2f8b4d66b90774a3ad22623b515a94497d0dca6a4c1e1f16895038b",
+      "mask_sha256": "9c35ddf8038a9eca444b4185a010af03f4f37cba2ebf0743d43baff5549f182e"
+    },
+    {
+      "path": "Lying_Dumbbell_Tricep_Extension/0.jpg",
+      "source_sha256": "a5ec7e38e794e88a7fef0355f6ade5a5c3b545eee56af6510c9482fe00e1e69e",
+      "mask_sha256": "67a45d7ce986d1e0b2e4d446ce616f0b00625b42ff9a4fc64df5c6477e4bf6d9"
+    },
+    {
+      "path": "Lying_Dumbbell_Tricep_Extension/1.jpg",
+      "source_sha256": "52dce4a85c0ab148348c8830e105c5ab8195a46a69a9f1fd042aee6ee60d9189",
+      "mask_sha256": "07770553fa69e0ae4680bd9482642bc5983901053552f4a01adc3be5e0e3284f"
+    },
+    {
+      "path": "Lying_Leg_Curls/0.jpg",
+      "source_sha256": "0875bf50a6615d4dc33df63110d3c6ee55b41606ed79a9fe705e17fcb4626095",
+      "mask_sha256": "d0868c1e4577ea3b57d0e4890d82bec903b865466e20873e84dbec7b60c5cfa4"
+    },
+    {
+      "path": "Lying_Leg_Curls/1.jpg",
+      "source_sha256": "4ccf6f4a26dc97dcf8241cc55e08e22579b5a02bdebafe56d74f951ceab2bd06",
+      "mask_sha256": "56873c1eb0d7ae9dc41e50b4b2d96883d16519c943fc484690189b7702295ba0"
+    },
+    {
+      "path": "Lying_T-Bar_Row/0.jpg",
+      "source_sha256": "e2df3ebe53e7087771174cd47ca27256f9d66455aee6f2cdbff91302ec31a5d3",
+      "mask_sha256": "6b42d03db260b80d1752e5d12ca927b6a65b613c276cedb19c46ce8303110e37"
+    },
+    {
+      "path": "Lying_T-Bar_Row/1.jpg",
+      "source_sha256": "edb81609353d3d8e0b9fb8806b8754778ede84eff14fd5c1704882c225dd17c0",
+      "mask_sha256": "a770e320138e0593dc45d225ab4673af45fdc321ff2ffabb14aedfbe2324895f"
+    },
+    {
+      "path": "Machine_Bench_Press/0.jpg",
+      "source_sha256": "d3d8399ff8da08865f0ec97495b3001731a8170ac44a63663dfe382c7d092d41",
+      "mask_sha256": "d469dbde7df8b3ad15197278149c06bc4a51b38ae1034f926fb3253da356904d"
+    },
+    {
+      "path": "Machine_Bench_Press/1.jpg",
+      "source_sha256": "b916ff565039208b3baec76e141b4963f4e90aac17dff25c99098d6fc2131251",
+      "mask_sha256": "4147e97ee9121407870654317c78d0a86605c1d1019d0d85c85d8fd900e53641"
+    },
+    {
+      "path": "Machine_Shoulder_Military_Press/0.jpg",
+      "source_sha256": "5c93a4ede9b98bbdcf804559b81fa475ba08da92240badccd671e095755dfaa1",
+      "mask_sha256": "b918c2149fb3d559ee45af03d8de16b9d8092953079c9ebe19051f413cad2347"
+    },
+    {
+      "path": "Machine_Shoulder_Military_Press/1.jpg",
+      "source_sha256": "e1864fee339bff5a3af525adbda87ca70c71e6a58055c5e8299743b6d014ed1d",
+      "mask_sha256": "329ebb346016ca61f52976ae444d6f70609f8e5df994e2cce588a155383124b9"
+    },
+    {
+      "path": "Narrow_Stance_Hack_Squats/0.jpg",
+      "source_sha256": "5ee61d871a75285314f3a5050992184492306ad51bad59ba6fa2e866f22510a8",
+      "mask_sha256": "a19e7a25089100d78d4c3f40e9450cd8032c4c28980e5e1c424b514d1cad8456"
+    },
+    {
+      "path": "Narrow_Stance_Hack_Squats/1.jpg",
+      "source_sha256": "bab59bd8ce0aa13fce6d3bb5797e5a9e2351ae68dda0e30127c1028e4ed520fb",
+      "mask_sha256": "29e7ab881d6959d6fec284ee5e387a92603cb8054af83b4789e558835193ccd1"
+    },
+    {
+      "path": "Narrow_Stance_Leg_Press/0.jpg",
+      "source_sha256": "4b16b62e674be211a2e448cdde311f81996ef2e7bb84d3c7186cc4072cd2b90b",
+      "mask_sha256": "18c44fc7c3e2717dfd95b2789316a4e167e02a86c09782a915cc27bbcf2ba6cc"
+    },
+    {
+      "path": "Narrow_Stance_Leg_Press/1.jpg",
+      "source_sha256": "8dd544fd46bd6f685f2eecad4937b8600781b5d889626410a839cfda888aec67",
+      "mask_sha256": "552dc7535e41acbc5580a07666f1c57acb40fa7167e80f11340bbce94905a07d"
+    },
+    {
+      "path": "Natural_Glute_Ham_Raise/0.jpg",
+      "source_sha256": "47b0a05e5de017cf5bf654659dd64c4e93a102aa224d90f8ff92d76198eb7947",
+      "mask_sha256": "7d11f0e570ce7418c6326b90556891f83fe9652f1c03c320f4048e207cb1868c"
+    },
+    {
+      "path": "Natural_Glute_Ham_Raise/1.jpg",
+      "source_sha256": "44b036e496e90290c261daeaa11b7d2ebeb71d1f04491a3ab1fd0109c6e7ac6e",
+      "mask_sha256": "8243c602f3fec2fd0498e35a44f2fb356318a72ad8ce8dcac8e96e2078c532e4"
+    },
+    {
+      "path": "One-Arm_Dumbbell_Row/0.jpg",
+      "source_sha256": "04b2f49e6ba0c2fce5f566fe53d03571715fa58350a2b8558b3dfa9110093a53",
+      "mask_sha256": "1ed59197ae7978a9150a4b7e54c29314016241cefb9a739ca01f00c58b1fcbe6"
+    },
+    {
+      "path": "One-Arm_Dumbbell_Row/1.jpg",
+      "source_sha256": "83d5ceaa6d9ec6732f0afedaaa9a842c34cfdedce89e6fed75681c0bf971174a",
+      "mask_sha256": "5768e70d8f764000794a4acbc28d86187f9b8eea38dc2c7d7195e039f7da7d47"
+    },
+    {
+      "path": "One-Arm_Kettlebell_Swings/0.jpg",
+      "source_sha256": "afe7f20cef83fa4ab96d8ec0d02315a3a00bf025d15ac31880a4658689ba350f",
+      "mask_sha256": "6d0349b686198da6eb48986495088f90dc4c063a2977c4f4e47f60c2bb3e0b94"
+    },
+    {
+      "path": "One-Arm_Kettlebell_Swings/1.jpg",
+      "source_sha256": "f98e0aa9e30ea22073f3448802bba29159b0654d1def07d899f8f2b090731caa",
+      "mask_sha256": "91ed0412f892a65fc8e0d5aa05f9f1087f668c868c6d1c68a149931388a67160"
+    },
+    {
+      "path": "One-Legged_Cable_Kickback/0.jpg",
+      "source_sha256": "a1f283eeba62ba6775d47f807a7fa2b9a1e2ba59eae1086f6e9b977815ac0874",
+      "mask_sha256": "d8aeab003f11c290fd01d971034d987d1726b08b14e069fb04955bd5dd587d1e"
+    },
+    {
+      "path": "One-Legged_Cable_Kickback/1.jpg",
+      "source_sha256": "0baa168e9e558cdb4867d2819d5e7a6787423a857a6e0db7f07bb1fcea27e6ac",
+      "mask_sha256": "572992711ef9f3db95cad3eed0c51954524adb80c899aab38d3cdcf7c7aad53a"
+    },
+    {
+      "path": "One_Arm_Lat_Pulldown/0.jpg",
+      "source_sha256": "54c9f1e1aa19eae6aa244893c6994d64ce123d0b45f2bdd4059f5a80651e1f67",
+      "mask_sha256": "2597537c9075592d5079b60e1b1096f5738d41c1bfc6a8e8c54ea2a84a8a364d"
+    },
+    {
+      "path": "One_Arm_Lat_Pulldown/1.jpg",
+      "source_sha256": "3c51cffec74f3e5eb15080ff10711d0fe5ae92cd8f5b2c22ae65bb79334a1655",
+      "mask_sha256": "0e3fa15572e7bb74855211741c0ba5864f28ff65fd76d1a8e1847060115c27d3"
+    },
+    {
+      "path": "Pallof_Press/0.jpg",
+      "source_sha256": "4fb0cdc1782078ada6e012aaaa3b1fdfd6ddb6ea7c7d34d98e51e5559da3d272",
+      "mask_sha256": "6d66ddc2981c1f8eb0193088c89ebf23c854e70448a92457fd1466d6cd0ea4f0"
+    },
+    {
+      "path": "Pallof_Press/1.jpg",
+      "source_sha256": "362cd65410c2f8f3a6ffbbcd68e457dde5250028072bb0416eeda857555e7f09",
+      "mask_sha256": "05f7c6c57b4be1a4ff1011efb2154a58a556059e1faf6d577cfefbfb2a3cab58"
+    },
+    {
+      "path": "Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench/0.jpg",
+      "source_sha256": "7044d9ea82a03cf5d8b1a9f76ffce9e532a228dde51a9b7c3569868bed83268c",
+      "mask_sha256": "9a0c114152ec0a767accb343473d331a3c155d9f9d271725cc8447f38b0c2df1"
+    },
+    {
+      "path": "Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench/1.jpg",
+      "source_sha256": "dd0d434fc08e805cf8eb9caefb2d90b52f66448d61594886d181523de5e3672f",
+      "mask_sha256": "efce8522a9c26572161843fa72c252da775a0d8adc553f40c8f3db6d2135e382"
+    },
+    {
+      "path": "Palms-Down_Wrist_Curl_Over_A_Bench/0.jpg",
+      "source_sha256": "415635b89e971929abf07124fc30791c512e884c5297ee1e2f4570d3c2032219",
+      "mask_sha256": "2100bd0881f391c14fe3b173c75368b290aaeea0902a2cdb397c11a71878b78f"
+    },
+    {
+      "path": "Palms-Down_Wrist_Curl_Over_A_Bench/1.jpg",
+      "source_sha256": "75dfa4e46a11e9054986a5570de2ec41e9852105f5c56c9af4ef6b847b7ef403",
+      "mask_sha256": "944431ca2466d65b6fdaa554aa81e923a1960e53f085195828afca90748052c8"
+    },
+    {
+      "path": "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench/0.jpg",
+      "source_sha256": "96c17bd05147a27959a5e032b800bcaf64dbd02067a275d281eae8a29e5ff170",
+      "mask_sha256": "39c1584988052028e891a99a64e6bb909823178edb7270134146338f95e8c25c"
+    },
+    {
+      "path": "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench/1.jpg",
+      "source_sha256": "bb636ce2bbd58642518c238e17338d37e0a9c762e8eb6bedcbe9d80555234bfc",
+      "mask_sha256": "47729e22f2dc00d015a5737e66bd948d0bc61fe5ec1f3c7f8bcebd13cc2feb26"
+    },
+    {
+      "path": "Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench/0.jpg",
+      "source_sha256": "0aa1d08f0276372934e08dfcf96fe0bf6af7fe2def161edcf6790adcb8238ec9",
+      "mask_sha256": "05d9dd5018af8780bc0f1702906bdd86c8eb9bf4ae1a1c13abf9dd2a45ead5d8"
+    },
+    {
+      "path": "Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench/1.jpg",
+      "source_sha256": "8d651d9ad4a9cd1937d585c5b316e468bddbc20184fed2b27514ea655f3d3e7a",
+      "mask_sha256": "0626e5c58f38e222fb83a6c121e85a7cfac274883e47244e241be96e5da67182"
+    },
+    {
+      "path": "Physioball_Hip_Bridge/0.jpg",
+      "source_sha256": "b5d5d6b695f187d33c67b86184429182a999617647d0e07b379bbf63d01c9b1c",
+      "mask_sha256": "48178a591fab8f35ee56c3c301c18acedb9bebb66cbb803f061c42b66a9a8dec"
+    },
+    {
+      "path": "Physioball_Hip_Bridge/1.jpg",
+      "source_sha256": "ab452410797d7846e9fe0541e5b2d7484127303dfd55e1ec96d6d2b6ed034133",
+      "mask_sha256": "dd6227e0c3ef7b9acfa382f6d28168793bd08057d0806a43b031e0f0e50296d5"
+    },
+    {
+      "path": "Plank/0.jpg",
+      "source_sha256": "7a6545152b4c918a84b7e0fd2c3c7d10d571f8fbda8e4459354eb24059ff245d",
+      "mask_sha256": "d0ca95840de96237e194c33d41e8ba307d9ed95049a2af745a7ed001ee377550"
+    },
+    {
+      "path": "Plank/1.jpg",
+      "source_sha256": "7f6b690f7594dfab002fb27d36f8247957171b08d19020f24208afd4d5186043",
+      "mask_sha256": "f1a668130bccb25aca665eea87017781673e256028a592cc85017ad3b90449c9"
+    },
+    {
+      "path": "Plate_Pinch/0.jpg",
+      "source_sha256": "749c35940841c7d292411a4d3bb31a0b0d71500ea294bd4910585b891c38ef49",
+      "mask_sha256": "4c7cd8c5d40d83cba0b040c63d5645a2cf4016445d0b77bd90d1e1ef91e8393e"
+    },
+    {
+      "path": "Plate_Pinch/1.jpg",
+      "source_sha256": "8b6d6da2de82018915b1c3c2756595696bb82aebe196564e966e68c082390d57",
+      "mask_sha256": "c6f3053dadcd7acd42c2fd4edfa3c73a00c9e200957f07d3e0aa48ddcd9f5faa"
+    },
+    {
+      "path": "Platform_Hamstring_Slides/0.jpg",
+      "source_sha256": "637ac2e7575fc3134303054789f1696212cde90f163aaeaf8c0fe8e39250acd2",
+      "mask_sha256": "7e8caaa8bef70fcd324c879c67affd1d5557b48a2fb7b7b1facf109f0f039117"
+    },
+    {
+      "path": "Platform_Hamstring_Slides/1.jpg",
+      "source_sha256": "883d5f30c5d7da7adfb710d4145c760f54614e2c63b45895074960acb31a21b8",
+      "mask_sha256": "5ca4c8d9972e6fc6464f18d5534021846daf091233cd39abf340abc9fc948be2"
+    },
+    {
+      "path": "Plie_Dumbbell_Squat/0.jpg",
+      "source_sha256": "f72c3df6c5948892f4c5243ed85c947169a17b51e6aefc41635a4c265320b2bf",
+      "mask_sha256": "0a7a31af0356f041bb55b926cd70ed67292a36175d3a8275ca825277f95c7941"
+    },
+    {
+      "path": "Plie_Dumbbell_Squat/1.jpg",
+      "source_sha256": "55bc6d4f0b3b2121a2f3c00244471faf32a538db910610f2f7886332fc5562f3",
+      "mask_sha256": "4be290b6aab02476bedfa62d7c73570a5d49b04ec26e9e61b776bc6e34eb2939"
+    },
+    {
+      "path": "Preacher_Curl/0.jpg",
+      "source_sha256": "b727674d48727a3bbba6a682fdaa228284ecc1875a2cd8b262bde2ac38cef0f4",
+      "mask_sha256": "56c5601e43466e66a6077fee7bfb532b7f6dc969c25454448e018ca27546a75e"
+    },
+    {
+      "path": "Preacher_Curl/1.jpg",
+      "source_sha256": "487fa4636df3e55b50161b391cfb683211f3d7a278bfe16d272f395daf2faa37",
+      "mask_sha256": "41db19f82387d63d8819871ae8a468529d48d41de63f99bd44f97caddb4f9d57"
+    },
+    {
+      "path": "Prone_Manual_Hamstring/0.jpg",
+      "source_sha256": "46fce5904f4d2d18307e63a127f641d6724fa2c5e719ea28d227a2852086b09b",
+      "mask_sha256": "eb8747543993b8ba356d5b5f70d47e1cf8c8d03427f7e660623931dfbd05d720"
+    },
+    {
+      "path": "Prone_Manual_Hamstring/1.jpg",
+      "source_sha256": "91ed7d5839c515f3bba3509b32e5534e81da63bf88892aae742429f5f186351c",
+      "mask_sha256": "4fd26f0adc4681a6e2ce682997c8139c343ad9e6f74ff9d06e2dcbb3a30dfbf0"
+    },
+    {
+      "path": "Pull_Through/0.jpg",
+      "source_sha256": "9c0d877f1cfc455f655cac63d7b13ad41b987d46879069b5a36fb271d20cc684",
+      "mask_sha256": "9c2e3082d8fb0cf4b150a0d3fb8a5415cf7c9b64c926d60af02af096b9546e9d"
+    },
+    {
+      "path": "Pull_Through/1.jpg",
+      "source_sha256": "c9c71951a1879295e2a9d1e5d05d166c94aaab93a9cc3754316b30bb601f7956",
+      "mask_sha256": "64341daa0daa4f0ba707fb14432d958def0d9a04e1356883ec7ed653725af9ba"
+    },
+    {
+      "path": "Pullups/0.jpg",
+      "source_sha256": "e56c8c43a41cfe2489dcfffc2c8195fd9e8897ba25165dbc34a4154ed6df5c7a",
+      "mask_sha256": "15232e468ecf7a46c2073bf1c00e715cfdf024c1f12f3d56d0d6b2acdb2be845"
+    },
+    {
+      "path": "Pullups/1.jpg",
+      "source_sha256": "40549a52b064e5084a85e2c36afb51438df6ac1097169379a05f21565f8b4f3f",
+      "mask_sha256": "55643eb651e2743687199daa248475637cd716ff54e0dba4c9bbf4c9e1f145fa"
+    },
+    {
+      "path": "Push-Ups_With_Feet_Elevated/0.jpg",
+      "source_sha256": "d713b4cfdc943302ae0e218a6043267b073e5dbb067a346d749bbb38e4d787f1",
+      "mask_sha256": "c4af7d2bb6af91d9562e5c1e5e1771894da48fdaa8e2238b85f9043189bf51d9"
+    },
+    {
+      "path": "Push-Ups_With_Feet_Elevated/1.jpg",
+      "source_sha256": "80b16525ae0edad39d70d2744530150f68723964e0c0b1e527af11ee0c48bcd1",
+      "mask_sha256": "09ffda533ed33b029ef22ecdb4ef4a64eda031bce7380c0ea6af8f57c9b1598c"
+    },
+    {
+      "path": "Pushups/0.jpg",
+      "source_sha256": "8e6757ae0dc1d50a30f0ea67cdb330994947716a106451860cf7362bcd15f9f4",
+      "mask_sha256": "81aae2ebbc2d6729318687bb9f436420394272773c0dad33c956703072b96ef8"
+    },
+    {
+      "path": "Pushups/1.jpg",
+      "source_sha256": "e835d50facea325828d7a3700185a0d8ba9f908db3f033334f81a6f85f774f27",
+      "mask_sha256": "bee62ad213a58f4b240ad59ca583a8d468eea6e97b4e86312169430a4671e01b"
+    },
+    {
+      "path": "Reverse_Barbell_Curl/0.jpg",
+      "source_sha256": "6ffb82c647f8792d5bf53610c8810018768bf8502a40d0c7f38078e9e10e9423",
+      "mask_sha256": "d01fec66376c0c05912aa718938896f46e25afd93258e4ebab5d6323dc88a5b1"
+    },
+    {
+      "path": "Reverse_Barbell_Curl/1.jpg",
+      "source_sha256": "964522e8c943e0a248afccf9792dc16df581847e82583c5436733effde2e3469",
+      "mask_sha256": "13ebd2840a166039c3d1d846e6001f9408e5f6c716fe1c27574559be153998ed"
+    },
+    {
+      "path": "Reverse_Crunch/0.jpg",
+      "source_sha256": "e75947d8504ca71723ade3f2a5c6fbfe38c358b26eee6924e98f2e023cb788cc",
+      "mask_sha256": "4b7758959c4b10cc45994444b07a4355bb6201393c88c6b18f9e225311b5bc45"
+    },
+    {
+      "path": "Reverse_Crunch/1.jpg",
+      "source_sha256": "c3b300e3b33f4ef187632b5c1cab492e91cbd3e879a5d3b040ce0b11dc09bb12",
+      "mask_sha256": "0513eaf5fa3503dc92e6ce66fa001888e8176fccfd2b1b73bd22667d12322024"
+    },
+    {
+      "path": "Reverse_Grip_Triceps_Pushdown/0.jpg",
+      "source_sha256": "0ea78ae10d7216a22f22a6563aa2a25057220d8ea4c472a32548ab2af993fff1",
+      "mask_sha256": "6cdd5bf39d58fb4b415df3d552f729075206156a270f07b9d25a68b224761a32"
+    },
+    {
+      "path": "Reverse_Grip_Triceps_Pushdown/1.jpg",
+      "source_sha256": "4d169c18829d24109be8bbdcfe4db6b32346c5f22183c825d53de5bd82ec0b88",
+      "mask_sha256": "25208f05b04f0fd846af9f950d740357a39372d3654d725a484d1a6d2d918c68"
+    },
+    {
+      "path": "Reverse_Hyperextension/0.jpg",
+      "source_sha256": "00149620a104b032467caf0f1b66089253beaf3cd87e12645eee348d78f559ac",
+      "mask_sha256": "42fcd46891cc61d554854bc25cc2c9c7000b7042cd2dde4cee3c748aabf28e50"
+    },
+    {
+      "path": "Reverse_Hyperextension/1.jpg",
+      "source_sha256": "75547bd647b13066cfbf0049ee60607609e773df08a1409687e74c35827b3495",
+      "mask_sha256": "373fe477110ff80b41c42071373f6b0375a0f3f74ac958701299ab4421c918cf"
+    },
+    {
+      "path": "Reverse_Machine_Flyes/0.jpg",
+      "source_sha256": "732cac68ea0780bab823ac3593f4d5f5fda1eb7c14c01620b6a2a12c2f838161",
+      "mask_sha256": "ae1ebd84e98bcae5832e88006348ec0662167b10721b123916fe66fcb8b526e8"
+    },
+    {
+      "path": "Reverse_Machine_Flyes/1.jpg",
+      "source_sha256": "c12b21e34fb7c46c14c0b61e29920637cd8c678474fd97a0c4ef61e86d4cf023",
+      "mask_sha256": "923ed0f61f5089b03c2133a31772a0488c306602ac27180198f0f00948c77018"
+    },
+    {
+      "path": "Rocking_Standing_Calf_Raise/0.jpg",
+      "source_sha256": "b6530a1a4e02e782f94a100c8312a6b6c13939d0b525d5e8bda75954722c5105",
+      "mask_sha256": "e7ff07034bc94f5bf22e36c75cf8afe0a4675c51382b2428ef033c25c8782ebe"
+    },
+    {
+      "path": "Rocking_Standing_Calf_Raise/1.jpg",
+      "source_sha256": "0570bc1b3f526530cfcd634143ec36a3c997d3f5bc51a144236586e770156f8c",
+      "mask_sha256": "09b6d181edc0c5748da93e3188f77bf4f9a3d76779cd6a77a4d227a528d301af"
+    },
+    {
+      "path": "Romanian_Deadlift/0.jpg",
+      "source_sha256": "cd62a031d395afa1f63f660370e79d812ca0f9cf52718a33ee24d9fec2a9709f",
+      "mask_sha256": "fb841dd2afcca5bdfe2033d343e549664dd05fc046cc49dd30bb386a50727869"
+    },
+    {
+      "path": "Romanian_Deadlift/1.jpg",
+      "source_sha256": "156406c703e8d4a172034e413b317b93907be82deaad5ea2f3cc0a9f181c7b9b",
+      "mask_sha256": "8e827775b5f1df2ba5aa30bff7deb0476733fd8a1a08add07c595451397dabd9"
+    },
+    {
+      "path": "Romanian_Deadlift_from_Deficit/0.jpg",
+      "source_sha256": "4bd0c18f2bd485c8b5119a7f4503c10a16e715ba6ebfbaa3a6b8fc8a1e244973",
+      "mask_sha256": "dcbff8a23f64f6cfbca201c4de221ca43418a1ad7c8811a56e73490b1fcc57dd"
+    },
+    {
+      "path": "Romanian_Deadlift_from_Deficit/1.jpg",
+      "source_sha256": "66780fe2a10c0e32eb9e7cd97e71b4dc277ca657bd5c054f1ec85c2b4cf96fb4",
+      "mask_sha256": "3912d575e510d324154d3db25dd01c46de0a35d4674d495259baf4df0a5ab2fa"
+    },
+    {
+      "path": "Russian_Twist/0.jpg",
+      "source_sha256": "e82f47fe7f7f9ba5c75e56b751d357f6e78eb3a5adba4da3aef8df44dfa7234f",
+      "mask_sha256": "aafddc3dfcabb71691e2097cedaf32ccd3287121273f1893e28de1ab1a289f5a"
+    },
+    {
+      "path": "Russian_Twist/1.jpg",
+      "source_sha256": "7942e01c08ff47f71deea024bd6ed8d4766818d58229547770f22988b03c8da6",
+      "mask_sha256": "2916ab851013f06bb3d19d5cbefdd74249f190c780022eaa7a410300bf1fe7c7"
+    },
+    {
+      "path": "Seated_Band_Hamstring_Curl/0.jpg",
+      "source_sha256": "37af0ca65b5c252db7b89a8335c9ae6a09d71bc7e9c4f6bb7f02eb71bf87df3d",
+      "mask_sha256": "6ada60c926ee5c678c6c1ef72c40c7ad9090b5204ab45aac024f6544d79e962d"
+    },
+    {
+      "path": "Seated_Band_Hamstring_Curl/1.jpg",
+      "source_sha256": "725e779057237b740d526e124433cded069db103ceb5b4d377fadcfaf07bf504",
+      "mask_sha256": "166cc000fd0145444d51a91fcccd5f196a9b8eed91c9cf499a3864d2c27b9e13"
+    },
+    {
+      "path": "Seated_Bent-Over_Rear_Delt_Raise/0.jpg",
+      "source_sha256": "6edcdf92b77376a714f7d3a552b0e148e2f0f409bcc1c5ec3e63610255638333",
+      "mask_sha256": "1a79169b7e72816f492645255cec5f3dc93bf02d4b9d2baf2259d96a5e83ef28"
+    },
+    {
+      "path": "Seated_Bent-Over_Rear_Delt_Raise/1.jpg",
+      "source_sha256": "ae4b412ff3a666d74189215b95712d7fafd1b5feaa1dc2e4a93cc0f855230240",
+      "mask_sha256": "4d7a5f6c122f87ce13142cc00e88eac4db9276a14cb58130e7e86415d3554741"
+    },
+    {
+      "path": "Seated_Cable_Rows/0.jpg",
+      "source_sha256": "f5a4adf972f93a6c7b09e003f23005a1163653a7e36b71f1e374acab0243ddf7",
+      "mask_sha256": "87c7b7d637c0a11af9b88d405d574cb78de2400dde0e591b307aec5d82aa176b"
+    },
+    {
+      "path": "Seated_Cable_Rows/1.jpg",
+      "source_sha256": "0b8e1a0b0fff86cafff45d851ea631a20d469713e9fd735031d3fffb0299fde6",
+      "mask_sha256": "d76f9458fe5ab565045b962f3eade81358eaf3a7683dac7d7370682f5e8205de"
+    },
+    {
+      "path": "Seated_Calf_Raise/0.jpg",
+      "source_sha256": "6f1e5d06681b9d7050531622e065391fd3adb8d18e41a23fb80c62cf99c88d63",
+      "mask_sha256": "f82ca31ba4b19de0e2a258a55f5c9057b6f12d2fa8f317d6c921103968a80b83"
+    },
+    {
+      "path": "Seated_Calf_Raise/1.jpg",
+      "source_sha256": "c397665d9d93377db1a579a6c7a3ab4b2b92428706df545fffcc7cb35e7ec738",
+      "mask_sha256": "78ce82d09aa0bba564cd3e4cb282e4cd35324684b0e8952626f6e53b0a75c967"
+    },
+    {
+      "path": "Seated_Calf_Stretch/0.jpg",
+      "source_sha256": "a9fc285572c79d5eb85a436e1aacbfdf0ce249266cb659c55f3b6b42d846967b",
+      "mask_sha256": "a953e9f5066c0416976b48dd56a35b1c3c5dfb21a9a1b3673d4cce9cf78b57ed"
+    },
+    {
+      "path": "Seated_Calf_Stretch/1.jpg",
+      "source_sha256": "49e0dd714abcc76927d1ec36fb2db71a8a574281681e3736592cfefd557c3ea5",
+      "mask_sha256": "32a92b50f16f4518b3b5daeca8ae2ebc2069ab4afca9f8e6f35cf0ec672f75e3"
+    },
+    {
+      "path": "Seated_Dumbbell_Palms-Down_Wrist_Curl/0.jpg",
+      "source_sha256": "030dc765e3f881cab9b004f395fac0a33145a0a06f612f200903c22196e49697",
+      "mask_sha256": "9905c8054e55578b3f9df9a73b64c0126cac04ce98738405ba97032ae02bf0c9"
+    },
+    {
+      "path": "Seated_Dumbbell_Palms-Down_Wrist_Curl/1.jpg",
+      "source_sha256": "a46854b4055f25d40be3e0ed3bdcb65f70980a3ac7b78ad234b347d234b66f59",
+      "mask_sha256": "a7b1733f6492064dbd20a8818e8bfba769082531610f14a0a7d9f2a9a55f1726"
+    },
+    {
+      "path": "Seated_Dumbbell_Palms-Up_Wrist_Curl/0.jpg",
+      "source_sha256": "0366c1e8d88c385f84e2948fb60acf67ea4d16792ea8d05f0dacb60b65964bb3",
+      "mask_sha256": "159d0783ae020a05ea2c10eb3e2148cfbb44e3789dd0a30d5fa053bf20f92ec2"
+    },
+    {
+      "path": "Seated_Dumbbell_Palms-Up_Wrist_Curl/1.jpg",
+      "source_sha256": "2eac39b0386e12b06cf229591cc680df2d61dacac03545db2280665cd0703304",
+      "mask_sha256": "732e87b682a740f898d29a96f006824bd1415108d247de9339144ed024ef12d6"
+    },
+    {
+      "path": "Seated_Dumbbell_Press/0.jpg",
+      "source_sha256": "bbcfab72d376f973932e7c46a87cc2022865a4641c0798b2d724ce6aea266deb",
+      "mask_sha256": "04666e3580e71d1307e9c32197362d9923a49cedd541b6418d9f0747a0ac2e12"
+    },
+    {
+      "path": "Seated_Dumbbell_Press/1.jpg",
+      "source_sha256": "c61aba91d6ecb5c34bdec0086123c11a7b987a40314727a1fefe3e365210cb23",
+      "mask_sha256": "9a6296a58ca027e7e0fb3aa1d2b554cd0717844635c2527553b52876b61f413f"
+    },
+    {
+      "path": "Seated_Leg_Curl/0.jpg",
+      "source_sha256": "c84ece2e8b52314c8605e9fc3ef1930a59fec475ff1b5a7f98687a4b8fc580a7",
+      "mask_sha256": "127e97cf4e3e7cfda2178e7a1b259c05c188999872689439923aef81aed428f1"
+    },
+    {
+      "path": "Seated_Leg_Curl/1.jpg",
+      "source_sha256": "2cbd4aa6c22162a209a7ced5d1a68274d44e88780c8c3936c7fab57d6e9918fd",
+      "mask_sha256": "277ab8e10a4843540dd8142f7760e360303822937c36b1db97ec80c666586960"
+    },
+    {
+      "path": "Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl/0.jpg",
+      "source_sha256": "babf6237db4846896126ea02cb986f79d14799eca928b7bc0bc0569826f99743",
+      "mask_sha256": "d28996461aaba1fce57bcb8fd6569bf5d9fe5f55b53ffdcf4204d3b5103a8cfe"
+    },
+    {
+      "path": "Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl/1.jpg",
+      "source_sha256": "8c258a9b519b88430d49bd546b78fc145ab7c55358a37e1d5252ba3e9445a764",
+      "mask_sha256": "e65bf4bf38bb00b8fb59694ed2f60a246808452ba86ed698960bd4e5213b96db"
+    },
+    {
+      "path": "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl/0.jpg",
+      "source_sha256": "588c2f0bba62063e835f74af71cdc17a124581d5c4d73cd375aa871cdcd663be",
+      "mask_sha256": "421c5114f65e2062b5327dae3d660f47306449168d00b021154d88aab89fd412"
+    },
+    {
+      "path": "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl/1.jpg",
+      "source_sha256": "c606764a36680b7d78a861474d22b265cd550c750bb751366f161e2d2c0be7ed",
+      "mask_sha256": "bf071fc32e24a860e9d498199122d05dbd238b162ae702ab4039779ff18b7cc6"
+    },
+    {
+      "path": "Seated_One-arm_Cable_Pulley_Rows/0.jpg",
+      "source_sha256": "2fa8f2c1db609642e272502a8ce0aa29234e1b0817615d7b0b0ec772c970a358",
+      "mask_sha256": "659e1920eeff8a925e652b17cf2ba14130a893542563e5031f0d9fa93423aeeb"
+    },
+    {
+      "path": "Seated_One-arm_Cable_Pulley_Rows/1.jpg",
+      "source_sha256": "a13de8f65164441a337738fba7e43650bbbdca06b9dc878eab15bee3a42a85af",
+      "mask_sha256": "37b8fce4484db00912ae62b1b2913bb51970fc30d693cac19734dc24b81a73ab"
+    },
+    {
+      "path": "Seated_Palm-Up_Barbell_Wrist_Curl/0.jpg",
+      "source_sha256": "37be49b5db8bd7efede4f4ab8cb4372a49f3917f7f0e635528858e4fcbc89bcc",
+      "mask_sha256": "2d1008ecd7dd0e1bd3ef1d819423cd2b2171f3be55b73dbbd6b96f522351db48"
+    },
+    {
+      "path": "Seated_Palm-Up_Barbell_Wrist_Curl/1.jpg",
+      "source_sha256": "9d4c7cc1e5270d7ade366fbcb183f1bb1d1280c7ad65f60a215705f9c9bc781e",
+      "mask_sha256": "f45296add84538b05ca3ca5360217b8598e0db12572b31e0d34781be111e6a21"
+    },
+    {
+      "path": "Seated_Palms-Down_Barbell_Wrist_Curl/0.jpg",
+      "source_sha256": "b67de85450035557b58ce589b10bd43b67b3b917af984b18d75cced9202ffcbf",
+      "mask_sha256": "7fbd45f98578ce7224f6c307e6f54ef5819a1885e27830e2556e83fb04e021c9"
+    },
+    {
+      "path": "Seated_Palms-Down_Barbell_Wrist_Curl/1.jpg",
+      "source_sha256": "233437e7e67f012e3f1bcbc6798517d4fea76ba664a3077179b779795bdd73c0",
+      "mask_sha256": "3f13aa8f8011db0b62b0abfe3ec17d9555aa3f9b3168d99fabacd884fc95cff1"
+    },
+    {
+      "path": "Seated_Side_Lateral_Raise/0.jpg",
+      "source_sha256": "1fdeefecb4bc51e6891212a46a72162b3816e1de39cfa33a6e1c5c63862d4a54",
+      "mask_sha256": "f83937ebfa95572828e38754fd5958f23528f8bb3ce035fb45e73c8e2c273359"
+    },
+    {
+      "path": "Seated_Side_Lateral_Raise/1.jpg",
+      "source_sha256": "107602e2a219e08f0736a10e58dec50d109e754435fbb0bf4461600f82664d1e",
+      "mask_sha256": "611eebbef0d6ede3fc962a03592df55e2cc6d87eed0a6e7bec5cd8ca31c1c5c8"
+    },
+    {
+      "path": "Seated_Triceps_Press/0.jpg",
+      "source_sha256": "1e9c8760bdaf3a8d7a69485b436e1df6e7444a02ad10d3d5c89f9ab0b1ddbcb8",
+      "mask_sha256": "c8283de31b01c3e5131a03d274f8d2bbad40ba38cad9e709683fe2fc6ef1078e"
+    },
+    {
+      "path": "Seated_Triceps_Press/1.jpg",
+      "source_sha256": "566e9eae79da144a54df952012f508b05ce385f144b56753b821dbbee88b6052",
+      "mask_sha256": "08a40ad6cddae5c183477ce2f66f526a8c9e2f32391464e202c435f44221f3cd"
+    },
+    {
+      "path": "Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl/0.jpg",
+      "source_sha256": "93e4064f3ac154cd04106eb6e7d1fc5796c36e8b863e02dd111f8ecf75a1fdb1",
+      "mask_sha256": "31c06ced621315dc3fc4764c9db3c87dc8fd7d3e990d51bb0551d66656577f07"
+    },
+    {
+      "path": "Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl/1.jpg",
+      "source_sha256": "241bdfcabd58bba29284366c1abfc190b802a7d1838489ca780d2ffbda81b0db",
+      "mask_sha256": "102d4ee1d0d2db6340d6de5f87b4ff339c603b91749794d036d538598fb2904f"
+    },
+    {
+      "path": "Side_Bridge/0.jpg",
+      "source_sha256": "fcbf157799efdce6c7d5a9aff22e7f73aec23e016d504abe5b4161a55844a48f",
+      "mask_sha256": "82e8adf9036ce66b04de8d9ff9ff52739c2f17604818fa3c5cbff31370f9da8d"
+    },
+    {
+      "path": "Side_Bridge/1.jpg",
+      "source_sha256": "ba9eb40f70d37af9830676643b36ddff7aeeb2ba88d76be272b4a0e697927f15",
+      "mask_sha256": "6568d4995bef6ba6723563f9cdebe828be778e8a4d26688b3a4f96fbe12ad606"
+    },
+    {
+      "path": "Side_Lateral_Raise/0.jpg",
+      "source_sha256": "aa1982c367ea9151ee7769ac1f9f8795209db94a6eb85f7d51a7033886fb7ebc",
+      "mask_sha256": "45d8a6e0865077b6890b057120c46341637b5d3deb5003e7295865b6ade15139"
+    },
+    {
+      "path": "Side_Lateral_Raise/1.jpg",
+      "source_sha256": "9210e0fb0202c306026d45a55703aaec89b3bef7aafeb7791aa1d06adcf58ab3",
+      "mask_sha256": "2005cee9c14712bd8de3614d5f984af7df73d80d409f17d7f40b0649fb5e0b99"
+    },
+    {
+      "path": "Single-Leg_Leg_Extension/0.jpg",
+      "source_sha256": "08a491680f00232e8487e8b556a478d766437b3a027f581c913df127ab040e6c",
+      "mask_sha256": "1afa0f7d7e98ca47d90a93fb817330477c0c1313e1385efe60cd90d99ff24d1d"
+    },
+    {
+      "path": "Single-Leg_Leg_Extension/1.jpg",
+      "source_sha256": "4e855477c1cbddc37db0f545332ae407a1afd9c878a40ba5521b76fe8416f68f",
+      "mask_sha256": "afee33d1e4ff700374614413445590c809bd1dfd95bfd0bad1d8f7c7db207435"
+    },
+    {
+      "path": "Single_Leg_Glute_Bridge/0.jpg",
+      "source_sha256": "12c9bb37081512ce5c013f02e986a00153411681ca36a9f1dbeab720c6eea667",
+      "mask_sha256": "4cedac5ab12b6d802ac43c7c5c815b1ba4521cf234358d9d6291b0865f52cdb2"
+    },
+    {
+      "path": "Single_Leg_Glute_Bridge/1.jpg",
+      "source_sha256": "bc3a789ff17aa09758e6f6e9594d369b83989cf145dbbce0734b772dfde81ee3",
+      "mask_sha256": "c5728e5f930cce1fc47abd11baa002f88be272fbcda501b2d98ce6fe9542353a"
+    },
+    {
+      "path": "Smith_Machine_Bench_Press/0.jpg",
+      "source_sha256": "8353678dd9478d1ae716a47cfcb765b8de6d7f3706ed87151c9ada7d2903e253",
+      "mask_sha256": "2026c574045d7e8afd75e5aa984ef2403ea3937b2221df68ffa0bc3edb2c0bc9"
+    },
+    {
+      "path": "Smith_Machine_Bench_Press/1.jpg",
+      "source_sha256": "47eaab8799aa613c10067c29cf7be5f57f6fe9b8ee5ea9a3f4d55b19a427085f",
+      "mask_sha256": "246440db8fa580cd636ec95160fbef734a1d34476577f7836b22e13ba7c2978c"
+    },
+    {
+      "path": "Smith_Machine_Calf_Raise/0.jpg",
+      "source_sha256": "27a3573ffb8818d7d87784b310e71c411fa9506eff08fcc38864dbffe4f52a01",
+      "mask_sha256": "54f0afc6eaeaf57b89aef1cfb4d532399b52c7ce6418ca5b53461f10903e564e"
+    },
+    {
+      "path": "Smith_Machine_Calf_Raise/1.jpg",
+      "source_sha256": "233c4ed08cccc68b9f372bfbd67158ece163a9c29d1a950a90e23a67c6a60515",
+      "mask_sha256": "905f24eee0e67799fecf356cd1e54b3df2fa74d8fa45a7b6381d4ba1640da1ac"
+    },
+    {
+      "path": "Smith_Machine_Incline_Bench_Press/0.jpg",
+      "source_sha256": "f395110a0b7c2f8319591805f14d6d04d89c90ab45923524249026ff5441db6c",
+      "mask_sha256": "089d45306b5b8b64b3e94cee26247b68ff0ac60e825a909ad63dc37cd4f4c4a3"
+    },
+    {
+      "path": "Smith_Machine_Incline_Bench_Press/1.jpg",
+      "source_sha256": "fbf2193e918bd4ab4615756b2e03e0dd733bcf21f262f81b1e80ccfbb75e8aa2",
+      "mask_sha256": "29f3bce04142ee34cb24d61ae386c01426c40e2ba5b39e4a96fe92de6ae3f400"
+    },
+    {
+      "path": "Smith_Machine_Overhead_Shoulder_Press/0.jpg",
+      "source_sha256": "6fcb94e9d86a3fb4c79d53741f7041406a474a73b0918597435bfb1246eeb5fa",
+      "mask_sha256": "2df2c1ad5f3742068304c4fc0387924f097928e8ba434cba031035f8c2fcf95a"
+    },
+    {
+      "path": "Smith_Machine_Overhead_Shoulder_Press/1.jpg",
+      "source_sha256": "8526aaa9be980fb387523ee5a44ce2c0488a7d850a1d7d58163a7e1f870e49e4",
+      "mask_sha256": "8147953741fa1cde29072e3c87a339e1ced83b881c5392b9363002f83c35af7a"
+    },
+    {
+      "path": "Smith_Machine_Reverse_Calf_Raises/0.jpg",
+      "source_sha256": "f8a71dad9870bdcf1c0af9735ea900a7364414e111e02b35ac6eeb10e2b763c6",
+      "mask_sha256": "ca7f69a8287006fc55a198349c35c06ede2fcbdc9a6af1ef2de04eb4e5f2845e"
+    },
+    {
+      "path": "Smith_Machine_Reverse_Calf_Raises/1.jpg",
+      "source_sha256": "0243fa2fbddc6004fd41c9f9b5c179479b4fa7f8bd8803e640760e06b010128a",
+      "mask_sha256": "3147fdb9f4031e3c507a9f0832f65d3dbd7efea51d30e20279e8808f6173095f"
+    },
+    {
+      "path": "Smith_Machine_Squat/0.jpg",
+      "source_sha256": "7afbe478c1715744a7790708d7291a5375ec038e39e5d3cc349b0bd8edfb529d",
+      "mask_sha256": "e19c7fb0d9263c840d4df0dd20da4c8687beb329764aa5b64032ad5de0d6ccc6"
+    },
+    {
+      "path": "Smith_Machine_Squat/1.jpg",
+      "source_sha256": "d910313e6348559bc07814978c4088a956b980c7e9bc8bffb884c89807d6a7fb",
+      "mask_sha256": "65aed48ff8f6566591f661b6b9bd21c89e97cc919c82bb739a5468b8688b9275"
+    },
+    {
+      "path": "Smith_Machine_Stiff-Legged_Deadlift/0.jpg",
+      "source_sha256": "9108afb527c5969b99778c22573031faa54c823495ee3449b5f509dc302753b1",
+      "mask_sha256": "fee0957c96121ab073970105544d2f25ef8c89d56cda848a38ce25f2a1d0ff26"
+    },
+    {
+      "path": "Smith_Machine_Stiff-Legged_Deadlift/1.jpg",
+      "source_sha256": "3c356e5620d247f00b60d4f6ac3019b378f9d9e71ef35596f8c1b598db2bbb83",
+      "mask_sha256": "8b4584e3ffecb60342b3743d2fcc6d87be0fc3dbb80b58ab3a2f5b23c506d9d5"
+    },
+    {
+      "path": "Split_Squat_with_Dumbbells/0.jpg",
+      "source_sha256": "3c5813f67aed71721eda63b2c102bd4d3e841bf6a7357c07967470bdda2d8fc8",
+      "mask_sha256": "44879d2114fd7f02b432f3bf5fdbd3243f7baf8e7285d5e5213cb6402699ff1f"
+    },
+    {
+      "path": "Split_Squat_with_Dumbbells/1.jpg",
+      "source_sha256": "376ed996e650ce4d796ca75a4c0de1ec2133ecc9a3e9b7a285bdd718309e4c08",
+      "mask_sha256": "cab92268f786c7b5887455b9ac8daf8fa19a16ad78b57b98e770ed1f1416971e"
+    },
+    {
+      "path": "Standing_Barbell_Calf_Raise/0.jpg",
+      "source_sha256": "82724066c87baa757b9639ddd5448303a8f07e641d3a90829401c671f6c7a554",
+      "mask_sha256": "332683bd6f527f276b4bd2054c3d1b1289d9e725f4d531d09f10b9a263f0a6d2"
+    },
+    {
+      "path": "Standing_Barbell_Calf_Raise/1.jpg",
+      "source_sha256": "f8da9c48c7bc8bd7c3084fb192f27a8e00d8a16c652e56acce34cb6b7d4f0552",
+      "mask_sha256": "adbcf60ece05d61d98147dc1c015c89c1e7be1ba46587ff78d4eff3f802bc2ee"
+    },
+    {
+      "path": "Standing_Biceps_Cable_Curl/0.jpg",
+      "source_sha256": "ccfe9ea6c72996c905bc82c032facf110246442ef6ccf28babee775277f0bc29",
+      "mask_sha256": "27b68f92a47658c433524bc959da41140e6eafd721dd6b2d3499148f58124b7e"
+    },
+    {
+      "path": "Standing_Biceps_Cable_Curl/1.jpg",
+      "source_sha256": "5aa3493077fbf138f40bd71a476880395275599ff72ca30f04ce0a15313c201b",
+      "mask_sha256": "05f113c2126c95454fddad492690ab77b6d00b8d8050363fcfffcc4809f1fd55"
+    },
+    {
+      "path": "Standing_Cable_Chest_Press/0.jpg",
+      "source_sha256": "0cb8759f65b292a272e1a737f9856500e01638810576d1c9a71b7be51eca3e8e",
+      "mask_sha256": "0681c2299c40e36d3b8d6d3987214c72c04f2be85ffb4b19d9d6cd84e54c118d"
+    },
+    {
+      "path": "Standing_Cable_Chest_Press/1.jpg",
+      "source_sha256": "6632bf5c06e45a7649ead2c4b874475df97461da4872b6ca8ac2d9d40d5fbe2c",
+      "mask_sha256": "9264075d90b225ca1736cebafdfdfa705dd77511b7c0bf229e75ef189463afa7"
+    },
+    {
+      "path": "Standing_Cable_Wood_Chop/0.jpg",
+      "source_sha256": "2527b5e163dbfe02a51665d32867da2a09c09a2757280e4f16f4dcc28db97489",
+      "mask_sha256": "ad246f83878b95fe8a690a1e97e2106e55ca0ead3198631ad2469f744a57564d"
+    },
+    {
+      "path": "Standing_Cable_Wood_Chop/1.jpg",
+      "source_sha256": "ae61b06de1c58add97f35c138fa67deac5433b4480239a2832bbbd36520a02c4",
+      "mask_sha256": "f4c640f5559722fea4fdef71360ce182e7e69667644e3780694a93e2b147c028"
+    },
+    {
+      "path": "Standing_Calf_Raises/0.jpg",
+      "source_sha256": "44922f411d204bb00dc86015981413e0ca503f0b9ba2346af25f345a91cf4848",
+      "mask_sha256": "45c2df79c9cf50f203a81f92f0a41a3fa1abbf956b473e64049fab765c82f13a"
+    },
+    {
+      "path": "Standing_Calf_Raises/1.jpg",
+      "source_sha256": "f0990fed5d984fdf31c7b6a8420adb59ed6a3f286af6f228d53b68445caa1c51",
+      "mask_sha256": "f1b07661aebb4a04cb02eb632eb450ee805fced908bdaefbe67d53426dc09fbc"
+    },
+    {
+      "path": "Standing_Dumbbell_Calf_Raise/0.jpg",
+      "source_sha256": "5e120471e335e58248af0202c3720a6f7c7f822566c785d0e43122d17da94aa7",
+      "mask_sha256": "84b0ccd3076d7341a3545a0c6927de7d48866b38b45b42a435ae75913c580f38"
+    },
+    {
+      "path": "Standing_Dumbbell_Calf_Raise/1.jpg",
+      "source_sha256": "9102c567e60b12ce944e4ce3177caad918a13ca0fe1c1be15f099f89369aa100",
+      "mask_sha256": "1b2828e9607dcd2cc59785bbd44ca7352e14efa96c6e8fddca391f473fb783cd"
+    },
+    {
+      "path": "Standing_Dumbbell_Press/0.jpg",
+      "source_sha256": "db1ff8c6dc877a840884f8a3202eba2be7a3f14ab95065f5f18dff50c4208423",
+      "mask_sha256": "a4b2e1155dfe93bcbb1dae0f80a1c9072879458a9081b769abcc466004da0a9b"
+    },
+    {
+      "path": "Standing_Dumbbell_Press/1.jpg",
+      "source_sha256": "fe28bcdd4d76ece161141a80f79c8a18e480c262d2dec80b4beafc4720027ea8",
+      "mask_sha256": "558a79dbc6b640b6fb035261e98c6a562b1e78dc1c5ddab108052ac59d94836c"
+    },
+    {
+      "path": "Standing_Dumbbell_Triceps_Extension/0.jpg",
+      "source_sha256": "f1689989803e4463fb92bcc955d96b422f6f5ef9ebd23d9a9e9547ab1242932f",
+      "mask_sha256": "a31cd056c2f57dd15eb1f5fbfe8b545b8ba46801480703a45dc4165f84f1c2c6"
+    },
+    {
+      "path": "Standing_Dumbbell_Triceps_Extension/1.jpg",
+      "source_sha256": "9fd2a8098c9a042300789e542f651d599114adbb3f070dfe44a0c9e3d3bdcd0c",
+      "mask_sha256": "f74e844f97cd8704cdce61229a803640fbca2083acf8fa43857b057dded658de"
+    },
+    {
+      "path": "Standing_Gastrocnemius_Calf_Stretch/0.jpg",
+      "source_sha256": "bb60adda48d2360fab7a3952e97b204a04699b38337e8efe87c0117dc1f2d578",
+      "mask_sha256": "3157bb63a846618f0aed23935fa3430c52f0d2f4c05fd103d5954171edee3b71"
+    },
+    {
+      "path": "Standing_Gastrocnemius_Calf_Stretch/1.jpg",
+      "source_sha256": "0f551f1b277978e273478818963d3e562c97b53f885880933b94adeb04ef3b00",
+      "mask_sha256": "f5e640c85ef539e9f8db9ee4d973f80c1e9ea1873636c06b3b1a2350d74bfd8e"
+    },
+    {
+      "path": "Standing_Leg_Curl/0.jpg",
+      "source_sha256": "844ccb740f184ca52928a3f3a4c9f6bc534cc4e5e796049e146a0823e33250d7",
+      "mask_sha256": "b4992c4d8ce660df484354ba4c3a4828a8e7fb95b9d1ab375374d6515bb758be"
+    },
+    {
+      "path": "Standing_Leg_Curl/1.jpg",
+      "source_sha256": "089b3ff2680d1ce0f5cd3fbb329a68b867ead76f7b94c471c5879180588859c1",
+      "mask_sha256": "fa8bcd455deaf168346d585264e0e9c75c0de1c8ed87a7f0a75e8559bd7abcea"
+    },
+    {
+      "path": "Standing_Low-Pulley_Deltoid_Raise/0.jpg",
+      "source_sha256": "7d14044cc478a750fe7c2e53ee55f96467f7cf50032e090bd361d76f73aa7153",
+      "mask_sha256": "55e384dfe891a79a874185aeb2aa51b3d2b4d1d26e691e621b46107e142d4732"
+    },
+    {
+      "path": "Standing_Low-Pulley_Deltoid_Raise/1.jpg",
+      "source_sha256": "89c796351be03f3f971fd776955e6b1cbd747c5361a3b6b8e50aeda26af66f93",
+      "mask_sha256": "fc0f8bebc6aa9f01f5a2c5db9411510729b1125c1d0e2db48165edcc7e318c0c"
+    },
+    {
+      "path": "Standing_Military_Press/0.jpg",
+      "source_sha256": "fb258efda95067b243b1c5033b1ff7b72a0f8cef8607477b71b969d3f72a8471",
+      "mask_sha256": "aa3fe85e25906d35a04707fb51612622ad878c247ad80ecd2074f919d58bd1dc"
+    },
+    {
+      "path": "Standing_Military_Press/1.jpg",
+      "source_sha256": "b9419884fa57bd7de1dff2d0f811aa61d4cd5547b3c6ebafaca01c7017d8be1a",
+      "mask_sha256": "a56f1c3438be22b99d8a67512ab415cd6e4be71d35beef5a2cdfa59f38d52c9b"
+    },
+    {
+      "path": "Standing_Olympic_Plate_Hand_Squeeze/0.jpg",
+      "source_sha256": "3ead7253a7a1c24b938588e87acdf3da298492c54c276e01b7953c4c138fd873",
+      "mask_sha256": "185f5e0133504e8e7961ce2d796e80928d572d7ff6d143650f050126f578f6b4"
+    },
+    {
+      "path": "Standing_Olympic_Plate_Hand_Squeeze/1.jpg",
+      "source_sha256": "f7b9cd4d2951e5d67e71767dcfc4c8ea6016f87f80bf6d26ce860f68a4ab9ea9",
+      "mask_sha256": "fe71ed901b87472c5a55822d121942b8496c989991788328963ff132eb859930"
+    },
+    {
+      "path": "Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl/0.jpg",
+      "source_sha256": "d76cf6891250f989e2424115b2f56888ec5bc0b0502fe77c52eada36197e0518",
+      "mask_sha256": "0bc26f051a4ffab38e3d71cbd74271d35944bde6d4e0cfac8ad7a9bb44c3dcdb"
+    },
+    {
+      "path": "Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl/1.jpg",
+      "source_sha256": "e6302f61f35bdadbfd3bb6e4c5011f7850f2d91e8bd47d00809454a3dca8df64",
+      "mask_sha256": "1791385052c6a1b6a87e77eadef83e2c3e9529cac2cc9520368afd47d1f1cd00"
+    },
+    {
+      "path": "Standing_Soleus_And_Achilles_Stretch/0.jpg",
+      "source_sha256": "828008b84ada439c464182a8fe9782a3ee3ed9727f8b6f223a4529170397964c",
+      "mask_sha256": "ae8f08b594ce58cc70c31b764ecd800676724bed0658026fd2cf5a3657b41ed8"
+    },
+    {
+      "path": "Standing_Soleus_And_Achilles_Stretch/1.jpg",
+      "source_sha256": "97b814367e010f09c7522ed697ae3aa3d289a23db0cc9a90ce4d482e1f412e6e",
+      "mask_sha256": "1c08597be3a18665794a55a38a531525a7c15a455479e21d450a0ab84db68972"
+    },
+    {
+      "path": "Step-up_with_Knee_Raise/0.jpg",
+      "source_sha256": "60c44f399a96d4bda485df453b3316c858da7c3fccc3cebd14f4a749962e1cea",
+      "mask_sha256": "937a9b21c776c67d445e78fffa6b5544bc84f255af46d536066e9575e93cd5e3"
+    },
+    {
+      "path": "Step-up_with_Knee_Raise/1.jpg",
+      "source_sha256": "f278412d713cc59a8959fec466faef106b548d7d6cff3533af505281cc555f4e",
+      "mask_sha256": "f8e463776e922e94e98592a3b2b533a9116cc14b68050f08ae7f7cda8de77ba8"
+    },
+    {
+      "path": "Stiff-Legged_Barbell_Deadlift/0.jpg",
+      "source_sha256": "8eb5a2b4c19ebe60ee0cf1c84f8af729ee886cb052e14192fe857881f8709cb8",
+      "mask_sha256": "4e3392e57a44423c8de0c0ec7515ca39aa301a52a71cefc44fedce8de890c324"
+    },
+    {
+      "path": "Stiff-Legged_Barbell_Deadlift/1.jpg",
+      "source_sha256": "faca4cc4a88f2abbb4520fabc4769ca7a37739139e8b899e954d54a34b8383f7",
+      "mask_sha256": "11cb4b29f0d892a618d06c1e109643581e1561f5ddbd65389c2abfd43b48c866"
+    },
+    {
+      "path": "Stiff-Legged_Dumbbell_Deadlift/0.jpg",
+      "source_sha256": "02659ec9c245a9b44be7da73d19b9ea6bfc819fcdf4de3ec6fab705e45abb7ca",
+      "mask_sha256": "fb42c1e0c45a9fea869757112b22a7f647df6966d656acc3133bd7ecc3acc821"
+    },
+    {
+      "path": "Stiff-Legged_Dumbbell_Deadlift/1.jpg",
+      "source_sha256": "4d56648788e857b4675ef398907a12a4d99c1a43240acac1d8fda1554cf119dc",
+      "mask_sha256": "cb386b26001097afde029c2391c533f9105b2539f1a767a337504ca7280c31b9"
+    },
+    {
+      "path": "Straight-Arm_Pulldown/0.jpg",
+      "source_sha256": "be0021aa99d1a00fa4536b027f9ade42f08acd3b59b384acab270bfbe6e9c294",
+      "mask_sha256": "9a51d202543fc4327de474eea2aeab3f63dacae862779a0b7a6746c628a91c2a"
+    },
+    {
+      "path": "Straight-Arm_Pulldown/1.jpg",
+      "source_sha256": "4ef6a19848a25f91f2089d168057e4c84b285d48d14758d16b3d8e131fbbc88c",
+      "mask_sha256": "004c35548f551f83011552e1ff907c9a5f269b52da7291c5d07c44e7f69c5a35"
+    },
+    {
+      "path": "Sumo_Deadlift/0.jpg",
+      "source_sha256": "40350f7e6ab32f208c04e84e175989a9fe9c33ce41057bf1585a67b1402f3baa",
+      "mask_sha256": "378aee3d1e9129c794fa27564f233e6a05a30f2cb16165dbcc97cf9f94f64b33"
+    },
+    {
+      "path": "Sumo_Deadlift/1.jpg",
+      "source_sha256": "ece39dbd0f736ffd2071a252b8f6a9cad6341c629257509aa44c0a425a47a432",
+      "mask_sha256": "aeac59b1bdff33f66e115e878add3e561ff1317a38a463879d7dc23bf65378f4"
+    },
+    {
+      "path": "Thigh_Abductor/0.jpg",
+      "source_sha256": "572cef392f2a10c377153c5fe0acd5e0b4d0e881024ff6a7fdd4a6320dc7ed51",
+      "mask_sha256": "d32e1b1decb84d57c20cf29eb0bb57eb4de5757c84c87e89713809e3f2ea6422"
+    },
+    {
+      "path": "Thigh_Abductor/1.jpg",
+      "source_sha256": "c438500671ec2dc6fa726086ec4a56903635ee65e37b3449174f18aaed1409c9",
+      "mask_sha256": "c238592e18f7929a5fcb6a5d638fb3ccbf02610585c45f942dbe68a6722d7073"
+    },
+    {
+      "path": "Toe_Touchers/0.jpg",
+      "source_sha256": "a5fba6505b4064704e7fe40cbf092ecfd43c080222a7a11d842c8745e389c968",
+      "mask_sha256": "2537194807a102013952269e4a2c1de2a3e3f8c323abdc9569711abb3d74f8c4"
+    },
+    {
+      "path": "Toe_Touchers/1.jpg",
+      "source_sha256": "1b11a8ef32d68facd3d7c78dc0b214e97a3d6fa74efe2f65faf085092830181d",
+      "mask_sha256": "930f0f30083016b60b3ae8e5f03cc81902a508e568e778f058308d24cf4c11df"
+    },
+    {
+      "path": "Tricep_Dumbbell_Kickback/0.jpg",
+      "source_sha256": "1af9b3ac2f7a97e5c9d9fe81d8993969d41bb198c828ec58f752e14f278e4310",
+      "mask_sha256": "0fcdd0eea0d9e8b3d77024e3e0eacec8870e93ff614687e5c9aedc497d53c3be"
+    },
+    {
+      "path": "Tricep_Dumbbell_Kickback/1.jpg",
+      "source_sha256": "fd3cabcb145d7e6f7cae7da1a8863390d8f10f92342939ae05bcecc7b1150e3c",
+      "mask_sha256": "da822b6192c3e35fa8062c2f360df1abc36e7faccd3691e18f787ee6402a31ce"
+    },
+    {
+      "path": "Triceps_Pushdown/0.jpg",
+      "source_sha256": "5f52b0f699fcd01bcf07053d9abe26e428f227816d62bc61a3232435715b5e7e",
+      "mask_sha256": "34788dc0b092755581bdf46cdbc564b5d2c6d9e5f299f6a22daf403ea0c10f1f"
+    },
+    {
+      "path": "Triceps_Pushdown/1.jpg",
+      "source_sha256": "76f7793452cebb4f00846f9fd5ce3306d90d4b1912b192125cd428c2d8b76a3c",
+      "mask_sha256": "6279d6bfd75a3ea0315641f027b34888642b5d09161a7319491c4b1c400b17bd"
+    },
+    {
+      "path": "Triceps_Pushdown_-_Rope_Attachment/0.jpg",
+      "source_sha256": "5761442a548a2dba5fbfa1290cab7e9c58f31439b883c94627cf66d309ed2b4b",
+      "mask_sha256": "99736c6175da9abfe13620ffe84fc677eae9905398dbd3752b30a0e37f056248"
+    },
+    {
+      "path": "Triceps_Pushdown_-_Rope_Attachment/1.jpg",
+      "source_sha256": "5f40623d6913781d34216ee9d0625a6808a21c0de8cbe25de0928c84a2699ece",
+      "mask_sha256": "e639bc915a3c3609cc106c4d4d78d1a863a887513bd5a533477b0e2640c52e77"
+    },
+    {
+      "path": "Triceps_Pushdown_-_V-Bar_Attachment/0.jpg",
+      "source_sha256": "c461989452d9f0ebaa0f88bf452a8cee66235e7d901b48aceb3b414fd20692f8",
+      "mask_sha256": "babf3344599583f48c99f638dae33fbde3c77118f3e33b73193a67e8d9c2f94e"
+    },
+    {
+      "path": "Triceps_Pushdown_-_V-Bar_Attachment/1.jpg",
+      "source_sha256": "d9896b2d9be8ed7f042831ca7acf3d282dde16facfef1280cd97b087a1023025",
+      "mask_sha256": "bedd7bc755cb5592b43697ef686288373312a97b9d8090cf6e8c44f974f09903"
+    },
+    {
+      "path": "Underhand_Cable_Pulldowns/0.jpg",
+      "source_sha256": "9cf650a2a4bbe33dfdb82c6928a6d50d2c033987dd639e001d89c6f2c00a832b",
+      "mask_sha256": "8b2b8091933571a3d6a4fb9cf0d52f2ba309c72e8e4e4c20cd13de02000015a0"
+    },
+    {
+      "path": "Underhand_Cable_Pulldowns/1.jpg",
+      "source_sha256": "9e4ce83781e80d48986fe03e7012b6b21ba8c8c189288d63d370e298d11e4b26",
+      "mask_sha256": "c919f84ec1ab8b92d201bb35f86c65a97d87e9c14cc5c727e760e9d214d1593a"
+    },
+    {
+      "path": "V-Bar_Pulldown/0.jpg",
+      "source_sha256": "34ca5813b3eefa0dad24c9c62c8bb2e384c11a186958ff31041ef5691a6d8d7a",
+      "mask_sha256": "eb391e59a55a602a6e0d8f34b946a052fd3333956089c83258afa927d33d40e3"
+    },
+    {
+      "path": "V-Bar_Pulldown/1.jpg",
+      "source_sha256": "c6884f3595ec437ff2331d8c42886f4e2f1cbd004a4c1ae35f2e58b94b343b8b",
+      "mask_sha256": "09f1854ef8f898c1f0d770cd6e331fc82e52bec83efd430410b48d5580ab6534"
+    },
+    {
+      "path": "Weighted_Crunches/0.jpg",
+      "source_sha256": "fcd6639d057615a4605f688d7457d2e680e85472a8b7d3f7895022e64b073dae",
+      "mask_sha256": "8a3bc1f0afe9b7e29e7b0d84074060240ce8d8759fac9a13737d2f4b2745618c"
+    },
+    {
+      "path": "Weighted_Crunches/1.jpg",
+      "source_sha256": "ee534650a39f0e3b5e0e9151bd366c3f1a7e820a6d5a14a30185ccc43c94d255",
+      "mask_sha256": "67cafd51781f13b12575762ea5e3d7711992823f59d3a81e86f0ca7cbeb378d7"
+    },
+    {
+      "path": "Weighted_Pull_Ups/0.jpg",
+      "source_sha256": "066e6552683526c9fefa1ca8a5dd73f7428a3e32a8f65a4ee4ccdca2bf6dd7ce",
+      "mask_sha256": "eba28beaff461c928a6f2877f43674080e8bb67bef0e142d9302fcf7b765d7e0"
+    },
+    {
+      "path": "Weighted_Pull_Ups/1.jpg",
+      "source_sha256": "1c9ca5cf666a656d690f2e9793f5e4a6b87b913fe31bb48a8d8ccf6bbcf7bd83",
+      "mask_sha256": "4ae2e452365bda05679a1088bbf4a40fefa15874c846ea23bedbc62e0b7718ab"
+    },
+    {
+      "path": "Wide-Grip_Lat_Pulldown/0.jpg",
+      "source_sha256": "929bc29751c35d0a624840b24501e74dc59438d351e66cc017e7ee8682fb3346",
+      "mask_sha256": "7a1ae56f581d7a19860b472778273ccb8b3f568579782e2c869e36392e45db25"
+    },
+    {
+      "path": "Wide-Grip_Lat_Pulldown/1.jpg",
+      "source_sha256": "781952e629e8a4cff549df94ee6b1da7e32c7cd507382d47e8566718c07807dd",
+      "mask_sha256": "8ae5c71ffec9e0afac9ff43a31b4bf8354b7a9ebd1e50841ea6d12294698f3e6"
+    },
+    {
+      "path": "Wide-Grip_Standing_Barbell_Curl/0.jpg",
+      "source_sha256": "695efb4f21e59eec9d99e20a4ec262c8c19f0e46ce2e18bed757c3a432d151f4",
+      "mask_sha256": "c5413a3268143bf87df5be42ccbb0dd2c8d0cdfa055fe679a2c187d2fcc65f80"
+    },
+    {
+      "path": "Wide-Grip_Standing_Barbell_Curl/1.jpg",
+      "source_sha256": "0600e3c0dbd9d5418c7610d88710cdb4e1fd7b33425e3cbd4d9f40f21f4dea32",
+      "mask_sha256": "bda28a27beb695863c916dbc94c5ebb443c63df5530edb969192fd7caba97b07"
+    },
+    {
+      "path": "Wide_Stance_Barbell_Squat/0.jpg",
+      "source_sha256": "8bb7beb603ed22f3aad27a46b5742998aea652fd029a825446e9fe460f0fcc19",
+      "mask_sha256": "fe9907aa2b8b8ff989b393a9464bacb17e4c574be5eb41d4e31f1c94a9d922e3"
+    },
+    {
+      "path": "Wide_Stance_Barbell_Squat/1.jpg",
+      "source_sha256": "29c32813b5fdd6939cb79dd24b9c2cc4da77f835dac758b6d04197fc1a0289cd",
+      "mask_sha256": "fa68d7b5c3561d3182d00acb362bb1f97210ae1302ebff50b77d8b0a0dae4eb5"
+    },
+    {
+      "path": "Wrist_Roller/0.jpg",
+      "source_sha256": "83af41a348d7aea4486798a5e22afcc69399c03e9fe6274ce1446b638e0275cc",
+      "mask_sha256": "3a4927cca1ca19ddfedb9451aabb6d56986f53a4bfdc5e57588a885e446d1f98"
+    },
+    {
+      "path": "Wrist_Roller/1.jpg",
+      "source_sha256": "0a97991223f8f6161b4d697c599c4e5f4958b0d2094bc19a5e36b10741b65f87",
+      "mask_sha256": "adb9e26fb649048fc084d123b6cc4968545e2c7d08e918d844dd24bab5700e9f"
+    },
+    {
+      "path": "Wrist_Rotations_with_Straight_Bar/0.jpg",
+      "source_sha256": "953073304f47ef801094ff6b14d102735a66e3a0a200850e02118181b1a297b6",
+      "mask_sha256": "721f414e52fa93922d2fe26eb8d87c2c398bb39c2a1d08c5eb69855cc94b8669"
+    },
+    {
+      "path": "Wrist_Rotations_with_Straight_Bar/1.jpg",
+      "source_sha256": "b7aea9471c8e19ea393220f35da2f89a1cd7bf5b06593770ddeac34bb721ee54",
+      "mask_sha256": "3a5f335dbedd25789a8cc1d13fc91c2e94686675d621777f323b41bb93d0cbd9"
+    },
+    {
+      "path": "Zottman_Curl/0.jpg",
+      "source_sha256": "4e26fe9dd5446ad75669a4d11365b5b51f6d63efcd9ab0f20a6e942e6bfdc0eb",
+      "mask_sha256": "090de28d5d22bdf59fa5dcadb599286a7aa25d79ab51ad1fe5ebc9fcafa7b2c5"
+    },
+    {
+      "path": "Zottman_Curl/1.jpg",
+      "source_sha256": "0259c67a6191b4a8e27fe5f24847963cd752a8753f5935be1fbd9573871bc378",
+      "mask_sha256": "a95d1191c0ac31237a4366279e5dc5f2c363f4815d796d89db736bf8ba05e380"
+    }
+  ]
+}

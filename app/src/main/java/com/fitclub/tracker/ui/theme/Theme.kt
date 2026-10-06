@@ -13,7 +13,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/** Shared palette for dark themes and White Day. */
+/** Shared palette for light and dark themes. */
 private val LocalLightTheme = staticCompositionLocalOf { false }
 
 object Fc {
@@ -59,7 +59,7 @@ private val AppTypography = Typography(
 )
 
 @Composable
-fun FitClubTheme(accent: Long = 0xFFD4FF3A, lightTheme: Boolean = false, content: @Composable () -> Unit) {
+fun FitClubTheme(accent: Long = 0xFF69B7FF, lightTheme: Boolean = false, content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalLightTheme provides lightTheme) {
     MaterialTheme(
         colorScheme = if (lightTheme) lightColorScheme(

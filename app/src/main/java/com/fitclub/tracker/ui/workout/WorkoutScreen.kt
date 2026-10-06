@@ -30,6 +30,8 @@ import com.fitclub.tracker.data.model.RepRange
 import com.fitclub.tracker.data.model.Sex
 import com.fitclub.tracker.data.repo.*
 import com.fitclub.tracker.ui.components.*
+import com.fitclub.tracker.data.seed.FreeExerciseCatalog
+import com.fitclub.tracker.ui.library.ExerciseMediaCard
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.theme.Fc
 import kotlinx.coroutines.delay
@@ -176,12 +178,14 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
             TextButton(onClick = { focus.clearFocus(); confirmFinish = true }, enabled = !vm.finishing, modifier = Modifier.testTag("finish-workout")) { Text("Завершить", color = Fc.Lime) }
         }
         LinearProgressIndicator(progress = { vm.completed.count { it.value }.toFloat() / plan.items.size }, modifier = Modifier.fillMaxWidth(), color = Fc.Lime, trackColor = Fc.Surface2)
-        LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        LazyColumn(Modifier.weight(1f).testTag("workout-list"), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             item {
                 Text("УПРАЖНЕНИЕ ${index + 1} ИЗ ${plan.items.size}", color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
                 Text(exercise?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.displaySmall)
             }
-            if (exercise != null) item { GroupImage(source.sex, exercise.group, Modifier.fillMaxWidth().height(145.dp)) }
+            if (!summary && exercise != null) FreeExerciseCatalog.media[exercise.id]?.let { media ->
+                item { ExerciseMediaCard(exercise.id, exercise.name, media, showVideo = false) }
+            }
             if (summary) {
                 item {
                     FcCard(border = Fc.Lime.copy(.45f)) {

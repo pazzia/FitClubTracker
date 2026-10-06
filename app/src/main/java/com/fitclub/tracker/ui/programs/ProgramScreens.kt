@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +35,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -111,20 +115,44 @@ private fun plural(n: Int, one: String, few: String, many: String): String {
 
 // ---------- Список программ ----------
 
-class ProgramsViewModel(c: AppContainer) : ViewModel() {
+class ProgramsViewModel(private val c: AppContainer) : ViewModel() {
     val programs: StateFlow<List<ProgramDraft>> =
         c.programs.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val catalog: StateFlow<Map<String, ExerciseEntity>> =
         c.exercises.observeAll().map { list -> list.associateBy { it.id } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+    fun deletePrograms(ids: Set<Long>, onDone: () -> Unit) {
+        viewModelScope.launch {
+            ids.forEach { c.programs.delete(it) }
+            onDone()
+        }
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false,
     choosingProgram: Boolean = false, onBack: (() -> Unit)? = null, onCreate: () -> Unit = { onOpen(0L) }) {
     val vm = appViewModel { ProgramsViewModel(it) }
     val programs by vm.programs.collectAsStateWithLifecycle()
     val catalog by vm.catalog.collectAsStateWithLifecycle()
+    var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
+    var selecting by rememberSaveable { mutableStateOf(false) }
+    var confirmBulkDelete by remember { mutableStateOf(false) }
+    BackHandler(enabled = selecting) { selecting = false; selectedIds = emptySet() }
+    if (confirmBulkDelete) AlertDialog(
+        onDismissRequest = { confirmBulkDelete = false },
+        title = { Text(if (selectedIds.size == 1) "Удалить программу?" else "Удалить выбранные программы?") },
+        text = { Column {
+            programs.filter { it.id in selectedIds }.forEach { Text(it.name, color = Fc.Text) }
+            Text("История выполненных тренировок сохранится.", color = Fc.Muted)
+        } },
+        dismissButton = { TextButton(onClick = { confirmBulkDelete = false }) { Text("Отмена") } },
+        confirmButton = { TextButton(onClick = {
+            confirmBulkDelete = false
+            vm.deletePrograms(selectedIds) { selectedIds = emptySet(); selecting = false }
+        }) { Text("Удалить", color = Fc.Pink) } }
+    )
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
@@ -137,11 +165,27 @@ fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false,
                 )
             }
         }
-        item { PrimaryButton("+  Создать программу", onCreate) }
+        item {
+            if (selecting) Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { selecting = false; selectedIds = emptySet() }) { Text("Отмена") }
+                Text("Выбрано: ${selectedIds.size}", color = Fc.Text, modifier = Modifier.weight(1f))
+                TextButton(onClick = { confirmBulkDelete = true }, enabled = selectedIds.isNotEmpty()) { Text("Удалить", color = Fc.Pink) }
+            } else Column {
+                OutlinedButton(onClick = onCreate, modifier = Modifier.fillMaxWidth()) { Text("+ Создать программу") }
+                Text("Удерживайте программу, чтобы выбрать для удаления.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+            }
+        }
         items(programs, key = { it.id }) { p ->
             val fit = remember(p, catalog) { ProgramScorer.score(p, catalog) }
-            FcCard(onClick = { onOpen(p.id) }, border = if (p.isActive) Fc.Lime.copy(alpha = 0.5f) else Fc.Line) {
+            FcCard(modifier = Modifier.combinedClickable(
+                onClick = { if (selecting) selectedIds = if (p.id in selectedIds) selectedIds - p.id else selectedIds + p.id else onOpen(p.id) },
+                onLongClickLabel = "Выбрать для удаления",
+                onLongClick = { selecting = true; selectedIds = selectedIds + p.id }
+            ), border = if (p.id in selectedIds || p.isActive) Fc.Lime.copy(alpha = 0.5f) else Fc.Line) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    if (selecting) Checkbox(checked = p.id in selectedIds, onCheckedChange = { checked ->
+                        selectedIds = if (checked) selectedIds + p.id else selectedIds - p.id
+                    })
                     ProgramCover(p.icon, Color(p.colorArgb), 60.dp, photo = p.coverPhoto)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(p.name, style = MaterialTheme.typography.titleMedium, color = Fc.Text)
@@ -231,6 +275,9 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
     val listState = rememberLazyListState()
     var photoBusy by remember { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var showAppearance by rememberSaveable { mutableStateOf(false) }
+    var showTrainingSettings by rememberSaveable { mutableStateOf(false) }
+    var showAnalysis by rememberSaveable { mutableStateOf(false) }
     if (confirmDelete) ProgramDeleteDialog(d.name, { confirmDelete = false }) {
         confirmDelete = false
         vm.delete(onClose)
@@ -258,7 +305,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         }
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                ProgramCover(d.icon, Color(d.colorArgb), 76.dp, photo = d.coverPhoto)
+                ProgramCover(d.icon, Color(d.colorArgb), 40.dp, photo = d.coverPhoto)
                 OutlinedTextField(
                     value = d.name, onValueChange = { v -> vm.update { it.copy(name = v) } },
                     label = { Text("Название программы") }, singleLine = true, modifier = Modifier.weight(1f),
@@ -272,6 +319,80 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                 )
             }
         }
+        item { Text("${d.goal.title} · ${d.freqPerWeek} дня в неделю", color = Fc.Muted, style = MaterialTheme.typography.bodyMedium) }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Дни программы", style = MaterialTheme.typography.titleSmall, color = Fc.Text)
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    d.days.forEachIndexed { i, dd ->
+                        val on = i == day
+                        Text(
+                            "День ${'A' + i} · ${dd.items.size}", style = MaterialTheme.typography.labelLarge,
+                            color = if (on) Fc.Lime else Fc.Text,
+                            modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) Fc.LimeSoft else Fc.Surface)
+                                .semantics { selected = on }
+                                .clickable(role = Role.Tab) { dayIndex = i }
+                                .padding(horizontal = 16.dp, vertical = 13.dp)
+                        )
+                    }
+                    Text(
+                        "+ День", style = MaterialTheme.typography.labelLarge, color = Fc.Muted,
+                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).border(1.5.dp, Color(0xFF4A4A55), RoundedCornerShape(14.dp))
+                            .clickable(role = Role.Button) { vm.addDay(); dayIndex = d.days.size }
+                            .padding(horizontal = 14.dp, vertical = 12.dp)
+                    )
+                }
+            }
+        }
+        itemsIndexed(d.days[day].items) { index, item ->
+            val e = catalog[item.exerciseId]
+            ItemCard(
+                name = e?.name ?: item.exerciseId,
+                meta = e?.let { "${it.group.title} · ${it.type.title} · ${it.equipment}" } ?: "",
+                item = item, goal = d.goal, exercise = e,
+                onChange = { fn -> vm.updateItem(day, index, fn) },
+                onRemove = { vm.removeItem(day, index) }
+            )
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (d.days[day].items.isEmpty()) Text("В этом дне пока нет упражнений.", style = MaterialTheme.typography.bodyMedium, color = Fc.Muted)
+                PrimaryButton("+  Добавить упражнение", { picking = true })
+            }
+        }
+        item { TextButton(onClick = { showTrainingSettings = !showTrainingSettings }, modifier = Modifier.fillMaxWidth()) { Text("Цель и расписание ${if (showTrainingSettings) "−" else "+"}", color = Fc.Text) } }
+        if (showTrainingSettings) {
+        item {
+            Section("Цель тренировок") {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Goal.entries.forEach { g ->
+                        val on = d.goal == g
+                        Text(
+                            g.title, style = MaterialTheme.typography.labelLarge, color = if (on) Fc.Bg else Fc.Text,
+                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) Fc.Text else Fc.Surface)
+                                .border(1.dp, if (on) Fc.Text else Fc.Line, RoundedCornerShape(20.dp))
+                                .semantics { selected = on }
+                                .clickable(role = Role.RadioButton) { vm.update { it.copy(goal = g) } }
+                                .padding(horizontal = 14.dp, vertical = 11.dp)
+                        )
+                    }
+                }
+            }
+        }
+        item {
+            FcCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Тренировок в неделю", style = MaterialTheme.typography.titleSmall, color = Fc.Text)
+                        Text("для цели «${d.goal.title}»: ${d.goal.freqPerWeek.first}–${d.goal.freqPerWeek.last}", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
+                    }
+                    Stepper(d.freqPerWeek, "тренировок в неделю", { vm.update { it.copy(freqPerWeek = (it.freqPerWeek - 1).coerceAtLeast(1)) } }, { vm.update { it.copy(freqPerWeek = (it.freqPerWeek + 1).coerceAtMost(7)) } })
+                }
+            }
+        }
+        }
+        item { TextButton(onClick = { showAppearance = !showAppearance }, modifier = Modifier.fillMaxWidth()) { Text("Оформление программы ${if (showAppearance) "−" else "+"}", color = Fc.Text) } }
+        if (showAppearance) {
         item {
             Section("Цвет") {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -305,80 +426,14 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                 }
             }
         }
-        item {
-            Section("Цель тренировок") {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Goal.entries.forEach { g ->
-                        val on = d.goal == g
-                        Text(
-                            g.title, style = MaterialTheme.typography.labelLarge, color = if (on) Fc.Bg else Fc.Text,
-                            modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(if (on) Fc.Text else Fc.Surface)
-                                .border(1.dp, if (on) Fc.Text else Fc.Line, RoundedCornerShape(20.dp))
-                                .semantics { selected = on }
-                                .clickable(role = Role.RadioButton) { vm.update { it.copy(goal = g) } }
-                                .padding(horizontal = 14.dp, vertical = 11.dp)
-                        )
-                    }
-                }
-            }
         }
-        item {
-            FcCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Тренировок в неделю", style = MaterialTheme.typography.titleSmall, color = Fc.Text)
-                        Text("для цели «${d.goal.title}»: ${d.goal.freqPerWeek.first}–${d.goal.freqPerWeek.last}", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
-                    }
-                    Stepper(d.freqPerWeek, "тренировок в неделю", { vm.update { it.copy(freqPerWeek = (it.freqPerWeek - 1).coerceAtLeast(1)) } }, { vm.update { it.copy(freqPerWeek = (it.freqPerWeek + 1).coerceAtMost(7)) } })
-                }
-            }
-        }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Дни программы", style = MaterialTheme.typography.titleSmall, color = Fc.Text)
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    d.days.forEachIndexed { i, dd ->
-                        val on = i == day
-                        Text(
-                            "День ${'A' + i} · ${dd.items.size}", style = MaterialTheme.typography.labelLarge,
-                            color = if (on) foregroundFor(Color(d.colorArgb)) else Fc.Text,
-                            modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) Color(d.colorArgb) else Fc.Surface)
-                                .semantics { selected = on }
-                                .clickable(role = Role.Tab) { dayIndex = i }
-                                .padding(horizontal = 16.dp, vertical = 13.dp)
-                        )
-                    }
-                    Text(
-                        "+ День", style = MaterialTheme.typography.labelLarge, color = Fc.Muted,
-                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).border(1.5.dp, Color(0xFF4A4A55), RoundedCornerShape(14.dp))
-                            .clickable(role = Role.Button) { vm.addDay(); dayIndex = d.days.size }
-                            .padding(horizontal = 14.dp, vertical = 12.dp)
-                    )
-                }
-            }
-        }
-        itemsIndexed(d.days[day].items) { index, item ->
-            val e = catalog[item.exerciseId]
-            ItemCard(
-                name = e?.name ?: item.exerciseId,
-                meta = e?.let { "${it.group.title} · ${it.type.title} · ${it.equipment}" } ?: "",
-                item = item, goal = d.goal, exercise = e,
-                onChange = { fn -> vm.updateItem(day, index, fn) },
-                onRemove = { vm.removeItem(day, index) }
-            )
-        }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (d.days[day].items.isEmpty()) Text("В этом дне пока нет упражнений.", style = MaterialTheme.typography.bodyMedium, color = Fc.Muted)
-                DashedButton("+  Добавить упражнение", { picking = true })
-            }
-        }
-        item { FitDetails(fit, d.goal) }
+        item { TextButton(onClick = { showAnalysis = !showAnalysis }, modifier = Modifier.fillMaxWidth()) { Text("Разбор программы ${if (showAnalysis) "−" else "+"}", color = Fc.Text) } }
+        if (showAnalysis) item { FitDetails(fit, d.goal) }
         item {
             if (photoBusy) Text("Сохраняем фото…", color = Fc.Muted)
-            else PrimaryButton("Сохранить программу", { vm.save(onClose) })
+            else OutlinedButton(onClick = { vm.save(onClose) }, modifier = Modifier.fillMaxWidth()) { Text("Сохранить программу") }
         }
-        item {
+        if (d.id != 0L) item {
             TextButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
                 Text("Удалить программу", color = Fc.Pink, fontWeight = FontWeight.ExtraBold)
             }
@@ -545,3 +600,4 @@ internal fun ProgramDeleteDialog(name: String, onDismiss: () -> Unit, onConfirm:
         dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } }
     )
 }
+

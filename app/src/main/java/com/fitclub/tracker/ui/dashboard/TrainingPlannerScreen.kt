@@ -135,10 +135,9 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
         }
         item {
             FcCard {
-                Text("Взять день из программы", color = Fc.Text, style = MaterialTheme.typography.titleSmall)
-                TextButton(onClick = onChooseProgram) {
-                    Text(programs.firstOrNull { it.id == draft.programId }?.name ?: "Выбрать программу →", color = Fc.Lime)
-                }
+                Text("Начните с программы", color = Fc.Text, style = MaterialTheme.typography.titleSmall)
+                Text("Выберите программу и день — упражнения появятся в плане.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                PrimaryButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу →", onChooseProgram)
                 val program = programs.firstOrNull { it.id == draft.programId }
                 if (program != null && program.days.isNotEmpty()) {
                     Segmented(program.days.indices.toList(), draft.dayPosition ?: 0,
@@ -154,7 +153,7 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
                 onChange = { fn -> vm.update { it.copy(items = it.items.mapIndexed { i, old -> if (i == index) fn(old) else old }) } },
                 onRemove = { vm.update { it.copy(items = it.items.filterIndexed { i, _ -> i != index }) } })
         }
-        item { PrimaryButton("+ Добавить упражнение", { picker = true }) }
+        item { OutlinedButton(onClick = { picker = true }, modifier = Modifier.fillMaxWidth()) { Text("+ Добавить отдельное упражнение") } }
         if (error != null) item { Text(error.orEmpty(), color = Fc.Pink) }
         item {
             Button(onClick = { vm.save { onClose() } }, enabled = canSave, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime)) {
@@ -166,4 +165,5 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
         }
     }
 }
+
 

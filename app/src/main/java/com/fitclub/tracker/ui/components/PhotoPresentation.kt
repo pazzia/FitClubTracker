@@ -2,24 +2,13 @@ package com.fitclub.tracker.ui.components
 
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.Rect
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.segmentation.Segmentation
-import com.google.mlkit.vision.segmentation.selfie.SelfieSegmenterOptions
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.coroutines.resume
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.roundToInt
 
-/** Drop only continuous, almost-white padding touching an image edge, never interior highlights. */
-internal fun trimPhotoPadding(source: Bitmap): Bitmap {
+internal fun trimPhotoPadding(source: Bitmap, reference: Bitmap = source): Bitmap {
     val w = source.width; val h = source.height
     val pixels = IntArray(w * h)
-    source.getPixels(pixels, 0, w, 0, 0, w, h)
+    require(reference.width == w && reference.height == h)
+    reference.getPixels(pixels, 0, w, 0, 0, w, h)
     fun white(c: Int) = Color.red(c) >= 244 && Color.green(c) >= 244 && Color.blue(c) >= 244
     if (pixels.all { white(it) }) return source
     fun row(y: Int) = (0 until w).count { white(pixels[y * w + it]) } >= w * .995
@@ -33,62 +22,53 @@ internal fun trimPhotoPadding(source: Bitmap): Bitmap {
     return Bitmap.createBitmap(source, left, top, right - left + 1, bottom - top + 1)
 }
 
-private val segmentationLock = Mutex()
-private val segmenter by lazy {
-    Segmentation.getClient(SelfieSegmenterOptions.Builder()
-        .setDetectorMode(SelfieSegmenterOptions.SINGLE_IMAGE_MODE).build())
+/** Preserve foreground and active equipment; gently brighten and blur only the background. */
+internal fun renderExercisePhoto(source: Bitmap, matte: Bitmap): Bitmap {
+    val w = source.width; val h = source.height
+    val scaled = if (matte.width == w && matte.height == h) matte
+        else Bitmap.createScaledBitmap(matte, w, h, true)
+    val pixels = IntArray(w * h)
+    val mask = IntArray(pixels.size)
+    source.getPixels(pixels, 0, w, 0, 0, w, h)
+    scaled.getPixels(mask, 0, w, 0, 0, w, h)
+    val blurred = blurThumbnailBackground(pixels, w, h, maxOf(1, w / 140))
+    val result = IntArray(pixels.size)
+    for (i in pixels.indices) {
+        val subject = Color.red(mask[i]) / 255f
+        val c = pixels[i]; val bg = blurred[i]
+        fun channel(value: Int, foreground: Int): Int {
+            val muted = (127.5f + (value - 127.5f) * .9f) * .9f + 25.5f
+            return (foreground * subject + muted * (1f - subject)).roundToInt().coerceIn(0, 255)
+        }
+        result[i] = Color.argb(Color.alpha(c), channel(Color.red(bg), Color.red(c)),
+            channel(Color.green(bg), Color.green(c)), channel(Color.blue(bg), Color.blue(c)))
+    }
+    if (scaled !== matte) scaled.recycle()
+    return Bitmap.createBitmap(result, w, h, Bitmap.Config.ARGB_8888)
 }
 
-/** The model is bundled with the APK. No photo or model is uploaded or downloaded by the app. */
-internal suspend fun emphasizeExerciseThumbnail(source: Bitmap): Bitmap {
-    val mask: FloatArray? = try {
-        segmentationLock.withLock {
-            withTimeoutOrNull(2_000) {
-                suspendCancellableCoroutine<FloatArray?> { continuation ->
-                    segmenter.process(InputImage.fromBitmap(source, 0))
-                        .addOnSuccessListener { result ->
-                            val values = FloatArray(result.width * result.height)
-                            result.buffer.rewind(); result.buffer.asFloatBuffer().get(values)
-                            if (continuation.isActive) continuation.resume(values)
-                        }
-                        .addOnFailureListener { if (continuation.isActive) continuation.resume(null) }
-                }
+/** Small separable box blur; final compositing restores all foreground pixels. */
+private fun blurThumbnailBackground(pixels: IntArray, w: Int, h: Int, radius: Int): IntArray {
+    fun pass(input: IntArray, horizontal: Boolean): IntArray {
+        val out = IntArray(input.size)
+        val length = if (horizontal) w else h
+        val lines = if (horizontal) h else w
+        fun index(line: Int, position: Int) = if (horizontal) line*w+position else position*w+line
+        val count = 2*radius+1
+        for (line in 0 until lines) {
+            var r = 0; var g = 0; var b = 0
+            for (offset in -radius..radius) {
+                val c = input[index(line, offset.coerceIn(0,length-1))]
+                r += Color.red(c); g += Color.green(c); b += Color.blue(c)
+            }
+            for (position in 0 until length) {
+                out[index(line,position)] = Color.rgb(r/count,g/count,b/count)
+                val old = input[index(line,(position-radius).coerceIn(0,length-1))]
+                val next = input[index(line,(position+radius+1).coerceIn(0,length-1))]
+                r += Color.red(next)-Color.red(old); g += Color.green(next)-Color.green(old); b += Color.blue(next)-Color.blue(old)
             }
         }
-    } catch (e: CancellationException) { throw e }
-      catch (_: Exception) { null }
-      catch (_: LinkageError) { null }
-    return renderExerciseThumbnail(source, mask)
-}
-
-/** Preserve the equipment around the person. Fade background rather than remove uncertain objects. */
-internal fun renderExerciseThumbnail(source: Bitmap, confidence: FloatArray?): Bitmap {
-    val w = source.width; val h = source.height
-    val pixels = IntArray(w * h)
-    source.getPixels(pixels, 0, w, 0, 0, w, h)
-    val mask = confidence?.takeIf { it.size == pixels.size }
-    var left = w; var right = 0; var top = h; var bottom = 0
-    mask?.forEachIndexed { i, value -> if (value > .75f) {
-        val x = i % w; val y = i / w
-        left = min(left, x); right = max(right, x); top = min(top, y); bottom = max(bottom, y)
-    } }
-    val hasSubject = left < right && top < bottom
-    // Keep a generous envelope for bars, dumbbells, benches and handles held by the athlete.
-    val equipment = if (hasSubject) Rect(
-        (left - (right - left) * .45f).toInt().coerceAtLeast(0),
-        (top - (bottom - top) * .12f).toInt().coerceAtLeast(0),
-        (right + (right - left) * .45f).toInt().coerceAtMost(w),
-        (bottom + (bottom - top) * .12f).toInt().coerceAtMost(h)) else null
-    for (i in pixels.indices) {
-        val c = pixels[i]; val r = Color.red(c); val g = Color.green(c); val b = Color.blue(c)
-        val paleBackground = r > 238 && g > 238 && b > 238
-        val subject = if (hasSubject) max(mask!![i], if (equipment!!.contains(i % w, i / w)) .88f else 0f) else 1f
-        val opacity = if (paleBackground && subject < .8f) .06f else if (paleBackground && mask == null) .06f else .22f + .78f * subject
-        val contrast = if (subject > .7f) 1.16f else .82f
-        val gray = r * .299f + g * .587f + b * .114f
-        val saturation = if (subject > .7f) 1.05f else .28f
-        fun channel(value: Int) = (((gray + (value - gray) * saturation) - 128) * contrast + 128).toInt().coerceIn(0, 255)
-        pixels[i] = Color.argb((opacity * 255).toInt().coerceIn(0, 255), channel(r), channel(g), channel(b))
+        return out
     }
-    return Bitmap.createBitmap(pixels, w, h, Bitmap.Config.ARGB_8888)
+    return pass(pass(pixels,true),false)
 }
