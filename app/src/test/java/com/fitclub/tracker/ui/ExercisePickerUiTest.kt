@@ -3,6 +3,9 @@ package com.fitclub.tracker.ui
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Surface
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -27,9 +30,11 @@ class ExercisePickerUiTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
     private var added = emptyList<String>()
     private var closed = false
-    private fun picker(already: Set<String> = emptySet(), light: Boolean = true) {
+    private fun picker(already: Set<String> = emptySet(), light: Boolean = true, compact: Boolean = false) {
         rule.setContent { FitClubTheme(lightTheme = light, accent = 0xFF236B9D) { Surface(color = Fc.Bg) {
-            ProgramExercisePicker(ExerciseSeed.all, already, "День A · Моя программа", { closed = true }, { added = it })
+            Box(if (compact) Modifier.fillMaxWidth().height(400.dp) else Modifier.fillMaxSize()) {
+                ProgramExercisePicker(ExerciseSeed.all, already, "День A · Моя программа", { closed = true }, { added = it })
+            }
         } } }
     }
     private fun query(text: String) {
@@ -78,6 +83,14 @@ class ExercisePickerUiTest {
         rule.onNodeWithTag("picker-select-all").assertIsNotEnabled()
         rule.onNodeWithText("Выбрано: 1").assertExists()
         rule.onNodeWithTag("picker-add").performClick()
+        assertEquals(listOf("bench"), added)
+    }
+    @Test fun reducedHeightKeepsSearchResultsAndConfirmationVisible() {
+        picker(compact = true)
+        query("штанг лежа")
+        rule.onNodeWithTag("exercise-search").assertIsDisplayed()
+        rule.onNodeWithTag("picker-exercise-bench").assertIsDisplayed().performClick()
+        rule.onNodeWithTag("picker-add").assertIsDisplayed().performClick()
         assertEquals(listOf("bench"), added)
     }
     @Test fun alreadyAddedIsDisabledAndCancelRequiresConfirmation() {

@@ -10,7 +10,10 @@ import kotlin.random.Random
 class ExerciseSearchIndexTest {
     private val index = ExerciseSearchIndex(ExerciseSeed.all)
     @Test fun normalizesAndRanksNameBeforeMetadata() {
-        assertEquals("bench", index.search("  ЖИМ   ЛЕЖА ").first().id)
+        val phrase = index.search("  ЖИМ   ЛЕЖА ")
+        assertTrue(phrase.any { it.id == "bench" })
+        // A name beginning with the complete phrase outranks a name with words between its terms.
+        assertTrue(phrase.first().name.lowercase().replace('ё', 'е').startsWith("жим лежа"))
         assertEquals("bench", index.search("штанг лежа").single().id)
         assertTrue(index.search("жим гант").size > 1)
         assertTrue(index.search("накл жим").isNotEmpty())

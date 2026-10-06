@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -69,11 +70,20 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
         confirmButton = { TextButton(onClick = onBack) { Text("Отменить выбор") } },
         dismissButton = { TextButton(onClick = { discard = false }) { Text("Продолжить выбор") } })
 
-    Column(Modifier.fillMaxSize().imePadding()) {
+    BoxWithConstraints(Modifier.fillMaxSize().imePadding()) {
+    val compact = maxHeight < 550.dp
+    Column(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            BackRow(if (reviewing) "К выбору упражнений" else "К программе") { close() }
-            ScreenTitle(if (reviewing) "Выбранные упражнения" else "Добавить упражнения")
-            Text(subtitle, color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+            val backLabel = if (reviewing) "К выбору упражнений" else "К программе"
+            val title = if (reviewing) "Выбранные упражнения" else "Добавить упражнения"
+            if (compact) Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { close() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, backLabel) }
+                Text(title, style = MaterialTheme.typography.titleLarge, color = Fc.Text, modifier = Modifier.weight(1f))
+            } else {
+                BackRow(backLabel) { close() }
+                ScreenTitle(title)
+                Text(subtitle, color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+            }
             if (!reviewing) {
                 OutlinedTextField(query, { query = it.take(120) }, modifier = Modifier.fillMaxWidth().testTag("exercise-search"),
                     singleLine = true, label = { Text("Поиск упражнений") }, placeholder = { Text("Название, мышцы, оборудование") },
@@ -148,6 +158,7 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
                 }
             }
         }
+    }
     }
 }
 
