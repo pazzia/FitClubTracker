@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.fitclub.tracker.data.model.MuscleGroup
@@ -25,9 +26,9 @@ val AnatomyGroupOrder = listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleG
 fun MuscleCategoryRow(groups: List<MuscleGroup>, sex: Sex, counts: Map<MuscleGroup, Int>, onGroup: (MuscleGroup) -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         groups.forEach { group ->
-            Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(Fc.Surface)
+            Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(Fc.AnatomyLabel)
                 .border(1.dp, Fc.Line, RoundedCornerShape(16.dp)).clickable(role = Role.Button) { onGroup(group) }) {
-                GroupImage(sex, group, Modifier.fillMaxWidth().height(124.dp))
+                GroupImage(sex, group, Modifier.fillMaxWidth().aspectRatio(4f / 3f), scale = ContentScale.Crop)
                 Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(group.title, color = Fc.Text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     Text("${counts[group] ?: 0} →", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
@@ -43,4 +44,3 @@ fun QuadricepsLegend() {
     Text("4 головки: прямая, латеральная широкая, медиальная широкая и промежуточная широкая. Промежуточная широкая лежит глубже прямой мышцы и не видна на поверхностном изображении.",
         color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
 }
-

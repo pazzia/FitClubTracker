@@ -20,6 +20,8 @@ object Fc {
     val Bg: Color @Composable get() = MaterialTheme.colorScheme.background
     val Surface: Color @Composable get() = MaterialTheme.colorScheme.surface
     val Surface2: Color @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+    val AnatomyBackground: Color @Composable get() = if (LocalLightTheme.current) Color(0xFFF1F4F6) else Color(0xFF222A31)
+    val AnatomyLabel: Color @Composable get() = if (LocalLightTheme.current) Color.White else Color(0xFF182028)
     val Line: Color @Composable get() = MaterialTheme.colorScheme.outline
     val Nav: Color @Composable get() = if (LocalLightTheme.current) Color.White else Color(0xFF11171C)
     val Text: Color @Composable get() = MaterialTheme.colorScheme.onBackground
