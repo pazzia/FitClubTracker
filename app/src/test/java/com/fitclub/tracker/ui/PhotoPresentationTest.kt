@@ -45,27 +45,35 @@ class PhotoPresentationTest {
         assertEquals(255, Color.alpha(result.getPixel(50, 40)))
         assertEquals(255, Color.alpha(result.getPixel(10, 40))) // equipment outside person bounds
         assertEquals(255, Color.alpha(result.getPixel(20, 40))) // full background between weight and athlete
-        assertEquals(Color.rgb(102, 118, 142), result.getPixel(20, 40)) // gentle background brightening
+        assertEquals(Color.rgb(102, 118, 142), result.getPixel(20, 40)) // mildly brightened background
         assertEquals(Color.rgb(102, 118, 142), result.getPixel(0, 0))
         assertEquals(255, Color.alpha(source.getPixel(0, 0)))
         assertEquals(source.getPixel(50, 40), result.getPixel(50, 40))
     }
 
-    @Test fun recolorsOnlyGarmentWhenItMergesWithBackground() {
-        val source = Bitmap.createBitmap(100, 80, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.rgb(45,45,45)) }
-        val foreground = Bitmap.createBitmap(100, 80, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.BLACK) }
-        val clothing = Bitmap.createBitmap(100, 80, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.BLACK) }
-        for (y in 20..60) for (x in 30..70) foreground.setPixel(x,y,Color.WHITE)
-        for (y in 30..50) for (x in 40..60) clothing.setPixel(x,y,Color.WHITE)
-        source.setPixel(32,25,Color.rgb(190,130,95)) // exposed skin
-        val result = renderExercisePhoto(source,foreground,clothing)
-        assertNotEquals(source.getPixel(50,40),result.getPixel(50,40))
-        assertEquals(source.getPixel(32,25),result.getPixel(32,25))
-        assertEquals(source.getPixel(35,40),result.getPixel(35,40)) // gear outside clothes
-        assertEquals(Color.rgb(45,45,45),source.getPixel(50,40))
-        for (y in 20..60) for (x in 30..70) source.setPixel(x,y,Color.WHITE)
-        val alreadyVisible = renderExercisePhoto(source,foreground,clothing)
-        assertEquals(Color.WHITE,alreadyVisible.getPixel(50,40))
+    @Test fun allEditedThumbnailsAreBundledAndTechniquesStayOriginal() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val manifest = org.json.JSONObject(context.assets.open("exercise_thumbnails/manifest.json").bufferedReader().use { it.readText() })
+        val rows = manifest.getJSONArray("photos")
+        assertEquals(64, rows.length())
+        val sourceHashes = context.assets.open("free_exercise_db/photos.sha256").bufferedReader().use { reader ->
+            reader.readLines().filter(String::isNotBlank).associate { it.substringAfter(' ') to it.substringBefore(' ') }
+        }
+        val seen = mutableSetOf<String>()
+        fun sha(bytes: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        for (i in 0 until rows.length()) {
+            val row = rows.getJSONObject(i); val path = row.getString("path")
+            assertTrue(seen.add(path))
+            assertTrue(path.endsWith("/1.jpg"))
+            assertEquals(sourceHashes[path], row.getString("source_sha256"))
+            val original = context.assets.open("free_exercise_db/$path").use { it.readBytes() }
+            assertEquals(sourceHashes[path], sha(original))
+            val edited = context.assets.open("exercise_thumbnails/$path").use { it.readBytes() }
+            assertEquals(row.getString("thumbnail_sha256"), sha(edited))
+            val bitmap = BitmapFactory.decodeByteArray(edited,0,edited.size)!!
+            assertTrue(bitmap.width >= 320 && bitmap.height >= 240)
+            bitmap.recycle()
+        }
     }
 
     @Test fun everyPhotoHasNonEmptyAlignedMaskAndNativePreview() {
@@ -75,7 +83,6 @@ class PhotoPresentationTest {
         val examples = listOf("Barbell_Bench_Press_-_Medium_Grip", "Incline_Dumbbell_Press", "Dumbbell_Flyes",
             "Close-Grip_Barbell_Bench_Press", "Barbell_Deadlift", "Sumo_Deadlift", "Wide-Grip_Lat_Pulldown", "Leg_Press", "Machine_Bench_Press", "Dips_-_Chest_Version", "Band_Pull_Apart", "Smith_Machine_Overhead_Shoulder_Press", "Ball_Leg_Curl")
         val output = File("build/contour-qa").apply { mkdirs() }
-        val changes = mutableListOf("photo,changed_clothing_pixels")
         val sheets = List(4) { Bitmap.createBitmap(1920, 2100, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.rgb(27, 34, 40)) } }
         val sheetCanvases = sheets.map { Canvas(it) }
         val sheetPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -89,25 +96,9 @@ class PhotoPresentationTest {
             mask.getPixels(pixels, 0, mask.width, 0, 0, mask.width, mask.height)
             assertTrue("No foreground: $path", pixels.count { Color.red(it) > 128 } > pixels.size * .003)
             assertTrue("No background: $path", pixels.count { Color.red(it) < 128 } > pixels.size * .02)
-            val clothing = if (path.endsWith("/1.jpg")) context.assets.open("exercise_clothing/${path.removeSuffix(".jpg")}.png").use { BitmapFactory.decodeStream(it) }!! else null
-            if (clothing != null) {
-                assertEquals(path, source.width, clothing.width)
-                assertEquals(path, source.height, clothing.height)
-            }
-            val rendered = renderExercisePhoto(source, mask, clothing)
-            // Gear and skin outside the garment mask retain exact foreground pixels.
-            for (y in 0 until source.height step 4) for (x in 0 until source.width step 4) {
-                if (Color.red(mask.getPixel(x,y)) == 255 && (clothing == null || Color.red(clothing.getPixel(x,y)) == 0))
-                    assertEquals("Changed unmasked foreground: $path ($x,$y)", source.getPixel(x,y), rendered.getPixel(x,y))
-            }
-            if (clothing != null) {
-                var changed = 0
-                for (y in 0 until source.height) for (x in 0 until source.width)
-                    if (Color.red(clothing.getPixel(x,y)) == 255 && source.getPixel(x,y) != rendered.getPixel(x,y)) changed++
-                changes.add("$path,$changed")
-            }
-            clothing?.recycle()
-            val trimmed = trimPhotoPadding(rendered, source)
+            val prepared = try { context.assets.open("exercise_thumbnails/$path").use { BitmapFactory.decodeStream(it) } } catch (_: java.io.IOException) { null }
+            val rendered = prepared ?: renderExercisePhoto(source, mask)
+            val trimmed = if (prepared != null) trimPhotoPadding(rendered) else trimPhotoPadding(rendered, source)
             val cell = index % 112
             val x = (cell % 8) * 240
             val y = (cell / 8) * 150
@@ -135,11 +126,9 @@ class PhotoPresentationTest {
             if (trimmed !== rendered) trimmed.recycle()
             rendered.recycle(); source.recycle(); mask.recycle()
         }
-        File(output, "clothing-changes.csv").writeText(changes.joinToString("\n"))
         sheets.forEachIndexed { index, sheet ->
             File(output, "all-photos-${index+1}.png").outputStream().use { sheet.compress(Bitmap.CompressFormat.PNG, 100, it) }
             sheet.recycle()
         }
     }
 }
-

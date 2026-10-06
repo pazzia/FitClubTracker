@@ -49,6 +49,18 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
             photoCache.get(cacheKey) ?: try {
                 path?.let {
                     val options = BitmapFactory.Options().apply { inSampleSize = if (thumbnail) 2 else 1 }
+                    if (thumbnail) {
+                        val preparedPath = "exercise_thumbnails/" + it.removePrefix("free_exercise_db/")
+                        val prepared = try {
+                            context.assets.open(preparedPath).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
+                        } catch (_: IOException) { null }
+                        if (prepared != null) {
+                            val result = trimPhotoPadding(prepared)
+                            if (result !== prepared) prepared.recycle()
+                            photoCache.put(cacheKey, result)
+                            return@let result
+                        }
+                    }
                     context.assets.open(it).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
                         ?.let { decoded ->
                             if (!thumbnail) {
@@ -59,12 +71,7 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                             val mask = context.assets.open(maskPath).use { stream -> BitmapFactory.decodeStream(stream) }
                                 ?: throw IOException("Missing foreground matte: $maskPath")
                             // Process before trimming so matte coordinates remain aligned at both sample sizes.
-                            val clothingPath = "exercise_clothing/" + it.removePrefix("free_exercise_db/").removeSuffix(".jpg") + ".png"
-                            val clothing = try {
-                                context.assets.open(clothingPath).use { stream -> BitmapFactory.decodeStream(stream) }
-                            } catch (_: IOException) { null }
-                            val processed = renderExercisePhoto(decoded, mask, clothing)
-                            clothing?.recycle()
+                            val processed = renderExercisePhoto(decoded, mask)
                             mask.recycle()
                             val result = trimPhotoPadding(processed, decoded)
                             decoded.recycle()
@@ -84,4 +91,3 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
         } ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Fc.Muted)
     }
 }
-

@@ -74,7 +74,7 @@ android {
         minSdk = 28
         targetSdk = 34
         versionCode = 15
-        versionName = "0.6.8-preview"
+        versionName = "0.6.8"
     }
 
     buildTypes {
@@ -130,5 +130,4 @@ dependencies {
 tasks.withType<Test>().configureEach {
     systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
 }
-
 

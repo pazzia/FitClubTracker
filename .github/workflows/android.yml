@@ -54,34 +54,8 @@ jobs:
           name: contour-report-${{ matrix.shard }}
           path: contour-reports/semantic-${{ matrix.shard }}.json
 
-  clothing:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7]
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install pinned garment parsing dependencies
-        run: |
-          pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
-          pip install transformers==4.44.2 numpy==1.26.4 Pillow==11.0.0 scipy==1.14.1
-      - name: Prepare clothing mattes without changing technique photographs
-        run: python3 scripts/prepare_clothing_masks.py --shard ${{ matrix.shard }} --shards 8
-      - uses: actions/upload-artifact@v4
-        with:
-          name: clothing-mattes-${{ matrix.shard }}
-          path: app/src/main/assets/exercise_clothing/
-          if-no-files-found: error
-
   build:
-    needs: [contours, clothing]
+    needs: contours
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -115,13 +89,6 @@ jobs:
           python3 -m pip install Pillow==11.0.0
           python3 scripts/assemble_release_masks.py
           touch app/src/main/assets/exercise_masks/whole-objects-v2
-
-      - name: Download garment mattes
-        uses: actions/download-artifact@v4
-        with:
-          pattern: clothing-mattes-*
-          merge-multiple: true
-          path: app/src/main/assets/exercise_clothing/
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -195,7 +162,6 @@ jobs:
           python3 -m pip install Pillow==11.0.0
           gradle :app:prepareExercisePhotos
           python3 scripts/validate_exercise_masks.py
-          python3 scripts/validate_clothing_masks.py
 
       - name: Unit tests
         run: |
@@ -280,4 +246,3 @@ jobs:
           name: ui-preview-screens
           path: app/build/ui-preview/
           if-no-files-found: ignore
-
