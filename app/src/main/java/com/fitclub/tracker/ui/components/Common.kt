@@ -147,7 +147,7 @@ fun <T> Segmented(
 fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Fc.Lime, textColor: Color = foregroundFor(color)) {
     Surface(
         onClick = onClick, color = color, shape = RoundedCornerShape(16.dp),
-        modifier = modifier.fillMaxWidth().height(54.dp)
+        modifier = modifier.fillMaxWidth().height(56.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(text, style = MaterialTheme.typography.titleMedium, color = textColor)
@@ -219,3 +219,20 @@ fun ProgramCover(icon: String, color: Color, size: Dp, modifier: Modifier = Modi
 
 val DefaultBorder = BorderStroke(1.dp, Color(0xFF26262F))
 
+
+
+/** Common primary/secondary action dimensions, including multiline labels. */
+@Composable
+fun ActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier,
+    outlined: Boolean = false, enabled: Boolean = true) {
+    val shape = RoundedCornerShape(16.dp)
+    val size = modifier.fillMaxWidth().height(56.dp)
+    if (outlined) androidx.compose.material3.OutlinedButton(onClick = onClick, enabled = enabled,
+        modifier = size, shape = shape, border = BorderStroke(1.dp, Fc.Line),
+        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Fc.Lime)) {
+        Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, maxLines = 2)
+    } else androidx.compose.material3.Button(onClick = onClick, enabled = enabled, modifier = size, shape = shape,
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Fc.Lime, contentColor = foregroundFor(Fc.Lime))) {
+        Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, maxLines = 2)
+    }
+}

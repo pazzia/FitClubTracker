@@ -69,6 +69,28 @@ class ScheduleRepositoryTest {
         assertEquals(id, log.session.scheduleId)
         assertEquals(480f, log.volumeKg)
     }
+    @Test fun twoWorkoutsOnSameDateAreIndependent() = runBlocking {
+        val first = repo.save(ScheduledDraft(epochDay = date, title = "Утро", startMinute = 480, items = items))
+        val second = repo.save(ScheduledDraft(epochDay = date, title = "Вечер", startMinute = 1200, items = items.take(1)))
+        assertNotEquals(first, second)
+        assertEquals(listOf(first, second), repo.getAllForDate(date).map { it.id })
+        repo.save(repo.get(second)!!.copy(title = "Вечер изменён"))
+        repo.delete(first)
+        assertEquals("Вечер изменён", repo.getAllForDate(date).single().title)
+    }
+    @Test fun editedResultsRecalculateVolumeAndDeleteOnlySelectedWorkout() = runBlocking {
+        val fitness = FitnessRepository(db)
+        val firstPlan = repo.save(ScheduledDraft(epochDay = date, items = items))
+        val otherPlan = repo.save(ScheduledDraft(epochDay = date, items = items))
+        val first = fitness.finishWorkout(null, null, 1000, listOf(CompletedSet("bench", 0, 60f, 8)), firstPlan, date)
+        val other = fitness.finishWorkout(null, null, 1000, listOf(CompletedSet("bench", 0, 50f, 10)), otherPlan, date)
+        fitness.updateWorkout(first, 1000, 61000, listOf(SetLogEntity(sessionId = first, exerciseId = "bench", setIndex = 0, weightKg = 70f, reps = 10, done = true)))
+        assertEquals(700f, fitness.observeWorkouts().first().first { it.session.id == first }.volumeKg)
+        fitness.deleteWorkout(first)
+        assertEquals(other, fitness.observeWorkouts().first().single().session.id)
+        assertNull(repo.get(firstPlan))
+        assertNotNull(repo.get(otherPlan))
+    }
     @Test fun invalidPlansAreRejected() = runBlocking {
         for (plan in listOf(ScheduledDraft(epochDay = date), ScheduledDraft(epochDay = date, items = items, startMinute = 1440))) {
             try { repo.save(plan); fail("Invalid plan was saved") } catch (_: IllegalArgumentException) { }
@@ -82,3 +104,4 @@ class ScheduleRepositoryTest {
         assertEquals(Sex.FEMALE, ProfileRepository(context).settings.value.sex)
     }
 }
+

@@ -17,6 +17,7 @@ import com.fitclub.tracker.data.seed.ExerciseSeed
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 
 /** Программа в удобном для редактирования виде. */
 data class ProgramDraft(
@@ -137,6 +138,24 @@ class FitnessRepository(private val db: AppDatabase) {
         sessions.map { session -> WorkoutLog(session, sets.filter { it.sessionId == session.id }, exercises.filter { it.sessionId == session.id }) }
     }
 
+    suspend fun deleteWorkout(id: Long, deleteLinkedPlan: Boolean = true) = db.withTransaction {
+        val session = db.workoutDao().getSession(id) ?: return@withTransaction
+        db.workoutDao().deleteSession(id)
+        if (deleteLinkedPlan && session.scheduleId != null &&
+            db.workoutDao().observeSessions().first().none { it.scheduleId == session.scheduleId }) {
+            db.scheduleDao().delete(session.scheduleId)
+        }
+    }
+
+    suspend fun updateWorkout(sessionId: Long, startedAt: Long, finishedAt: Long, sets: List<SetLogEntity>) = db.withTransaction {
+        require(finishedAt >= startedAt)
+        require(sets.all { it.weightKg.isFinite() && it.weightKg >= 0 && it.reps > 0 })
+        val session = requireNotNull(db.workoutDao().getSession(sessionId))
+        db.workoutDao().updateSession(session.copy(startedAt = startedAt, finishedAt = finishedAt))
+        db.workoutDao().deleteSets(sessionId)
+        db.workoutDao().insertSets(sets.map { it.copy(id = 0, sessionId = sessionId) })
+    }
+
     suspend fun addMeasurement(weight: Float?, waist: Float?, fat: Float?, chest: Float?, arm: Float?) {
         db.measurementDao().insert(
             BodyMeasurementEntity(
@@ -200,4 +219,5 @@ object SamplePrograms {
         )
     )
 }
+
 

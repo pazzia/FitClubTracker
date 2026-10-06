@@ -28,6 +28,8 @@ class WorkoutUiTest {
         val id = runBlocking { app.container.schedule.save(ScheduledDraft(epochDay = 22000,
             items = listOf(ItemDraft("bench", 1, RepRange.R8_12, 0), ItemDraft("bbrow", 1, RepRange.R8_12, 0)))) }
         rule.setContent { FitClubTheme { WorkoutScreen(id, onClose = {}, onTechnique = {}) } }
+        waitFor("Выберите любое упражнение. Удерживайте ≡, чтобы изменить порядок.")
+        rule.onNodeWithText("Жим штанги лёжа").performClick()
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
         return app
     }
@@ -36,7 +38,7 @@ class WorkoutUiTest {
         rule.onNodeWithTag("finish-workout").assertIsEnabled().performClick()
         waitFor("Завершить и сохранить")
         rule.onNodeWithText("Завершить и сохранить").performClick()
-        rule.waitUntil(15_000) { runBlocking { app.container.fitness.observeWorkouts().first().isNotEmpty() } }
+        rule.waitUntil(15_000) { rule.waitForIdle(); runBlocking { app.container.fitness.observeWorkouts().first().isNotEmpty() } }
         assertEquals(0, runBlocking { app.container.fitness.observeWorkouts().first().first().completedSets })
     }
     @Test fun completedExerciseShowsStatsAndNextExerciseRemainsReachable() {
@@ -67,4 +69,5 @@ class WorkoutUiTest {
         bounds.forEach { assertEquals(bounds.first().width, it.width, 1f); assertEquals(bounds.first().height, it.height, 1f) }
     }
 }
+
 

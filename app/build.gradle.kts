@@ -73,8 +73,8 @@ android {
         applicationId = "com.fitclub.tracker"
         minSdk = 28
         targetSdk = 34
-        versionCode = 16
-        versionName = "0.6.9"
+        versionCode = 17
+        versionName = "0.7.0"
     }
 
     buildTypes {
@@ -95,6 +95,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     sourceSets.getByName("main").assets.srcDir(exercisePhotosDirectory)
     testOptions {
@@ -130,3 +131,4 @@ dependencies {
 tasks.withType<Test>().configureEach {
     systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
 }
+

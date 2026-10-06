@@ -31,6 +31,17 @@ class ScheduleRepository(private val db: AppDatabase) {
     private val dao = db.scheduleDao()
     fun observeAll() = dao.observeAll().map { list -> list.map { it.toDraft() } }
     fun observe(id: Long) = dao.observe(id).map { it?.toDraft() }
+    suspend fun get(id: Long) = dao.get(id)?.toDraft()
+    suspend fun getAllForDate(epochDay: Long) = dao.getAllForDate(epochDay).map { it.toDraft() }
+    suspend fun replaceItems(id: Long, items: List<ItemDraft>) = db.withTransaction {
+        require(dao.get(id) != null)
+        require(items.all { it.sets in 1..10 && it.restSec in 0..600 && it.exerciseId.isNotBlank() })
+        dao.deleteItems(id)
+        dao.insertItems(items.mapIndexed { position, item ->
+            ScheduledExerciseEntity(scheduleId = id, exerciseId = item.exerciseId, position = position,
+                sets = item.sets, reps = item.reps, restSec = item.restSec, comment = item.comment)
+        })
+    }
     suspend fun getForDate(epochDay: Long) = dao.getForDate(epochDay)?.toDraft()
 
     suspend fun save(draft: ScheduledDraft): Long {
@@ -48,3 +59,4 @@ class ScheduleRepository(private val db: AppDatabase) {
     }
     suspend fun delete(id: Long) = dao.delete(id)
 }
+

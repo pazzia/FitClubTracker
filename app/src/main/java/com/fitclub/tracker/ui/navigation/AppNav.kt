@@ -60,6 +60,7 @@ import com.fitclub.tracker.ui.dashboard.TrainingPlannerScreen
 import com.fitclub.tracker.ui.dashboard.ProgressScreen
 import com.fitclub.tracker.ui.dashboard.ProfileScreen
 import com.fitclub.tracker.ui.workout.WorkoutScreen
+import com.fitclub.tracker.ui.workout.WorkoutResultScreen
 import com.fitclub.tracker.ui.programs.ProgramEditorScreen
 import com.fitclub.tracker.ui.programs.ProgramsScreen
 import com.fitclub.tracker.ui.theme.Fc
@@ -82,12 +83,13 @@ object Routes {
     const val PROFILE = "profile"
     const val WORKOUT = "workout/{schedule}"
     const val PICK_PROGRAM = "plan-programs/{epochDay}"
-    const val PLANNER = "plan/{epochDay}"
+    const val PLANNER = "plan/{epochDay}?schedule={schedule}"
+    const val RESULT = "result/{session}"
     fun program(id: Long, add: String = "") = "program/$id?add=$add"
     fun group(g: MuscleGroup) = "library/${g.name}"
     fun exercise(id: String) = "exercise/$id"
     fun workout(schedule: Long) = "workout/$schedule"
-    fun plan(epochDay: Long) = "plan/$epochDay"
+    fun plan(epochDay: Long, schedule: Long = 0L) = "plan/$epochDay?schedule=$schedule"
 }
 
 private data class Tab(val route: String, val title: String, val icon: ImageVector, val prefixes: List<String>)
@@ -109,12 +111,12 @@ fun AppRoot() {
     ) { padding ->
         NavHost(nav, startDestination = Routes.CALENDAR, modifier = Modifier.fillMaxSize().padding(padding)) {
             composable(Routes.CALENDAR) {
-                CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.navigate(Routes.PROFILE) })
+                CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.navigate(Routes.PROFILE) }, onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onResult = { nav.navigate("result/$it") })
             }
-            composable(Routes.PLANNER, arguments = listOf(navArgument("epochDay") { type = NavType.LongType })) { entry ->
+            composable(Routes.PLANNER, arguments = listOf(navArgument("epochDay") { type = NavType.LongType }, navArgument("schedule") { type = NavType.LongType; defaultValue = 0L })) { entry ->
                 val selectedProgram by entry.savedStateHandle.getStateFlow("selectedProgramId", 0L).collectAsStateWithLifecycle()
                 TrainingPlannerScreen(onChooseProgram = { nav.navigate("plan-programs/${entry.arguments!!.getLong("epochDay")}") },
-                    selectedProgramId = selectedProgram, onSelectionConsumed = { entry.savedStateHandle["selectedProgramId"] = 0L }, epochDay = entry.arguments!!.getLong("epochDay"), onClose = { nav.popBackStack() }, onStart = {
+                    scheduleId = entry.arguments!!.getLong("schedule"), selectedProgramId = selectedProgram, onSelectionConsumed = { entry.savedStateHandle["selectedProgramId"] = 0L }, epochDay = entry.arguments!!.getLong("epochDay"), onClose = { nav.popBackStack() }, onStart = {
                     nav.navigate(Routes.workout(it)) { popUpTo(Routes.PLANNER) { inclusive = true } }
                 })
             }
@@ -124,6 +126,9 @@ fun AppRoot() {
                         nav.previousBackStackEntry?.savedStateHandle?.set("selectedProgramId", id)
                         nav.popBackStack()
                     })
+            }
+            composable(Routes.RESULT, arguments = listOf(navArgument("session") { type = NavType.LongType })) { entry ->
+                WorkoutResultScreen(entry.arguments!!.getLong("session"), onClose = { nav.popBackStack() })
             }
             composable(Routes.PROGRESS) { ProgressScreen(onProfile = { nav.navigate(Routes.PROFILE) }) }
             composable(Routes.PROFILE) { ProfileScreen(onBack = { nav.popBackStack() }) }
@@ -167,7 +172,7 @@ fun AppRoot() {
 private fun BottomBar(nav: NavHostController) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: ""
-    if (route.startsWith("workout") || route.startsWith("plan/") || route.startsWith("plan-programs/") || runCatching { nav.getBackStackEntry(Routes.WORKOUT) }.getOrNull() != null) return
+    if (route.startsWith("result/") || route.startsWith("workout") || route.startsWith("plan/") || route.startsWith("plan-programs/") || runCatching { nav.getBackStackEntry(Routes.WORKOUT) }.getOrNull() != null) return
     Column(Modifier.background(Fc.Nav).navigationBarsPadding()) {
         HorizontalDivider(color = Fc.Line, thickness = 1.dp)
         Row(Modifier.fillMaxWidth().height(72.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -205,4 +210,5 @@ private fun BottomBar(nav: NavHostController) {
         }
     }
 }
+
 

@@ -25,7 +25,7 @@ import com.fitclub.tracker.ui.theme.Fc
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-class TrainingPlannerViewModel(private val c: AppContainer, epochDay: Long) : ViewModel() {
+class TrainingPlannerViewModel(private val c: AppContainer, epochDay: Long, scheduleId: Long = 0L) : ViewModel() {
     val draft = MutableStateFlow<ScheduledDraft?>(null)
     val error = MutableStateFlow<String?>(null)
     val saving = MutableStateFlow(false)
@@ -36,7 +36,7 @@ class TrainingPlannerViewModel(private val c: AppContainer, epochDay: Long) : Vi
     val dirty: Boolean get() = draft.value != initial
 
     init { viewModelScope.launch {
-        runCatching { c.schedule.getForDate(epochDay) ?: ScheduledDraft(epochDay = epochDay) }
+        runCatching { if (scheduleId == 0L) ScheduledDraft(epochDay = epochDay) else requireNotNull(c.schedule.get(scheduleId)) }
             .onSuccess { initial = it; draft.value = it }
             .onFailure { error.value = "Не удалось загрузить план: ${it.message}" }
     } }
@@ -73,8 +73,8 @@ fun parseScheduleTime(value: String): Int? {
 
 @Composable
 fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -> Unit,
-    onChooseProgram: () -> Unit = {}, selectedProgramId: Long = 0L, onSelectionConsumed: () -> Unit = {}) {
-    val vm = appViewModel(key = "plan-$epochDay") { TrainingPlannerViewModel(it, epochDay) }
+    onChooseProgram: () -> Unit = {}, selectedProgramId: Long = 0L, onSelectionConsumed: () -> Unit = {}, scheduleId: Long = 0L) {
+    val vm = appViewModel(key = "plan-$epochDay-$scheduleId") { TrainingPlannerViewModel(it, epochDay, scheduleId) }
     val value by vm.draft.collectAsStateWithLifecycle()
     val catalog by vm.catalog.collectAsStateWithLifecycle()
     val programs by vm.programs.collectAsStateWithLifecycle()
@@ -135,15 +135,18 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
         }
         item {
             FcCard {
-                Text("Начните с программы", color = Fc.Text, style = MaterialTheme.typography.titleSmall)
+                Text("Основа тренировки", color = Fc.Text, style = MaterialTheme.typography.titleSmall)
                 Text("Выберите программу и день — упражнения появятся в плане.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-                PrimaryButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу →", onChooseProgram)
+                Spacer(Modifier.height(12.dp))
+                ActionButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу →", onChooseProgram)
                 val program = programs.firstOrNull { it.id == draft.programId }
                 if (program != null && program.days.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
                     Segmented(program.days.indices.toList(), draft.dayPosition ?: 0,
                         { day -> vm.update { it.fromProgram(program, day) } }, { "День ${'A' + it}" }, selectedBg = Fc.Lime)
                 }
-                Text("Упражнения копируются в план на эту дату. Ниже можно изменить их настройки.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(10.dp))
+                Text("План на эту дату можно настроить независимо от программы.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
             }
         }
         item { Text("${draft.items.size} упражнений · ${draft.items.sumOf { it.sets }} подходов", color = Fc.Muted) }
@@ -151,19 +154,19 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
             val exercise = catalog[item.exerciseId]
             ItemCard(exercise?.name ?: item.exerciseId, exercise?.equipment.orEmpty(), item, Goal.GENERAL,
                 onChange = { fn -> vm.update { it.copy(items = it.items.mapIndexed { i, old -> if (i == index) fn(old) else old }) } },
-                onRemove = { vm.update { it.copy(items = it.items.filterIndexed { i, _ -> i != index }) } })
+                onRemove = { vm.update { it.copy(items = it.items.filterIndexed { i, _ -> i != index }) } }, exercise = exercise)
         }
-        item { OutlinedButton(onClick = { picker = true }, modifier = Modifier.fillMaxWidth()) { Text("+ Добавить отдельное упражнение") } }
+        item { ActionButton("+ Добавить упражнение", { picker = true }, outlined = true) }
         if (error != null) item { Text(error.orEmpty(), color = Fc.Pink) }
         item {
-            Button(onClick = { vm.save { onClose() } }, enabled = canSave, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime)) {
-                Text(if (saving) "Сохраняю…" else "Сохранить план", modifier = Modifier.padding(6.dp))
-            }
+            ActionButton(if (saving) "Сохраняю…" else "Сохранить план", { vm.save { onClose() } }, enabled = canSave)
             if (draft.items.isEmpty()) Text("Добавьте хотя бы одно упражнение", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-            if (!completed) OutlinedButton(onClick = { vm.save(onStart) }, enabled = canSave, modifier = Modifier.fillMaxWidth()) { Text("Сохранить и начать тренировку") }
+            Spacer(Modifier.height(10.dp))
+            if (!completed) ActionButton("Сохранить и начать", { vm.save(onStart) }, outlined = true, enabled = canSave)
             if (draft.id != 0L) TextButton(onClick = { confirmDelete = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text("Удалить план на этот день", color = Fc.Pink) }
         }
     }
 }
+
 
 

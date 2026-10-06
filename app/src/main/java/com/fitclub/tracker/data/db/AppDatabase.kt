@@ -119,6 +119,18 @@ interface WorkoutDao {
     @Query("SELECT * FROM exercise_logs ORDER BY sessionId DESC, position")
     fun observeExercises(): Flow<List<ExerciseLogEntity>>
 
+    @Query("SELECT * FROM workout_sessions WHERE id = :id")
+    suspend fun getSession(id: Long): WorkoutSessionEntity?
+
+    @Update
+    suspend fun updateSession(item: WorkoutSessionEntity)
+
+    @Query("DELETE FROM workout_sessions WHERE id = :id")
+    suspend fun deleteSession(id: Long)
+
+    @Query("DELETE FROM set_logs WHERE sessionId = :id")
+    suspend fun deleteSets(id: Long)
+
     @Insert
     suspend fun insertExercises(items: List<ExerciseLogEntity>)
 
@@ -140,8 +152,16 @@ interface ScheduleDao {
     fun observe(id: Long): Flow<ScheduledWorkoutWithItems?>
 
     @Transaction
-    @Query("SELECT * FROM scheduled_workouts WHERE epochDay = :epochDay")
+    @Query("SELECT * FROM scheduled_workouts WHERE epochDay = :epochDay ORDER BY startMinute, id LIMIT 1")
     suspend fun getForDate(epochDay: Long): ScheduledWorkoutWithItems?
+
+    @Transaction
+    @Query("SELECT * FROM scheduled_workouts WHERE id = :id")
+    suspend fun get(id: Long): ScheduledWorkoutWithItems?
+
+    @Transaction
+    @Query("SELECT * FROM scheduled_workouts WHERE epochDay = :epochDay ORDER BY startMinute, id")
+    suspend fun getAllForDate(epochDay: Long): List<ScheduledWorkoutWithItems>
 
     @Insert
     suspend fun insert(workout: ScheduledWorkoutEntity): Long
@@ -165,7 +185,7 @@ interface ScheduleDao {
         BodyMeasurementEntity::class, WorkoutSessionEntity::class, SetLogEntity::class,
         ScheduledWorkoutEntity::class, ScheduledExerciseEntity::class, ExerciseLogEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -204,10 +224,17 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_exercise_logs_exerciseId ON exercise_logs (exerciseId)")
             }
         }
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP INDEX IF EXISTS index_scheduled_workouts_epochDay")
+                db.execSQL("CREATE INDEX index_scheduled_workouts_epochDay ON scheduled_workouts (epochDay)")
+            }
+        }
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .build()
     }
 }
+
 

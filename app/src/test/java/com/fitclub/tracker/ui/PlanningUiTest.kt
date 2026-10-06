@@ -26,10 +26,13 @@ class PlanningUiTest {
     private fun waitFor(text: String) = rule.waitUntil(15_000) {
         rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
     }
-    @Test fun dateOpensPlannerAndSavedDateReopensItsWorkout() {
+    @Test fun dateShowsDayAndExplicitActionOpensIndependentPlanner() {
         open()
         val date = calendarDate(LocalDate.now().toEpochDay())
         rule.onNodeWithContentDescription("$date, запланировать тренировку").performClick()
+        rule.onNodeWithText("План тренировки").assertDoesNotExist()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+ Запланировать тренировку"))
+        rule.onNodeWithText("+ Запланировать тренировку").performClick()
         waitFor("План тренировки")
         rule.onNodeWithText("Выбрать программу →").performClick()
         waitFor("Выберите программу")
@@ -38,9 +41,11 @@ class PlanningUiTest {
         waitFor("План тренировки")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить план"))
         rule.onNodeWithText("Сохранить план").performClick()
-        waitFor("Открыть план →")
+        waitFor("Изменить план")
         rule.onNodeWithText("Фулбоди 3× · день A").assertExists()
         rule.onNodeWithContentDescription("$date, тренировка запланирована").performClick()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Изменить план"))
+        rule.onNodeWithText("Изменить план").performClick()
         waitFor("Тренировка")
         rule.onNodeWithText("Фулбоди 3× · день A").assertExists()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить план"))
@@ -63,4 +68,5 @@ class PlanningUiTest {
         rule.onAllNodesWithText("Женская").assertCountEquals(0)
     }
 }
+
 
