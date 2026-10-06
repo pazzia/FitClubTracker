@@ -60,9 +60,11 @@ class WorkoutFlowTest {
         rule.setContent { FitClubTheme { WorkoutResultScreen(id, {}) } }
         waitFor("Общий тоннаж: 480 кг")
         rule.onNodeWithText("Редактировать результат").performClick()
-        waitFor("Сохранить изменения")
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("weight-0"))
         rule.onNodeWithTag("weight-0").performTextReplacement("70")
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить изменения"))
         rule.onNodeWithText("Сохранить изменения").performClick()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Общий тоннаж: 560 кг"))
         waitFor("Общий тоннаж: 560 кг")
         waitFor("Редактировать результат")
         val logs = runBlocking { app.container.fitness.observeWorkouts().first() }
@@ -96,3 +98,4 @@ class WorkoutFlowTest {
         }
     }
 }
+

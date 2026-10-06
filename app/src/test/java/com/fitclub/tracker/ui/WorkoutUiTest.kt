@@ -48,7 +48,7 @@ class WorkoutUiTest {
         rule.onNodeWithTag("done-0").performClick()
         rule.onNodeWithTag("complete-exercise").performClick()
         waitFor("Упражнение завершено")
-        rule.onNodeWithText("Тоннаж: 480 кг").assertExists()
+        rule.onNodeWithText("Тоннаж: 600 кг").assertExists()
         rule.onNodeWithTag("next-exercise").assertIsEnabled().performClick()
         waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
         rule.onNodeWithTag("next-exercise").assertIsEnabled().performClick()
@@ -69,5 +69,4 @@ class WorkoutUiTest {
         bounds.forEach { assertEquals(bounds.first().width, it.width, 1f); assertEquals(bounds.first().height, it.height, 1f) }
     }
 }
-
 

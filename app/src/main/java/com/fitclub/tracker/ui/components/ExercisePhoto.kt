@@ -42,10 +42,16 @@ fun ExerciseThumbnail(exercise: ExerciseEntity, modifier: Modifier = Modifier) {
 @Composable
 fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modifier, thumbnail: Boolean = false) {
     val context = LocalContext.current
+    val aspect = remember(context, path, thumbnail) {
+        if (thumbnail || path == null) 1.5f else runCatching {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            context.assets.open(path).use { BitmapFactory.decodeStream(it, null, bounds) }
+            if (bounds.outWidth > 0 && bounds.outHeight > 0) bounds.outWidth.toFloat() / bounds.outHeight else 1.5f
+        }.getOrDefault(1.5f)
+    }
     val cacheKey = "$path:$thumbnail"
-    val bitmap by produceState<Bitmap?>(photoCache.get(cacheKey), cacheKey) {
-        value = photoCache.get(cacheKey)
-        value = withContext(Dispatchers.IO) {
+    val photo by produceState<Pair<Boolean, Bitmap?>>(true to photoCache.get(cacheKey), cacheKey) {
+        val decoded = withContext(Dispatchers.IO) {
             photoCache.get(cacheKey) ?: try {
                 path?.let {
                     val options = BitmapFactory.Options().apply { inSampleSize = if (thumbnail) 2 else 1 }
@@ -55,7 +61,10 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                             context.assets.open(preparedPath).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
                         } catch (_: IOException) { null }
                         if (prepared != null) {
-                            val result = trimPhotoPadding(prepared)
+                            val maskPath = "exercise_masks/" + it.removePrefix("free_exercise_db/").removeSuffix(".jpg") + ".png"
+                            val mask = context.assets.open(maskPath).use { stream -> BitmapFactory.decodeStream(stream) }
+                            val result = if (mask != null && mask.width / options.inSampleSize == prepared.width && mask.height / options.inSampleSize == prepared.height) frameExerciseThumbnail(prepared, mask) else trimPhotoPadding(prepared)
+                            mask?.recycle()
                             if (result !== prepared) prepared.recycle()
                             photoCache.put(cacheKey, result)
                             return@let result
@@ -72,8 +81,8 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                                 ?: throw IOException("Missing foreground matte: $maskPath")
                             // Process before trimming so matte coordinates remain aligned at both sample sizes.
                             val processed = renderExercisePhoto(decoded, mask)
+                            val result = frameExerciseThumbnail(processed, mask)
                             mask.recycle()
-                            val result = trimPhotoPadding(processed, decoded)
                             decoded.recycle()
                             if (result !== processed) processed.recycle()
                             photoCache.put(cacheKey, result)
@@ -82,12 +91,16 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                 }
             } catch (_: IOException) { null }
         }
+        value = false to decoded
     }
-    val layout = if (thumbnail) modifier else modifier.fillMaxWidth().aspectRatio(bitmap?.let { it.width.toFloat() / it.height } ?: 1.5f)
+    val loading = photo.first
+    val bitmap = photo.second
+    val layout = if (thumbnail) modifier else modifier.fillMaxWidth().aspectRatio(aspect)
     Box(layout.background(Fc.Surface2).semantics { contentDescription = description },
         contentAlignment = Alignment.Center) {
         bitmap?.let {
             Image(it.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
-        } ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Fc.Muted)
+        } ?: Text(if (loading) "Загрузка…" else "Фото недоступно", color = Fc.Muted)
     }
 }
+

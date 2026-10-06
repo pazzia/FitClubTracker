@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import com.fitclub.tracker.ui.components.ActionButton
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -196,8 +198,8 @@ fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false,
                         if (p.isActive) Text("АКТИВНАЯ", style = MaterialTheme.typography.labelSmall, color = Fc.Lime)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("${fit.percent}%", style = MaterialTheme.typography.headlineSmall, color = Fc.fit(fit.percent / 100f))
-                        Text("к цели", style = MaterialTheme.typography.labelSmall, color = Fc.Muted)
+                        Text("${fit.percent}/100", style = MaterialTheme.typography.headlineSmall, color = Fc.fit(fit.percent / 100f))
+                        Text("структура", style = MaterialTheme.typography.labelSmall, color = Fc.Muted)
                     }
                 }
             }
@@ -214,13 +216,17 @@ class ProgramEditorViewModel(private val c: AppContainer, private val programId:
         c.exercises.observeAll().map { list -> list.associateBy { it.id } }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
+    var initial: ProgramDraft? = null
+        private set
+    val dirty: Boolean get() = draft.value != initial
+    var saving by mutableStateOf(false)
+        private set
+    var error by mutableStateOf<String?>(null)
+    var pendingAdd by mutableStateOf(addExercise.isNotBlank())
     init {
         viewModelScope.launch {
-            val loaded = if (programId == 0L) ProgramDraft() else c.programs.get(programId) ?: ProgramDraft()
-            _draft.value = if (addExercise.isNotBlank() && loaded.days.firstOrNull()?.items?.none { it.exerciseId == addExercise } != false)
-                loaded.copy(days = (loaded.days.ifEmpty { listOf(DayDraft()) }).mapIndexed { index, day ->
-                    if (index == 0) day.copy(items = day.items + ItemDraft(addExercise, 3, loaded.goal.defaultReps, loaded.goal.defaultRest)) else day
-                }) else loaded
+            runCatching { if (programId == 0L) ProgramDraft() else requireNotNull(c.programs.get(programId)) { "Программа не найдена" } }
+                .onSuccess { initial = it; _draft.value = it }.onFailure { error = "Не удалось загрузить программу: ${it.message}" }
         }
     }
 
@@ -241,22 +247,39 @@ class ProgramEditorViewModel(private val c: AppContainer, private val programId:
         d.copy(days = d.days.mapIndexed { i, dd -> if (i != day) dd else dd.copy(items = dd.items + item) })
     }
 
+    fun addExercises(day: Int, exerciseIds: List<String>) = update { d ->
+        d.copy(days = d.days.mapIndexed { i, dd ->
+            if (i != day) dd else {
+                val existing = dd.items.map { it.exerciseId }.toSet()
+                val additions = exerciseIds.distinct().filter { it !in existing && it in catalog.value }
+                    .map { ItemDraft(it, 3, d.goal.defaultReps, d.goal.defaultRest) }
+                dd.copy(items = dd.items + additions)
+            }
+        })
+    }
+
     fun addDay() = update { it.copy(days = it.days + DayDraft()) }
 
     fun save(onDone: () -> Unit) {
         val d = _draft.value ?: return
+        if (saving || d.name.isBlank()) return
+        saving = true
         viewModelScope.launch {
-            val id = c.programs.save(d)
-            if (d.isActive) c.programs.setActive(id)
-            onDone()
+            runCatching { c.programs.save(d) }
+                .onSuccess { initial = d; onDone() }
+                .onFailure { error = "Не удалось сохранить программу: ${it.message}" }
+            saving = false
         }
     }
 
     fun delete(onDone: () -> Unit) {
         val d = _draft.value ?: return
+        if (saving) return
+        saving = true
         viewModelScope.launch {
-            if (d.id != 0L) c.programs.delete(d.id)
-            onDone()
+            runCatching { if (d.id != 0L) c.programs.delete(d.id) }
+                .onSuccess { onDone() }.onFailure { error = "Не удалось удалить: ${it.message}" }
+            saving = false
         }
     }
 }
@@ -267,7 +290,21 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
     val vm = appViewModel(key = "program-$programId-$addExercise") { ProgramEditorViewModel(it, programId, addExercise) }
     val draftOrNull by vm.draft.collectAsStateWithLifecycle()
     val catalog by vm.catalog.collectAsStateWithLifecycle()
-    val d = draftOrNull ?: return
+    val d = draftOrNull
+    if (d == null) {
+        Column(Modifier.padding(20.dp)) { BackRow("Программы", onClose); Text(vm.error ?: "Загружаю программу…", color = if (vm.error == null) Fc.Muted else Fc.Pink) }
+        return
+    }
+    var discard by rememberSaveable { mutableStateOf(false) }
+    val close = { if (!vm.saving) { if (vm.dirty) discard = true else onClose() } }
+    BackHandler { close() }
+    if (discard) AlertDialog(onDismissRequest = { discard = false }, title = { Text("Выйти без сохранения?") },
+        text = { Text("Изменения программы ещё не сохранены.") },
+        confirmButton = { TextButton(onClick = onClose) { Text("Выйти") } },
+        dismissButton = { TextButton(onClick = { discard = false }) { Text("Продолжить редактирование") } })
+    if (vm.pendingAdd) AlertDialog(onDismissRequest = { vm.pendingAdd = false }, title = { Text("В какой день добавить упражнение?") },
+        text = { Column { d.days.indices.forEach { index -> TextButton(onClick = { vm.addExercise(index, addExercise); vm.pendingAdd = false }) { Text("День ${'A' + index}") } } } },
+        confirmButton = {}, dismissButton = { TextButton(onClick = { vm.pendingAdd = false }) { Text("Отмена") } })
     var dayIndex by rememberSaveable { mutableStateOf(0) }
     val day = dayIndex.coerceIn(0, d.days.lastIndex)
     var picking by rememberSaveable { mutableStateOf(false) }
@@ -290,7 +327,8 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             already = d.days[day].items.map { it.exerciseId }.toSet(),
             subtitle = "в день ${'A' + day} программы «${d.name}»",
             onBack = { picking = false },
-            onPick = { vm.addExercise(day, it); picking = false }
+            onPick = { vm.addExercise(day, it); picking = false },
+            onPickMany = { vm.addExercises(day, it); picking = false }
         )
         return
     }
@@ -298,7 +336,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
     LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f)) { BackRow("Программы", onClose) }
+                Box(Modifier.weight(1f)) { BackRow("Программы", close) }
                 if (d.isActive) Pill("АКТИВНАЯ", Fc.LimeSoft, Fc.Lime)
                 else TextButton(onClick = { vm.update { it.copy(isActive = true) } }) { Text("Сделать активной", color = Fc.Text) }
             }
@@ -357,10 +395,10 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (d.days[day].items.isEmpty()) Text("В этом дне пока нет упражнений.", style = MaterialTheme.typography.bodyMedium, color = Fc.Muted)
-                PrimaryButton("+  Добавить упражнение", { picking = true })
+                ActionButton("+  Добавить упражнение", { picking = true }, outlined = true)
             }
         }
-        item { TextButton(onClick = { showTrainingSettings = !showTrainingSettings }, modifier = Modifier.fillMaxWidth()) { Text("Цель и расписание ${if (showTrainingSettings) "−" else "+"}", color = Fc.Text) } }
+        item { TextButton(onClick = { showTrainingSettings = !showTrainingSettings }, modifier = Modifier.fillMaxWidth()) { Text("Цель и частота ${if (showTrainingSettings) "−" else "+"}", color = Fc.Text) } }
         if (showTrainingSettings) {
         item {
             Section("Цель тренировок") {
@@ -384,7 +422,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Тренировок в неделю", style = MaterialTheme.typography.titleSmall, color = Fc.Text)
-                        Text("для цели «${d.goal.title}»: ${d.goal.freqPerWeek.first}–${d.goal.freqPerWeek.last}", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
+                        Text("Даты задаются в календаре. Для цели «${d.goal.title}»: ${d.goal.freqPerWeek.first}–${d.goal.freqPerWeek.last}", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
                     }
                     Stepper(d.freqPerWeek, "тренировок в неделю", { vm.update { it.copy(freqPerWeek = (it.freqPerWeek - 1).coerceAtLeast(1)) } }, { vm.update { it.copy(freqPerWeek = (it.freqPerWeek + 1).coerceAtMost(7)) } })
                 }
@@ -395,11 +433,11 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         if (showAppearance) {
         item {
             Section("Цвет") {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     PROGRAM_COLORS.forEach { (argb, title) ->
                         val on = d.colorArgb == argb
                         Box(
-                            Modifier.size(44.dp)
+                            Modifier.size(48.dp)
                                 .then(if (on) Modifier.border(2.dp, Fc.Text, CircleShape).padding(4.dp) else Modifier)
                                 .clip(CircleShape).background(Color(argb))
                                 .semantics { contentDescription = "Цвет: $title"; selected = on }
@@ -411,27 +449,32 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         }
         item {
             Section("Обложка") {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ProgramIcons.all.forEach { icon ->
                         val on = d.icon == icon && d.coverPhoto == null
                         Box(
-                            Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface)
+                            Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface)
                                 .border(1.5.dp, if (on) Color(d.colorArgb) else Fc.Line, RoundedCornerShape(12.dp))
                                 .semantics { contentDescription = "Обложка: ${IconPaths.titles[icon]}"; selected = on }
                                 .clickable(role = Role.RadioButton) { vm.update { it.copy(icon = icon, coverPhoto = null) } },
                             contentAlignment = Alignment.Center
                         ) { StrokeIcon(icon, if (on) Color(d.colorArgb) else Fc.Muted, Modifier.size(22.dp), strokeWidth = 2f) }
                     }
-                    ProgramPhotoButton(d.coverPhoto, { photo -> vm.update { it.copy(coverPhoto = photo) } }, Modifier.weight(1f), onBusy = { photoBusy = it })
+                    ProgramPhotoButton(d.coverPhoto, { photo -> vm.update { it.copy(coverPhoto = photo) } }, Modifier.size(48.dp), onBusy = { photoBusy = it })
                 }
             }
         }
         }
         item { TextButton(onClick = { showAnalysis = !showAnalysis }, modifier = Modifier.fillMaxWidth()) { Text("Разбор программы ${if (showAnalysis) "−" else "+"}", color = Fc.Text) } }
-        if (showAnalysis) item { FitDetails(fit, d.goal) }
+        if (showAnalysis) {
+            item { Text("Вся программа", color = Fc.Text); FitDetails(fit, d.goal) }
+            item { Text("Текущий день ${'A' + day}", color = Fc.Text); FitDetails(ProgramScorer.score(d.copy(days = listOf(d.days[day])), catalog), d.goal) }
+        }
         item {
             if (photoBusy) Text("Сохраняем фото…", color = Fc.Muted)
-            else OutlinedButton(onClick = { vm.save(onClose) }, modifier = Modifier.fillMaxWidth()) { Text("Сохранить программу") }
+            else ActionButton(if (vm.saving) "Сохраняю…" else "Сохранить программу", { vm.save(onClose) }, enabled = !vm.saving && d.name.isNotBlank())
+            if (d.name.isBlank()) Text("Введите название программы", color = Fc.Pink)
+            if (vm.error != null) Text(vm.error.orEmpty(), color = Fc.Pink)
         }
         if (d.id != 0L) item {
             TextButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth()) {
@@ -453,11 +496,11 @@ private fun Section(title: String, content: @Composable () -> Unit) {
 @Composable
 private fun Stepper(value: Int, what: String, onDec: () -> Unit, onInc: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onDec, modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface2)) {
+        IconButton(onClick = onDec, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface2)) {
             Text("−", fontSize = 20.sp, color = Fc.Text, modifier = Modifier.semantics { contentDescription = "Меньше: $what" })
         }
         Text("$value", style = MaterialTheme.typography.titleMedium, color = Fc.Text, modifier = Modifier.width(34.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        IconButton(onClick = onInc, modifier = Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface2)) {
+        IconButton(onClick = onInc, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface2)) {
             Text("+", fontSize = 20.sp, color = Fc.Text, modifier = Modifier.semantics { contentDescription = "Больше: $what" })
         }
     }
@@ -468,14 +511,14 @@ private fun FitDetails(fit: FitResult, goal: Goal) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("РАЗБОР ПРОГРАММЫ", style = MaterialTheme.typography.headlineSmall, color = Fc.Text, modifier = Modifier.weight(1f))
-            Text("${fit.percent}%", style = MaterialTheme.typography.headlineSmall, color = Fc.fit(fit.percent / 100f))
+            Text("${fit.percent}/100", style = MaterialTheme.typography.headlineSmall, color = Fc.fit(fit.percent / 100f))
         }
         if (fit.criteria.isNotEmpty()) FcCard {
             fit.criteria.forEachIndexed { i, c ->
                 if (i > 0) Spacer(Modifier.height(10.dp))
                 Row {
                     Text(c.title, style = MaterialTheme.typography.labelLarge, color = Fc.Text, modifier = Modifier.weight(1f))
-                    Text("${(c.value * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, color = Fc.fit(c.value))
+                    Text("${(c.value * 100).toInt()}/100", style = MaterialTheme.typography.labelLarge, color = Fc.fit(c.value))
                 }
                 Spacer(Modifier.height(5.dp))
                 Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(Fc.Line)) {
@@ -496,13 +539,13 @@ private fun FitDetails(fit: FitResult, goal: Goal) {
             }
         }
         Text(
-            "Оценка основана на общепринятых рекомендациях по силовому тренингу (диапазоны повторений, отдых, объём, частота) и не заменяет работу с тренером.",
+            "Условная оценка структуры всей программы по правилам приложения. Это не прогноз результата. Отдельные дни могут отличаться; учитывайте восстановление и свой опыт.",
             style = MaterialTheme.typography.labelSmall, color = Fc.Muted2
         )
         FcCard(modifier = Modifier.testTag("program-fit-conclusion")) {
             Text("Итог для цели «${goal.title}»", style = MaterialTheme.typography.titleSmall, color = Fc.Text)
             Text(fit.verdict, style = MaterialTheme.typography.titleMedium, color = Fc.fit(fit.percent / 100f))
-            Text("${fit.percent}%", color = Fc.Muted)
+            Text("${fit.percent}/100", color = Fc.Muted)
         }
     }
 }
@@ -521,34 +564,34 @@ internal fun ItemCard(
                 Text(name, style = MaterialTheme.typography.titleSmall, color = Fc.Text)
                 Text(meta, style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
             }
-            IconButton(onClick = onRemove, modifier = Modifier.size(40.dp)) {
+            IconButton(onClick = onRemove, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Filled.Close, contentDescription = "Убрать $name", tint = Fc.Muted2)
             }
         }
         Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-            Column(Modifier.weight(1.2f)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth()) {
                 Text("Подходы", style = MaterialTheme.typography.labelSmall, color = Fc.Muted)
                 Spacer(Modifier.height(4.dp))
                 Row(
-                    Modifier.height(44.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Fc.Bg).border(1.dp, Fc.Line, RoundedCornerShape(10.dp)),
+                    Modifier.heightIn(min = 48.dp).fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Fc.Bg).border(1.dp, Fc.Line, RoundedCornerShape(10.dp)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { onChange { it.copy(sets = (it.sets - 1).coerceAtLeast(1)) } }, modifier = Modifier.size(44.dp)) {
+                    IconButton(onClick = { onChange { it.copy(sets = (it.sets - 1).coerceAtLeast(1)) } }, modifier = Modifier.size(48.dp)) {
                         Text("−", fontSize = 18.sp, color = Fc.Text, modifier = Modifier.semantics { contentDescription = "Меньше подходов" })
                     }
                     Text("${item.sets}", style = MaterialTheme.typography.titleMedium, color = Fc.Text, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    IconButton(onClick = { onChange { it.copy(sets = (it.sets + 1).coerceAtMost(10)) } }, modifier = Modifier.size(44.dp)) {
+                    IconButton(onClick = { onChange { it.copy(sets = (it.sets + 1).coerceAtMost(10)) } }, modifier = Modifier.size(48.dp)) {
                         Text("+", fontSize = 18.sp, color = Fc.Text, modifier = Modifier.semantics { contentDescription = "Больше подходов" })
                     }
                 }
             }
             Dropdown(
-                title = "Повторы", value = item.reps.label, ok = repsOk, modifier = Modifier.weight(1f),
+                title = "Повторы", value = item.reps.label, ok = repsOk, modifier = Modifier.fillMaxWidth(),
                 options = RepRange.entries.map { it.label to { onChange { x -> x.copy(reps = it) } } }
             )
             Dropdown(
-                title = "Отдых", value = restLabel(item.restSec), ok = restOk, modifier = Modifier.weight(1f),
+                title = "Отдых", value = restLabel(item.restSec), ok = restOk, modifier = Modifier.fillMaxWidth(),
                 options = REST_OPTIONS.map { sec -> restLabel(sec) to { onChange { x -> x.copy(restSec = sec) } } }
             )
         }
@@ -575,7 +618,7 @@ private fun Dropdown(title: String, value: String, ok: Boolean, options: List<Pa
                     .padding(start = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(value, style = MaterialTheme.typography.labelLarge, color = Fc.Text, modifier = Modifier.weight(1f), maxLines = 1)
+                Text(value, style = MaterialTheme.typography.labelLarge, color = Fc.Text, modifier = Modifier.weight(1f), maxLines = 3)
                 Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = Fc.Muted)
             }
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
@@ -600,4 +643,5 @@ internal fun ProgramDeleteDialog(name: String, onDismiss: () -> Unit, onConfirm:
         dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } }
     )
 }
+
 

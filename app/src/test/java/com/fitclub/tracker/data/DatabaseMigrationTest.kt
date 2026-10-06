@@ -22,6 +22,7 @@ class DatabaseMigrationTest {
     @Test fun migratesVersionThreeWithoutLosingPlans() = checkMigration(3)
     @Test fun migratesVersionFourWithoutLosingHistory() = checkMigration(4)
     @Test fun migratesVersionFiveAndAllowsSecondPlan() = checkMigration(5)
+    @Test fun migratesVersionSixWithoutLosingHistory() = checkMigration(6)
     private fun checkMigration(version: Int) = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         context.deleteDatabase("fitclub.db")
@@ -42,6 +43,7 @@ class DatabaseMigrationTest {
                     }
                     if (version >= 4) AppDatabase.MIGRATION_3_4.migrate(db)
                     if (version >= 5) AppDatabase.MIGRATION_4_5.migrate(db)
+                    if (version >= 6) AppDatabase.MIGRATION_5_6.migrate(db)
                 }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
             }).build())
@@ -84,5 +86,4 @@ class DatabaseMigrationTest {
         "CREATE INDEX IF NOT EXISTS `index_set_logs_exerciseId` ON `set_logs` (`exerciseId`)"
     )
 }
-
 

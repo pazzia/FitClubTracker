@@ -2,6 +2,8 @@ package com.fitclub.tracker.ui
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import androidx.compose.runtime.*
+import com.fitclub.tracker.ui.library.ExerciseDetailScreen
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -53,19 +55,32 @@ class Preview66UiTest {
         val id = runBlocking { app.container.schedule.save(ScheduledDraft(epochDay = 22001,
             items = listOf(ItemDraft("bench", 1, RepRange.R8_12, 0), ItemDraft("bbrow", 1, RepRange.R8_12, 0)))) }
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) {
-            WorkoutScreen(id, onClose = {}, onTechnique = {})
+            var technique by remember { mutableStateOf("") }
+            if (technique.isBlank()) WorkoutScreen(id, onClose = {}, onTechnique = { technique = it })
+            else ExerciseDetailScreen(technique, onBack = { technique = "" }, onOpenExercise = { technique = it }, onAddToProgram = {}, trainingContext = true)
         } }
         waitFor("Выберите любое упражнение. Удерживайте ≡, чтобы изменить порядок.")
         rule.onNodeWithText("Жим штанги лёжа").performClick()
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
+        rule.onNodeWithTag("exercise-photo-pager").assertDoesNotExist()
+        rule.onNodeWithContentDescription("Жим штанги лёжа — миниатюра техники").assertIsDisplayed()
+        rule.onNodeWithText("Техника выполнения →").performClick()
+        waitFor("Техника")
+        rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasTestTag("exercise-photo-pager"))
         rule.onNodeWithTag("exercise-photo-pager").assertIsDisplayed()
         screenshot("workout-technique-1")
+        rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasText("Фото 2"))
         rule.onNodeWithText("Фото 2").performClick()
         rule.waitForIdle()
         rule.onNodeWithText("2 / 2 · Листайте свайпом").assertExists()
         screenshot("workout-technique-2")
+        rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasText("Вернуться к тренировке"))
+        rule.onNodeWithText("Вернуться к тренировке").performClick()
         rule.onNodeWithTag("next-exercise").performClick()
         waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
+        rule.onNodeWithText("Техника выполнения →").performClick()
+        waitFor("Техника")
+        rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasTestTag("exercise-photo-pager"))
         rule.onNodeWithText("1 / 2 · Листайте свайпом").assertExists()
     }
     @Test fun longPressSupportsSingleAndMultipleDeletionWithCancel() {
@@ -89,7 +104,7 @@ class Preview66UiTest {
         waitFor("+ Создать программу")
         rule.onAllNodesWithText("Фулбоди 3×").assertCountEquals(0)
         rule.onAllNodesWithText("Сила 5×5").assertCountEquals(0)
-        rule.onNodeWithText("Летний рельеф").assertExists()
+        rule.onNodeWithText("Учебный пример: ошибки программы").assertExists()
     }
     @Test fun editorPrioritizesExercisesAndKeepsAppearanceCollapsed() {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
@@ -101,8 +116,8 @@ class Preview66UiTest {
         rule.onAllNodesWithText("Цвет").assertCountEquals(0)
         screenshot("new-program")
         rule.onNodeWithText("+  Добавить упражнение").performClick()
-        waitFor("Выберите группу мышц")
-        rule.onNodeWithText("Выберите группу мышц").assertExists()
+        waitFor("Добавить упражнения")
+        rule.onNodeWithText("Добавить упражнения").assertExists()
     }
     @Test fun plannerShowsPrimaryProgramChoiceAndSecondaryManualAdd() {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
@@ -122,4 +137,3 @@ class Preview66UiTest {
         waitFor("Выберите группу мышц")
     }
 }
-

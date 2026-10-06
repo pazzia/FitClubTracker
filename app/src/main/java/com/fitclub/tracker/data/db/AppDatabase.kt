@@ -110,6 +110,13 @@ interface MeasurementDao {
 
 @Dao
 interface WorkoutDao {
+    @Query("SELECT * FROM active_workouts") fun observeActive(): Flow<List<ActiveWorkoutEntity>>
+    @Query("SELECT * FROM active_workouts WHERE scheduleId = :id") suspend fun getActive(id: Long): ActiveWorkoutEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun saveActive(item: ActiveWorkoutEntity)
+    @Query("DELETE FROM active_workouts WHERE scheduleId = :id") suspend fun deleteActive(id: Long)
+    @Query("DELETE FROM exercise_logs WHERE sessionId = :id") suspend fun deleteExercises(id: Long)
+    @Query("SELECT * FROM exercise_logs WHERE sessionId = :id ORDER BY position") suspend fun getExercises(id: Long): List<ExerciseLogEntity>
+
     @Query("SELECT * FROM workout_sessions ORDER BY startedAt DESC")
     fun observeSessions(): Flow<List<WorkoutSessionEntity>>
 
@@ -183,9 +190,9 @@ interface ScheduleDao {
     entities = [
         ExerciseEntity::class, ProgramEntity::class, ProgramDayEntity::class, ProgramExerciseEntity::class,
         BodyMeasurementEntity::class, WorkoutSessionEntity::class, SetLogEntity::class,
-        ScheduledWorkoutEntity::class, ScheduledExerciseEntity::class, ExerciseLogEntity::class
+        ScheduledWorkoutEntity::class, ScheduledExerciseEntity::class, ExerciseLogEntity::class, ActiveWorkoutEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -230,11 +237,25 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX index_scheduled_workouts_epochDay ON scheduled_workouts (epochDay)")
             }
         }
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE workout_sessions ADD COLUMN title TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE workout_sessions ADD COLUMN plannedEpochDay INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE workout_sessions ADD COLUMN planSnapshot TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE workout_sessions ADD COLUMN durationMillis INTEGER NOT NULL DEFAULT -1")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN exercisePosition INTEGER NOT NULL DEFAULT -1")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN warmup INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN rir INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN assisted INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("CREATE TABLE active_workouts (scheduleId INTEGER NOT NULL PRIMARY KEY, title TEXT NOT NULL, snapshot TEXT NOT NULL)")
+                db.execSQL("UPDATE workout_sessions SET title = COALESCE((SELECT title FROM scheduled_workouts WHERE id = scheduleId), '')")
+                // Older sets cannot be unambiguously split between duplicate blocks; preserve as legacy (-1).
+            }
+        }
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .build()
     }
 }
-
 

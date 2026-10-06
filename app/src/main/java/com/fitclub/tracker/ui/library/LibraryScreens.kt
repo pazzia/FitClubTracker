@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -143,17 +144,17 @@ private fun AnatomyCard(sex: Sex) {
 }
 
 @Composable
-fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise: (String) -> Unit, onAddToProgram: () -> Unit) {
+fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise: (String) -> Unit, onAddToProgram: () -> Unit, trainingContext: Boolean = false) {
     val vm = appViewModel { LibraryViewModel(it) }
     val all by vm.exercises.collectAsStateWithLifecycle()
     val profile by vm.settings.collectAsStateWithLifecycle()
     val e = all.firstOrNull { it.id == exerciseId }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     if (e == null) {
-        Column(Modifier.padding(20.dp)) { BackRow("Справочник", onBack); Text("Загрузка упражнения…", color = Fc.Muted) }
+        Column(Modifier.padding(20.dp)) { BackRow("Справочник", onBack); Text(if (all.isEmpty()) "Загрузка упражнения…" else "Упражнение не найдено", color = Fc.Muted) }
         return
     }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("exercise-detail-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { BackRow(e.group.title, onBack); ScreenTitle(e.name) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -161,6 +162,8 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
                 Pill(FreeExerciseCatalog.media[e.id]?.category?.takeIf { it == "Растяжка" } ?: e.type.title, Fc.Surface2, Fc.Text)
             }
         }
+        item { Segmented(listOf(0, 1, 2), tab, { tab = it }, { listOf("Техника", "Описание", "Замены")[it] }, selectedBg = Fc.Lime) }
+        if (tab == 0) item { FcCard { Text(e.technique, style = MaterialTheme.typography.bodyMedium, color = Fc.Text) } }
         item { GroupImage(profile.sex, e.group, Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(20.dp))) }
         FreeExerciseCatalog.media[e.id]?.let { media ->
             item { ExerciseMediaCard(e.id, e.name, media) }
@@ -176,9 +179,9 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
         }
         if (e.group == MuscleGroup.QUADS) item { QuadricepsLegend() }
         item { ExerciseMuscleMap(profile.sex, e.primary, e.secondary) }
-        item { Segmented(listOf(0, 1, 2), tab, { tab = it }, { listOf("Техника", "Описание", "Замены")[it] }, selectedBg = Fc.Lime) }
+
         when (tab) {
-            0 -> item { FcCard { Text(e.technique, style = MaterialTheme.typography.bodyMedium, color = Fc.Text) } }
+
             1 -> item { FcCard { Text(e.impact, color = Fc.Text); Spacer(Modifier.height(12.dp)); Text("Уровень: ${Levels.title(e.level)}", color = Fc.Lime); Text(Levels.explanation(e.level), color = Fc.Muted) } }
             2 -> items(e.alternatives) { alt ->
                 val linked = all.firstOrNull { it.name == alt.name }
@@ -188,6 +191,8 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
                 }
             }
         }
-        item { PrimaryButton("+ Добавить в программу", onAddToProgram) }
+        if (!trainingContext) item { PrimaryButton("+ Добавить в программу", onAddToProgram) }
+        else item { PrimaryButton("Вернуться к тренировке", onBack) }
     }
 }
+

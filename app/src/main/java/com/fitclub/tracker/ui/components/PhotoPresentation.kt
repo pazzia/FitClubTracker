@@ -72,3 +72,28 @@ private fun blurThumbnailBackground(pixels: IntArray, w: Int, h: Int, radius: In
     }
     return pass(pass(pixels,true),false)
 }
+
+
+/** Crop only empty context, keeping every foreground mask pixel and a visible margin. */
+internal fun frameExerciseThumbnail(source: Bitmap, matte: Bitmap): Bitmap {
+    val w = source.width; val h = source.height
+    val scaled = if (matte.width == w && matte.height == h) matte else Bitmap.createScaledBitmap(matte, w, h, false)
+    val pixels = IntArray(w * h); scaled.getPixels(pixels, 0, w, 0, 0, w, h)
+    var left = w; var right = -1; var top = h; var bottom = -1
+    pixels.forEachIndexed { i, value -> if (Color.red(value) >= 128) {
+        val x = i % w; val y = i / w
+        left = minOf(left, x); right = maxOf(right, x); top = minOf(top, y); bottom = maxOf(bottom, y)
+    } }
+    if (scaled !== matte) scaled.recycle()
+    if (right < left || bottom < top) return source
+    val margin = (maxOf(right - left + 1, bottom - top + 1) * .08f).roundToInt().coerceAtLeast(2)
+    left = (left - margin).coerceAtLeast(0); right = (right + margin).coerceAtMost(w - 1)
+    top = (top - margin).coerceAtLeast(0); bottom = (bottom + margin).coerceAtMost(h - 1)
+    // Expand the shorter axis toward a common 3:2 frame; never shrink the subject bounds.
+    val targetW = maxOf(right - left + 1, ((bottom - top + 1) * 1.5f).roundToInt()).coerceAtMost(w)
+    val targetH = maxOf(bottom - top + 1, ((right - left + 1) / 1.5f).roundToInt()).coerceAtMost(h)
+    left = ((left + right + 1 - targetW) / 2).coerceIn(0, w - targetW)
+    top = ((top + bottom + 1 - targetH) / 2).coerceIn(0, h - targetH)
+    if (left == 0 && top == 0 && targetW == w && targetH == h) return source
+    return Bitmap.createBitmap(source, left, top, targetW, targetH)
+}

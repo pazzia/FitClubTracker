@@ -25,6 +25,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
+import com.fitclub.tracker.domain.LocalWeightUnits
+import com.fitclub.tracker.domain.WeightUnits
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -78,7 +83,7 @@ object Routes {
     const val PROGRAM = "program/{id}?add={add}"
     const val LIBRARY = "library"
     const val GROUP = "library/{group}"
-    const val EXERCISE = "exercise/{id}"
+    const val EXERCISE = "exercise/{id}?training={training}"
     const val PROGRESS = "progress"
     const val PROFILE = "profile"
     const val WORKOUT = "workout/{schedule}"
@@ -105,6 +110,9 @@ private val tabs = listOf(
 @Composable
 fun AppRoot() {
     val nav = rememberNavController()
+    val app = LocalContext.current.applicationContext as FitApp
+    val profile by app.container.profile.settings.collectAsStateWithLifecycle()
+    CompositionLocalProvider(LocalWeightUnits provides WeightUnits(profile.unitsKg)) {
     Scaffold(
         containerColor = Fc.Bg,
         bottomBar = { BottomBar(nav) }
@@ -136,7 +144,7 @@ fun AppRoot() {
                 WorkoutScreen(
                     scheduleId = entry.arguments?.getLong("schedule") ?: 0L,
                     onClose = { nav.popBackStack() },
-                    onTechnique = { nav.navigate(Routes.exercise(it)) }
+                    onTechnique = { nav.navigate(Routes.exercise(it) + "?training=true") }
                 )
             }
             composable(Routes.LIBRARY) {
@@ -149,9 +157,10 @@ fun AppRoot() {
                 val group = MuscleGroup.valueOf(entry.arguments?.getString("group") ?: MuscleGroup.CHEST.name)
                 LibraryGroupScreen(group, onBack = { nav.popBackStack() }, onExercise = { nav.navigate(Routes.exercise(it)) })
             }
-            composable(Routes.EXERCISE, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+            composable(Routes.EXERCISE, arguments = listOf(navArgument("id") { type = NavType.StringType }, navArgument("training") { type = NavType.BoolType; defaultValue = false })) { entry ->
                 ExerciseDetailScreen(
                     exerciseId = entry.arguments?.getString("id") ?: "",
+                    trainingContext = entry.arguments?.getBoolean("training") == true,
                     onBack = { nav.popBackStack() },
                     onOpenExercise = { nav.navigate(Routes.exercise(it)) },
                     onAddToProgram = { nav.navigate("programs?add=${entry.arguments?.getString("id").orEmpty()}") }
@@ -168,11 +177,13 @@ fun AppRoot() {
     }
 }
 
+}
+
 @Composable
 private fun BottomBar(nav: NavHostController) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: ""
-    if (route.startsWith("result/") || route.startsWith("workout") || route.startsWith("plan/") || route.startsWith("plan-programs/") || runCatching { nav.getBackStackEntry(Routes.WORKOUT) }.getOrNull() != null) return
+    if (route.startsWith("program/") || route.startsWith("result/") || route.startsWith("workout") || route.startsWith("plan/") || route.startsWith("plan-programs/") || runCatching { nav.getBackStackEntry(Routes.WORKOUT) }.getOrNull() != null) return
     Column(Modifier.background(Fc.Nav).navigationBarsPadding()) {
         HorizontalDivider(color = Fc.Line, thickness = 1.dp)
         Row(Modifier.fillMaxWidth().height(72.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -182,6 +193,7 @@ private fun BottomBar(nav: NavHostController) {
                     Modifier
                         .weight(1f)
                         .fillMaxHeight()
+                        .semantics { selected = on }
                         .clickable(role = Role.Tab) {
                             nav.navigate(tab.route) {
                                 popUpTo(nav.graph.startDestinationId) { saveState = true }
@@ -210,5 +222,4 @@ private fun BottomBar(nav: NavHostController) {
         }
     }
 }
-
 

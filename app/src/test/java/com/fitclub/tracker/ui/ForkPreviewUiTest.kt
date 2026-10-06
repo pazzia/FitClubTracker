@@ -6,6 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
+import com.fitclub.tracker.BuildConfig
+import com.fitclub.tracker.ui.dashboard.ProfileScreen
+import androidx.compose.material3.Surface
+import com.fitclub.tracker.ui.theme.Fc
 import com.fitclub.tracker.FitApp
 import com.fitclub.tracker.data.model.RepRange
 import com.fitclub.tracker.data.repo.*
@@ -30,6 +34,7 @@ class ForkPreviewUiTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
     private fun waitFor(text: String) = rule.waitUntil(15000) { rule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
     private fun screenshot(name: String) {
+        rule.waitUntil(15000) { rule.onAllNodesWithText("Загрузка…").fetchSemanticsNodes().isEmpty() }
         rule.waitForIdle()
         rule.runOnIdle {
             val view = rule.activity.window.decorView
@@ -68,12 +73,24 @@ class ForkPreviewUiTest {
         screenshot("fork-overview")
         rule.onNodeWithText("Жим штанги лёжа").performClick()
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 1")
+        rule.onNodeWithTag("workout-list").performScrollToNode(hasTestTag("weight-0"))
+        rule.onNodeWithTag("weight-0").performTextReplacement("60")
+        screenshot("test-080-active-sets")
+        rule.onNodeWithTag("done-0").performClick()
         rule.onNodeWithTag("complete-exercise").performClick()
         waitFor("Упражнение завершено")
-        val left = rule.onNodeWithText("Назад").fetchSemanticsNode().boundsInRoot
+        val left = rule.onNodeWithText("Все упражнения").fetchSemanticsNode().boundsInRoot
         val right = rule.onNodeWithTag("next-exercise").fetchSemanticsNode().boundsInRoot
         assertEquals(left.height, right.height, 1f)
         assertEquals(left.width, right.width, 1f)
         screenshot("fork-completed-exercise")
     }
+    @Test fun testSettingsShowWeightChoiceAndVersion() {
+        rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { Surface(color = Fc.Bg) { ProfileScreen({}) } } }
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Версия приложения: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"))
+        rule.onNodeWithText("Фунты (lb)").performClick()
+        screenshot("test-080-settings")
+    }
+
 }
+
