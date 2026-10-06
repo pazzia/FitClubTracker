@@ -74,10 +74,14 @@ android {
         minSdk = 28
         targetSdk = 34
         versionCode = 16
-        versionName = "0.6.9"
+        versionName = "0.7.0-fork"
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".experimental"
+            resValue("string", "app_name", "FitClub · Тест")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -130,3 +134,4 @@ dependencies {
 tasks.withType<Test>().configureEach {
     systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
 }
+

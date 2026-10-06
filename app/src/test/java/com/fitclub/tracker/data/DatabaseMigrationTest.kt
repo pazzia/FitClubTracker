@@ -21,6 +21,7 @@ class DatabaseMigrationTest {
     @Test fun migratesVersionTwoWithoutLosingHistory() = checkMigration(2)
     @Test fun migratesVersionThreeWithoutLosingPlans() = checkMigration(3)
     @Test fun migratesVersionFourWithoutLosingHistory() = checkMigration(4)
+    @Test fun migratesVersionFiveAndAllowsSecondPlan() = checkMigration(5)
     private fun checkMigration(version: Int) = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         context.deleteDatabase("fitclub.db")
@@ -39,7 +40,8 @@ class DatabaseMigrationTest {
                         db.execSQL("INSERT INTO scheduled_workouts VALUES (1, 20001, 'Мой план', 1080, 1, 0)")
                         db.execSQL("INSERT INTO scheduled_exercises VALUES (1, 1, 'bench', 0, 3, 'R8_12', 90)")
                     }
-                    if (version == 4) AppDatabase.MIGRATION_3_4.migrate(db)
+                    if (version >= 4) AppDatabase.MIGRATION_3_4.migrate(db)
+                    if (version >= 5) AppDatabase.MIGRATION_4_5.migrate(db)
                 }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
             }).build())
@@ -60,11 +62,12 @@ class DatabaseMigrationTest {
             assertEquals(8, current.workoutDao().observeSets().first().single().reps)
             assertFalse(current.workoutDao().observeSets().first().single().isTimed)
             assertTrue(current.workoutDao().observeExercises().first().isEmpty())
+            current.scheduleDao().insert(com.fitclub.tracker.data.db.ScheduledWorkoutEntity(epochDay = 20001, title = "Вторая", startMinute = 1200, programId = null, dayPosition = null))
             val plans = current.scheduleDao().observeAll().first()
             if (version >= 3) {
-                assertEquals("Мой план", plans.single().workout.title)
-                assertEquals("", plans.single().items.single().comment)
-            } else assertTrue(plans.isEmpty())
+                assertEquals("Мой план", plans.first().workout.title)
+                assertEquals("", plans.first().items.single().comment)
+            } else assertEquals(1, plans.size)
         } finally { current.close(); context.deleteDatabase("fitclub.db") }
     }
     private val legacySchema = listOf(
@@ -81,4 +84,5 @@ class DatabaseMigrationTest {
         "CREATE INDEX IF NOT EXISTS `index_set_logs_exerciseId` ON `set_logs` (`exerciseId`)"
     )
 }
+
 

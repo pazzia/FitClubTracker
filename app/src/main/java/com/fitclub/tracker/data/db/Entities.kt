@@ -145,7 +145,7 @@ data class SetLogEntity(
 )
 
 /** Снимок тренировки на конкретную дату: изменения программы не меняют этот план. */
-@Entity(tableName = "scheduled_workouts", indices = [Index(value = ["epochDay"], unique = true)])
+@Entity(tableName = "scheduled_workouts", indices = [Index(value = ["epochDay"])])
 data class ScheduledWorkoutEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val epochDay: Long,
@@ -192,3 +192,4 @@ data class ExerciseLogEntity(
     val durationMillis: Long,
     val completed: Boolean
 )
+

@@ -3,6 +3,9 @@ package com.fitclub.tracker.ui.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -42,7 +45,14 @@ data class CalendarState(
     val workouts: List<WorkoutLog> = emptyList()
 )
 
-class CalendarViewModel(c: AppContainer) : ViewModel() {
+class CalendarViewModel(private val c: AppContainer) : ViewModel() {
+    val error = MutableStateFlow<String?>(null)
+    fun deletePlan(id: Long) { viewModelScope.launch {
+        runCatching { c.schedule.delete(id) }.onFailure { error.value = "Не удалось удалить: ${it.message}" }
+    } }
+    fun deleteWorkout(id: Long) { viewModelScope.launch {
+        runCatching { c.fitness.deleteWorkout(id) }.onFailure { error.value = "Не удалось удалить: ${it.message}" }
+    } }
     val state = combine(c.schedule.observeAll(), c.exercises.observeAll(), c.fitness.observeWorkouts()) { p, e, w ->
         CalendarState(p, e.associateBy { it.id }, w)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarState())
@@ -52,8 +62,10 @@ fun calendarDate(epochDay: Long): String = LocalDate.ofEpochDay(epochDay)
     .format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale("ru")))
 fun scheduleTime(minute: Int) = "%02d:%02d".format(Locale.US, minute / 60, minute % 60)
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfile: () -> Unit) {
+fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfile: () -> Unit,
+    onEditPlan: (Long, Long) -> Unit = { date, _ -> onPlan(date) }, onResult: (Long) -> Unit = {}) {
     val vm = appViewModel { CalendarViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     val today = LocalDate.now()
@@ -61,7 +73,16 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
     var monthValue by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     val month = YearMonth.parse(monthValue)
     val selectedDate = LocalDate.ofEpochDay(selectedEpoch)
-    val plan = state.plans.firstOrNull { it.epochDay == selectedEpoch }
+    val plans = state.plans.filter { it.epochDay == selectedEpoch }.sortedBy { it.startMinute }
+    val error by vm.error.collectAsStateWithLifecycle()
+    var deleting by remember { mutableStateOf<Pair<Boolean, Long>?>(null) }
+    if (deleting != null) AlertDialog(onDismissRequest = { deleting = null },
+        title = { Text(if (deleting!!.first) "Удалить выполненную тренировку?" else "Удалить запланированную тренировку?") },
+        text = { Text(if (deleting!!.first) "Результаты и связанный план этой тренировки будут удалены. Остальные тренировки сохранятся." else "Этот план будет удалён.") },
+        confirmButton = { TextButton(onClick = {
+            deleting?.let { (done, id) -> if (done) vm.deleteWorkout(id) else vm.deletePlan(id) }; deleting = null
+        }) { Text("Удалить", color = Fc.Pink) } },
+        dismissButton = { TextButton(onClick = { deleting = null }) { Text("Отмена") } })
     val logs = state.workouts.filter { it.session.epochDay == selectedEpoch }
     val completed = state.workouts.map { it.session.epochDay }.toSet()
     val planned = state.plans.associateBy { it.epochDay }
@@ -109,7 +130,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                                     .background(color, RoundedCornerShape(10.dp))
                                     .then(if (date == today && !selected) Modifier.border(1.dp, Fc.Lime, RoundedCornerShape(10.dp)) else Modifier)
                                     .semantics { contentDescription = calendarDate(epoch) + when { done -> ", выполнено"; hasPlan -> ", тренировка запланирована"; else -> ", запланировать тренировку" } }
-                                    .clickable(role = Role.Button) { selectedEpoch = epoch; onPlan(epoch) },
+                                    .clickable(role = Role.Button) { selectedEpoch = epoch },
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("$number", color = if (selected) Fc.Bg else if (hasPlan || done) Fc.Lime else Fc.Text,
                                         style = MaterialTheme.typography.bodyMedium, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Normal)
@@ -127,56 +148,56 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
             }
         }
         item { Text(calendarDate(selectedEpoch) + if (selectedDate == today) " · сегодня" else "", color = Fc.Text, style = MaterialTheme.typography.titleMedium) }
-        if (plan == null) item {
+        if (plans.isEmpty() && logs.isEmpty()) item {
             FcCard {
-                Text("Тренировка не запланирована", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
-                Text("Выберите день программы или составьте тренировку из упражнений.", color = Fc.Muted, modifier = Modifier.padding(vertical = 10.dp))
-                PrimaryButton("+ Запланировать тренировку", { onPlan(selectedEpoch) })
-            }
-        } else item {
-            FcCard(border = Fc.Lime.copy(alpha = .55f), onClick = { onPlan(selectedEpoch) }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Pill(if (state.workouts.any { it.session.scheduleId == plan.id }) "Выполнено" else "Запланировано", Fc.LimeSoft, Fc.Lime)
-                    Spacer(Modifier.weight(1f))
-                    Text(scheduleTime(plan.startMinute), color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
-                }
-                Text(plan.title, style = MaterialTheme.typography.headlineSmall, color = Fc.Text, modifier = Modifier.padding(top = 14.dp))
-                Text("${plan.items.size} упражнений · ${plan.items.sumOf { it.sets }} подходов", color = Fc.Muted, modifier = Modifier.padding(vertical = 8.dp))
-                plan.items.take(4).forEach { item ->
-                    Row(Modifier.padding(vertical = 5.dp)) {
-                        Text(state.catalog[item.exerciseId]?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                        Text("${item.sets} × ${item.reps.label}", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                PrimaryButton("Открыть план →", { onPlan(selectedEpoch) })
-                if (state.workouts.none { it.session.scheduleId == plan.id }) TextButton(onClick = { onStart(plan.id) }, modifier = Modifier.fillMaxWidth()) { Text("Начать тренировку", color = Fc.Lime) }
+                Text("На этот день тренировок нет", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                Text("Можно выбрать программу или составить свой план.", color = Fc.Muted, modifier = Modifier.padding(top = 8.dp))
             }
         }
+        plans.filter { plan -> logs.none { it.session.scheduleId == plan.id } }.forEach { plan ->
+            item(key = "plan-${plan.id}") {
+                FcCard(modifier = Modifier.fillMaxWidth().combinedClickable(
+                    onClick = { onEditPlan(selectedEpoch, plan.id) },
+                    onLongClick = { deleting = false to plan.id }), border = Fc.Lime.copy(alpha = .55f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Pill("Запланировано", Fc.LimeSoft, Fc.Lime)
+                        Spacer(Modifier.weight(1f))
+                        Text(scheduleTime(plan.startMinute), color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
+                    }
+                    Text(plan.title, style = MaterialTheme.typography.headlineSmall, color = Fc.Text, modifier = Modifier.padding(top = 12.dp))
+                    Text("${plan.items.size} упражнений · ${plan.items.sumOf { it.sets }} подходов", color = Fc.Muted, modifier = Modifier.padding(vertical = 8.dp))
+                    plan.items.take(3).forEach { item ->
+                        Text(state.catalog[item.exerciseId]?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 3.dp))
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    ActionButton("Начать тренировку", { onStart(plan.id) })
+                    Spacer(Modifier.height(8.dp))
+                    ActionButton("Изменить план", { onEditPlan(selectedEpoch, plan.id) }, outlined = true)
+                }
+            }
+        }
+        logs.forEach { log ->
+            item(key = "log-${log.session.id}") {
+                FcCard(modifier = Modifier.fillMaxWidth().combinedClickable(
+                    onClick = { onResult(log.session.id) }, onLongClick = { deleting = true to log.session.id })) {
+                    Pill("Выполнено", Fc.LimeSoft, Fc.Lime)
+                    Text(state.plans.firstOrNull { it.id == log.session.scheduleId }?.title ?: "Тренировка",
+                        color = Fc.Text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+                    Text("${log.completedSets} подходов · ${log.durationMin} мин", color = Fc.Muted, modifier = Modifier.padding(vertical = 8.dp))
+                    Text("Общий тоннаж: ${log.volumeKg.toInt()} кг", color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(12.dp))
+                    ActionButton("Посмотреть результат", { onResult(log.session.id) }, outlined = true)
+                }
+            }
+        }
+        item { ActionButton(if (plans.isNotEmpty() || logs.isNotEmpty()) "+ Запланировать ещё тренировку" else "+ Запланировать тренировку", { onPlan(selectedEpoch) }) }
         if (logs.isNotEmpty()) item {
             FcCard {
                 Text("Результат за этот день", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
-                logs.forEach { log ->
-                    Text("${log.completedSets} подходов · ${log.volumeKg.toInt()} кг · ${log.durationMin} мин", color = Fc.Muted, modifier = Modifier.padding(top = 8.dp))
-                    log.exercises.groupBy { it.exerciseId }.forEach { (exerciseId, times) ->
-                        val sets = log.sets.filter { it.done && it.exerciseId == exerciseId }
-                        val best = sets.maxWithOrNull(compareBy<com.fitclub.tracker.data.db.SetLogEntity> { it.weightKg }.thenBy { it.reps })
-                        val previous = state.workouts.filter { it.session.startedAt < log.session.startedAt }.flatMap { it.sets }
-                            .filter { it.done && it.exerciseId == exerciseId && it.isTimed == best?.isTimed }
-                            .maxWithOrNull(compareBy<com.fitclub.tracker.data.db.SetLogEntity> { it.weightKg }.thenBy { it.reps })
-                        val seconds = times.sumOf { it.durationMillis } / 1000
-                        Text(state.catalog[exerciseId]?.name ?: exerciseId, color = Fc.Text, modifier = Modifier.padding(top = 12.dp))
-                        Text("${if (times.all { it.completed }) "Завершено" else "Выполнено частично"} · ${sets.size} подходов · ${seconds / 60} мин ${seconds % 60} сек", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-                        Text("Тоннаж: ${sets.filter { !it.isTimed }.sumOf { (it.weightKg * it.reps).toDouble() }.toInt()} кг", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-                        if (best != null) {
-                            Text("Самый тяжёлый: ${best.weightKg} кг × ${best.reps}${if (best.isTimed) " сек." else ""}", color = Fc.Text, style = MaterialTheme.typography.bodySmall)
-                            if (previous != null) Text("До тренировки: ${previous.weightKg} кг × ${previous.reps} · разница ${best.weightKg - previous.weightKg} кг", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-                            else Text("Первый результат в истории", color = Fc.Lime, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
+                Text("${logs.sumOf { it.completedSets }} подходов · ${logs.sumOf { it.durationMin }} мин", color = Fc.Muted)
+                Text("Общий тоннаж: ${logs.sumOf { it.volumeKg.toDouble() }.toInt()} кг", color = Fc.Lime)
             }
         }
+        if (error != null) item { Text(error.orEmpty(), color = Fc.Pink) }
     }
 }
-
