@@ -124,7 +124,8 @@ data class WorkoutSessionEntity(
     val finishedAt: Long?,
     val scheduleId: Long? = null,
     @ColumnInfo(defaultValue = "''") val title: String = "",
-    @ColumnInfo(defaultValue = "NULL") val plannedEpochDay: Long? = null
+    @ColumnInfo(defaultValue = "NULL") val plannedEpochDay: Long? = null,
+    @ColumnInfo(defaultValue = "''") val planSnapshot: String = ""
 )
 
 @Entity(

@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import androidx.test.core.app.ApplicationProvider
+import com.fitclub.tracker.ui.components.frameExerciseThumbnail
 import com.fitclub.tracker.ui.components.trimPhotoPadding
 import com.fitclub.tracker.ui.components.renderExercisePhoto
 import java.io.File
@@ -49,6 +50,17 @@ class PhotoPresentationTest {
         assertEquals(Color.rgb(102, 118, 142), result.getPixel(0, 0))
         assertEquals(255, Color.alpha(source.getPixel(0, 0)))
         assertEquals(source.getPixel(50, 40), result.getPixel(50, 40))
+    }
+
+    @Test fun thumbnailFrameKeepsEquipmentOutsideAthleteAndBackgroundMargin() {
+        val source = Bitmap.createBitmap(200, 150, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.GRAY) }
+        val mask = Bitmap.createBitmap(200, 150, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.BLACK) }
+        for (y in 40..100) for (x in 80..120) { mask.setPixel(x, y, Color.WHITE); source.setPixel(x, y, Color.RED) }
+        mask.setPixel(45, 75, Color.WHITE); source.setPixel(45, 75, Color.BLUE)
+        val result = frameExerciseThumbnail(source, mask)
+        val pixels = IntArray(result.width * result.height); result.getPixels(pixels, 0, result.width, 0, 0, result.width, result.height)
+        assertTrue(pixels.contains(Color.BLUE)); assertTrue(pixels.contains(Color.RED)); assertTrue(pixels.contains(Color.GRAY))
+        assertTrue(result.width < source.width)
     }
 
     @Test fun allEditedThumbnailsAreBundledAndTechniquesStayOriginal() {
@@ -132,3 +144,4 @@ class PhotoPresentationTest {
         }
     }
 }
+

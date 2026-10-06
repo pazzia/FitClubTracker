@@ -241,6 +241,7 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE workout_sessions ADD COLUMN title TEXT NOT NULL DEFAULT ''")
                 db.execSQL("ALTER TABLE workout_sessions ADD COLUMN plannedEpochDay INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE workout_sessions ADD COLUMN planSnapshot TEXT NOT NULL DEFAULT ''")
                 db.execSQL("ALTER TABLE set_logs ADD COLUMN exercisePosition INTEGER NOT NULL DEFAULT -1")
                 db.execSQL("ALTER TABLE set_logs ADD COLUMN warmup INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE set_logs ADD COLUMN rir INTEGER DEFAULT NULL")

@@ -1,6 +1,9 @@
 package com.fitclub.tracker.ui
 
 import androidx.compose.ui.test.*
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.core.app.ApplicationProvider
 import com.fitclub.tracker.BuildConfig
@@ -32,6 +35,18 @@ class ReviewUiTest {
         rule.onNodeWithText("Килограммы (кг)").performClick()
         rule.runOnIdle { assertTrue(app.container.profile.settings.value.unitsKg) }
     }
+    @Test
+    @Config(qualifiers = "w320dp-h640dp")
+    fun settingsRemainReachableOnNarrowScreenWithLargeFont() {
+        rule.setContent { FitClubTheme {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, 1.5f)) { ProfileScreen({}) }
+        } }
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Версия приложения: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"))
+        rule.onNodeWithText("Версия приложения: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})").assertIsDisplayed()
+        rule.onNodeWithText("Фунты (lb)").performClick()
+        rule.onNodeWithText("Фунты (lb)").assertIsSelected()
+    }
     @Test fun historyEditorAcceptsPoundsAndPreservesCanonicalKilograms() {
         val app = ApplicationProvider.getApplicationContext<FitApp>()
         app.container.profile.update(app.container.profile.settings.value.copy(unitsKg = false))
@@ -39,8 +54,9 @@ class ReviewUiTest {
         rule.setContent { FitClubTheme { WorkoutResultScreen(id, {}) } }
         waitFor("Общий тоннаж: 1058.2 фунт.")
         rule.onNodeWithText("Редактировать результат").performClick()
-        waitFor("Сохранить изменения")
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("weight-0"))
         rule.onNodeWithTag("weight-0").assertTextEquals("132.3")
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить изменения"))
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить изменения"))
         rule.onNodeWithText("Сохранить изменения").performClick()
         waitFor("Редактировать результат")

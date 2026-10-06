@@ -4,6 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -115,6 +118,7 @@ fun <T> Segmented(
     Row(
         modifier
             .fillMaxWidth()
+            .then(if (options.size > 3) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
             .clip(RoundedCornerShape(12.dp))
             .background(Fc.Bg)
             .padding(3.dp),
@@ -124,7 +128,7 @@ fun <T> Segmented(
             val on = opt == selected
             Row(
                 Modifier
-                    .weight(1f)
+                    .then(if (options.size > 3) Modifier.width(96.dp) else Modifier.weight(1f))
                     .heightIn(min = height.coerceAtLeast(48.dp))
                     .clip(RoundedCornerShape(9.dp))
                     .background(if (on) selectedBg else Color.Transparent)

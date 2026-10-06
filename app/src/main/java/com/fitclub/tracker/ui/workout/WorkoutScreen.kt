@@ -111,6 +111,9 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
         private set
     var startedAt = System.currentTimeMillis()
         private set
+    private var elapsedBase = 0L
+    private var sessionRealtime = android.os.SystemClock.elapsedRealtime()
+    private var activeRealtime = 0L
     var elapsed by mutableLongStateOf(0L)
     var exerciseIndex by mutableIntStateOf(0)
         private set
@@ -136,14 +139,18 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
             snapshotFlow { if (!saved && !finishing && editedPlan != null) snapshot() else null }
                 .filterNotNull().collect { value ->
                     runCatching { c.fitness.saveActive(scheduleId, editedPlan?.title.orEmpty(), value) }
-                        .onFailure { error = "Не удалось сохранить черновик. Повторите сохранение перед выходом." }
+                        .onFailure { if (it is kotlinx.coroutines.CancellationException) throw it; error = "Не удалось сохранить черновик. Повторите сохранение перед выходом." }
                 }
         }
     }
     internal fun snapshot(): String {
         val p = requireNotNull(editedPlan)
-        val result = JSONObject().put("startedAt", startedAt).put("unitsKg", draftUnitsKg)
-            .put("restUntil", restUntil).put("index", exerciseIndex).put("overview", inOverview)
+        val now = System.currentTimeMillis()
+        val mono = android.os.SystemClock.elapsedRealtime()
+        val result = JSONObject().put("savedAt", now).put("elapsedMs", elapsedBase + (mono - sessionRealtime).coerceAtLeast(0))
+            .put("activeElapsed", if (activeIndex != null) (mono - activeRealtime).coerceAtLeast(0) else 0)
+            .put("startedAt", startedAt).put("unitsKg", draftUnitsKg)
+            .put("restUntil", if (restUntil == 0L) 0L else now + (restRealtime - mono).coerceAtLeast(0)).put("index", exerciseIndex).put("overview", inOverview)
             .put("summary", summaryIndex ?: -1).put("activeIndex", activeIndex ?: -1).put("activeSince", activeSince)
             .put("epochDay", p.epochDay).put("title", p.title).put("minute", p.startMinute)
             .put("program", p.programId ?: -1).put("day", p.dayPosition ?: -1)
@@ -173,7 +180,12 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
             val item = items.getJSONObject(i); completed[i] = item.getBoolean("completed"); started[i] = item.getBoolean("started"); durations[i] = item.getLong("duration") }
         startedAt = j.getLong("startedAt"); elapsed = (System.currentTimeMillis() - startedAt).coerceAtLeast(0) / 1000; draftUnitsKg = j.getBoolean("unitsKg"); restUntil = j.getLong("restUntil"); restRealtime = android.os.SystemClock.elapsedRealtime() + (restUntil - System.currentTimeMillis()).coerceAtLeast(0)
         exerciseIndex = j.getInt("index"); inOverview = j.getBoolean("overview"); summaryIndex = j.getInt("summary").takeIf { it >= 0 }
-        activeIndex = j.getInt("activeIndex").takeIf { it >= 0 }; activeSince = j.getLong("activeSince")
+        activeIndex = j.getInt("activeIndex").takeIf { it >= 0 }; activeSince = System.currentTimeMillis()
+        val gap = (System.currentTimeMillis() - j.optLong("savedAt", System.currentTimeMillis())).coerceAtLeast(0)
+        sessionRealtime = android.os.SystemClock.elapsedRealtime()
+        elapsedBase = j.optLong("elapsedMs", (System.currentTimeMillis() - startedAt).coerceAtLeast(0)) + gap
+        activeRealtime = sessionRealtime
+        activeIndex?.let { durations[it] = (durations[it] ?: 0L) + j.optLong("activeElapsed", 0) + gap }
     }
     init {
         viewModelScope.launch {
@@ -185,7 +197,7 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
         }
         viewModelScope.launch { while (true) {
         val now = System.currentTimeMillis()
-        elapsed = (now - startedAt) / 1000
+        elapsed = (elapsedBase + (android.os.SystemClock.elapsedRealtime() - sessionRealtime).coerceAtLeast(0)) / 1000
         rest = ((restRealtime - android.os.SystemClock.elapsedRealtime() + 999) / 1000).toInt().coerceAtLeast(0)
         delay(1000)
     } }
@@ -194,11 +206,11 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
     fun stopRest() { restUntil = 0; restRealtime = 0; rest = 0 }
     fun startExercise() {
         if (activeIndex == null && summaryIndex == null) {
-            started[exerciseIndex] = true; activeIndex = exerciseIndex; activeSince = System.currentTimeMillis()
+            started[exerciseIndex] = true; activeIndex = exerciseIndex; activeSince = System.currentTimeMillis(); activeRealtime = android.os.SystemClock.elapsedRealtime()
         }
     }
     fun duration(index: Int): Long = (durations[index] ?: 0L) +
-        if (activeIndex == index) (System.currentTimeMillis() - activeSince).coerceAtLeast(0) else 0L
+        if (activeIndex == index) (android.os.SystemClock.elapsedRealtime() - activeRealtime).coerceAtLeast(0) else 0L
     private fun pauseExercise() {
         activeIndex?.let { durations[it] = duration(it) }
         activeIndex = null
@@ -247,7 +259,7 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
                 persistJob?.cancelAndJoin()
                 c.fitness.finishWorkout(plan.programId, plan.dayPosition, startedAt, sets, plan.id,
                     java.time.Instant.ofEpochMilli(startedAt).atZone(java.time.ZoneId.systemDefault()).toLocalDate().toEpochDay(), exercises,
-                    title = plan.title, plannedEpochDay = plan.epochDay)
+                    title = plan.title, plannedEpochDay = plan.epochDay, planSnapshot = snapshot())
             }
                 .onSuccess { saved = true; onSaved() }
                 .onFailure { error = "Не удалось сохранить тренировку: ${it.message}"; startExercise() }
@@ -345,13 +357,18 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
                         if (item.reps == RepRange.TIME) Text("Выполнено: ${doneRows.sumOf { it.reps.toInt() }} сек.", color = Fc.Text)
                         else Text("Тоннаж: ${number(displayWeight(volume, vm.draftUnitsKg))} $units", color = Fc.Text)
                         Text("Время упражнения: ${time(vm.duration(index) / 1000)}", color = Fc.Text)
-                        Text("Самый тяжёлый подход: " + (heaviest?.let { "${number(displayWeight(weightKg(it.weight, vm.draftUnitsKg), vm.draftUnitsKg))} $units × ${it.reps}${if (item.reps == RepRange.TIME) " сек." else ""}" } ?: "нет выполненных подходов"), color = Fc.Text)
+                        Text((if (item.reps == RepRange.TIME) "Самое долгое удержание: " else "Самый тяжёлый подход: ") + (heaviest?.let { "${number(displayWeight(weightKg(it.weight, vm.draftUnitsKg), vm.draftUnitsKg))} $units × ${it.reps}${if (item.reps == RepRange.TIME) " сек." else ""}" } ?: "нет выполненных подходов"), color = Fc.Text)
                         Text("Рекорд за всю историю до этой тренировки: " + (previousBest?.let { "${number(displayWeight(it.weightKg, vm.draftUnitsKg))} $units × ${it.reps}${if (it.isTimed) " сек." else ""}" } ?: "первый результат"), color = Fc.Muted)
                         if (heaviest != null && previousBest != null) {
-                            val current = weightKg(heaviest.weight, vm.draftUnitsKg)
-                            val delta = displayWeight(current - previousBest.weightKg, vm.draftUnitsKg)
-                            Text("Сравнение по весу: ${if (delta > 0) "+" else ""}${number(delta)} $units", color = if (delta > 0) Fc.Lime else Fc.Text)
-                            if (current == previousBest.weightKg) Text("При том же весе: ${heaviest.reps.toInt() - previousBest.reps} ${if (item.reps == RepRange.TIME) "сек." else "повт."}", color = Fc.Muted)
+                            if (item.reps == RepRange.TIME) {
+                                val delta = heaviest.reps.toInt() - previousBest.reps
+                                Text("Сравнение по времени: ${if (delta > 0) "+" else ""}$delta сек.", color = Fc.Text)
+                            } else {
+                                val current = weightKg(heaviest.weight, vm.draftUnitsKg)
+                                val delta = displayWeight(current - previousBest.weightKg, vm.draftUnitsKg)
+                                Text("Сравнение по весу: ${if (delta > 0) "+" else ""}${number(delta)} $units", color = if (delta > 0) Fc.Lime else Fc.Text)
+                                if (current == previousBest.weightKg) Text("При том же весе: ${heaviest.reps.toInt() - previousBest.reps} повт.", color = Fc.Muted)
+                            }
                         }
                         TextButton(onClick = { vm.editExercise() }) { Text("Изменить подходы", color = Fc.Lime) }
                     }
@@ -481,6 +498,8 @@ private fun WorkoutOverview(vm: WorkoutViewModel, plan: ScheduledDraft, source: 
             item {
                 Text(plan.title, color = Fc.Text, style = MaterialTheme.typography.titleMedium)
                 Text(time(vm.elapsed), color = Fc.Lime)
+                if (vm.rest > 0) Text("Отдых: ${time(vm.rest.toLong())}", color = Fc.Lime)
+                Text("Единицы ввода: ${WeightUnits(vm.draftUnitsKg).label}", color = Fc.Muted)
                 ScreenTitle("План тренировки")
                 Text("Выберите любое упражнение. Удерживайте ≡, чтобы изменить порядок.", color = Fc.Muted)
                 val volume = vm.completedSets(plan, vm.draftUnitsKg).filter { !it.isTimed && !it.assisted }.sumOf { (it.weightKg * it.reps).toDouble() }

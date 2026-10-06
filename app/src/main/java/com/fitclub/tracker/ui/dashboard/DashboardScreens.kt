@@ -2,6 +2,8 @@ package com.fitclub.tracker.ui.dashboard
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -80,8 +82,8 @@ fun ProgressScreen(onProfile: () -> Unit) {
     var selectedExercise by rememberSaveable { mutableStateOf("") }
     val total = s.workouts.sumOf { it.volumeKg.toDouble() }.toFloat()
     val completedSets = s.workouts.sumOf { it.completedSets }
-    val latest = s.measurements.lastOrNull()
-    val first = s.measurements.firstOrNull()
+    val latest = s.measurements.lastOrNull { it.weightKg != null }
+    val first = s.measurements.firstOrNull { it.weightKg != null }
     val monday = LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
     val weekDates = (weeksBack - 1 downTo 0).map { monday.minusWeeks(it.toLong()) }
     val weekly = weekDates.map { date -> s.workouts.filter { it.session.epochDay in date.toEpochDay()..date.plusDays(6).toEpochDay() }
@@ -104,9 +106,9 @@ fun ProgressScreen(onProfile: () -> Unit) {
                 Spacer(Modifier.height(12.dp))
                 Segmented(listOf(6, 12), weeksBack, { weeksBack = it }, { "$it недель" })
                 val max = weekly.maxOrNull()?.coerceAtLeast(1f) ?: 1f
-                Row(Modifier.fillMaxWidth().height(150.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).heightIn(min = 150.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
                     weekly.forEachIndexed { i, v ->
-                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+                        Column(Modifier.width(52.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
                             Text(if (v > 0) fmt(units.fromKg(v)) else "0", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
                             Box(Modifier.fillMaxWidth().height((112 * v / max).coerceAtLeast(4f).dp).background(if (i == weekly.lastIndex) Fc.Lime else Fc.Surface2, RoundedCornerShape(6.dp)))
                             Text(weekDates[i].format(DateTimeFormatter.ofPattern("d.MM")), color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
@@ -146,6 +148,14 @@ fun ProgressScreen(onProfile: () -> Unit) {
                     Text(s.exercises[id]?.name ?: id, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
                     Text(if (best.isTimed) "Самое долгое удержание: ${best.reps} сек." else "Самый тяжёлый подход: ${units.format(best.weightKg)} × ${best.reps}", color = Fc.Muted)
                     Text("${sets.size} подходов за выбранный период", color = Fc.Muted)
+                    TextButton(onClick = { selectedExercise = id }) { Text("История упражнения", color = Fc.Lime) }
+                    if (selectedExercise == id) s.workouts.filter { it.session.epochDay >= weekDates.first().toEpochDay() }.sortedBy { it.session.startedAt }.forEach { log ->
+                        val performed = log.sets.filter { it.done && it.exerciseId == id && !it.warmup && !it.assisted }
+                        if (performed.isNotEmpty()) {
+                            Text(calendarDate(log.session.epochDay), color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+                            performed.forEach { row -> Text(if (row.isTimed) "${row.reps} сек." else "${units.format(row.weightKg)} × ${row.reps}", color = Fc.Text) }
+                        }
+                    }
                 }
             }
         }

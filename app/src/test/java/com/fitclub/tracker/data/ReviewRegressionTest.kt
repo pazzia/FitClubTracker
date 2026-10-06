@@ -71,9 +71,9 @@ class ReviewRegressionTest {
         repo.finishWorkout(null, null, 1, listOf(CompletedSet("bench", 0, 20f, 10, warmup = true, rir = 5), CompletedSet("pullup", 0, 40f, 10, assisted = true), CompletedSet("plank", 0, 10f, 60, true)))
         val log = repo.observeWorkouts().first().single()
         assertEquals(200f, log.volumeKg, 0f)
-        assertEquals(5, log.sets.first().rir)
-        assertTrue(log.sets.first().warmup)
-        assertTrue(log.sets[1].assisted)
+        assertEquals(5, log.sets.single { it.exerciseId == "bench" }.rir)
+        assertTrue(log.sets.single { it.exerciseId == "bench" }.warmup)
+        assertTrue(log.sets.single { it.exerciseId == "pullup" }.assisted)
     }
     @Test fun invalidMeasurementsAreRejectedWithoutWriting() = runBlocking {
         for (values in listOf(listOf<Float?>(null, null, null, null, null), listOf(-1f, null, null, null, null), listOf(null, null, 101f, null, null))) {

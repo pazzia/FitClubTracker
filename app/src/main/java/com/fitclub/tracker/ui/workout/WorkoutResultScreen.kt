@@ -99,6 +99,8 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
             Text(calendarDate(log.session.epochDay), color = Fc.Muted)
             ScreenTitle(if (editing) "Редактирование" else "Результат тренировки")
             Text(log.session.title.ifBlank { "Тренировка" }, color = Fc.Text)
+            Text(log.status, color = Fc.Muted)
+            log.session.plannedEpochDay?.takeIf { it != log.session.epochDay }?.let { Text("Была запланирована на ${calendarDate(it)}", color = Fc.Muted) }
         }
         item {
             FcCard {
@@ -141,11 +143,11 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
                         Text("Тоннаж: ${units.format(sets.filter { !it.isTimed && !it.assisted }.sumOf { (it.weightKg * it.reps).toDouble() }.toFloat())}", color = Fc.Lime)
                         val seconds = log.exercises.filter { it.exerciseId == id && (position == -1 || it.position == position) }.sumOf { it.durationMillis } / 1000
                         val best = sets.filter { !it.warmup && !it.assisted }.maxWithOrNull(compareBy<SetLogEntity> { if (it.isTimed) it.reps.toFloat() else it.weightKg }.thenBy { it.reps })
-                        if (best != null) Text("Самый тяжёлый: ${units.format(best.weightKg)} × ${best.reps}${if (best.isTimed) " сек." else ""}", color = Fc.Text)
+                        if (best != null) Text(if (best.isTimed) "Самое долгое удержание: ${best.reps} сек." else "Самый тяжёлый: ${units.format(best.weightKg)} × ${best.reps}", color = Fc.Text)
                         val previous = workouts.filter { it.session.startedAt < log.session.startedAt }.flatMap { it.sets }
                             .filter { it.done && !it.warmup && !it.assisted && it.exerciseId == id && it.isTimed == best?.isTimed }
                             .maxWithOrNull(compareBy<SetLogEntity> { if (it.isTimed) it.reps.toFloat() else it.weightKg }.thenBy { it.reps })
-                        Text(previous?.let { "Рекорд до тренировки: ${units.format(it.weightKg)} × ${it.reps}" } ?: "Первый результат в истории", color = Fc.Muted)
+                        Text(previous?.let { if (it.isTimed) "Рекорд до тренировки: ${it.reps} сек." else "Рекорд до тренировки: ${units.format(it.weightKg)} × ${it.reps}" } ?: "Первый результат в истории", color = Fc.Muted)
                         Text("Время упражнения: ${seconds / 60} мин ${seconds % 60} сек", color = Fc.Muted)
                     }
                 }

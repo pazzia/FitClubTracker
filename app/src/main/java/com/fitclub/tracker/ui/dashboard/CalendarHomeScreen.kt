@@ -2,6 +2,8 @@ package com.fitclub.tracker.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -18,6 +20,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -107,11 +110,15 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
         item {
             FcCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { monthValue = month.minusMonths(1).toString() }) { Text("‹", color = Fc.Text, style = MaterialTheme.typography.headlineSmall) }
+                    TextButton(onClick = { monthValue = month.minusMonths(1).toString() }) { Text("‹", modifier = Modifier.semantics { contentDescription = "Предыдущий месяц" }, color = Fc.Text, style = MaterialTheme.typography.headlineSmall) }
                     Text(month.atDay(1).format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale("ru"))).replaceFirstChar { it.uppercase() },
                         modifier = Modifier.weight(1f), textAlign = TextAlign.Center, color = Fc.Text, style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = { monthValue = month.plusMonths(1).toString() }) { Text("›", color = Fc.Text, style = MaterialTheme.typography.headlineSmall) }
+                    TextButton(onClick = { monthValue = month.plusMonths(1).toString() }) { Text("›", modifier = Modifier.semantics { contentDescription = "Следующий месяц" }, color = Fc.Text, style = MaterialTheme.typography.headlineSmall) }
                 }
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val gridWidth = maxWidth.coerceAtLeast(336.dp)
+                    Column(Modifier.horizontalScroll(rememberScrollState())) {
+                        Column(Modifier.width(gridWidth)) {
                 Row(Modifier.fillMaxWidth()) {
                     listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс").forEach {
                         Text(it, color = Fc.Muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
@@ -133,7 +140,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                                 Column(Modifier.weight(1f).heightIn(min = 48.dp).padding(2.dp)
                                     .background(color, RoundedCornerShape(10.dp))
                                     .then(if (date == today && !selected) Modifier.border(1.dp, Fc.Lime, RoundedCornerShape(10.dp)) else Modifier)
-                                    .semantics { contentDescription = calendarDate(epoch) + when { done -> ", выполнено"; hasPlan -> ", тренировка запланирована"; else -> ", запланировать тренировку" } }
+                                    .semantics { this.selected = selected; contentDescription = calendarDate(epoch) + when { done -> ", выполнено"; hasPlan -> ", тренировка запланирована"; else -> ", запланировать тренировку" } }
                                     .clickable(role = Role.Button) { selectedEpoch = epoch },
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("$number", color = if (selected) Fc.Bg else if (hasPlan || done) Fc.Lime else Fc.Text,
@@ -141,6 +148,9 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                                     if (done || hasPlan) Box(Modifier.padding(top = 3.dp).size(4.dp).background(if (selected) Fc.Bg else if (done) Fc.Lime else Fc.Lime, CircleShape))
                                 }
                             }
+                        }
+                    }
+                }
                         }
                     }
                 }

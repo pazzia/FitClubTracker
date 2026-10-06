@@ -225,8 +225,8 @@ class ProgramEditorViewModel(private val c: AppContainer, private val programId:
     var pendingAdd by mutableStateOf(addExercise.isNotBlank())
     init {
         viewModelScope.launch {
-            val loaded = if (programId == 0L) ProgramDraft() else c.programs.get(programId) ?: ProgramDraft()
-            initial = loaded; _draft.value = loaded
+            runCatching { if (programId == 0L) ProgramDraft() else requireNotNull(c.programs.get(programId)) { "Программа не найдена" } }
+                .onSuccess { initial = it; _draft.value = it }.onFailure { error = "Не удалось загрузить программу: ${it.message}" }
         }
     }
 
@@ -279,7 +279,11 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
     val vm = appViewModel(key = "program-$programId-$addExercise") { ProgramEditorViewModel(it, programId, addExercise) }
     val draftOrNull by vm.draft.collectAsStateWithLifecycle()
     val catalog by vm.catalog.collectAsStateWithLifecycle()
-    val d = draftOrNull ?: return
+    val d = draftOrNull
+    if (d == null) {
+        Column(Modifier.padding(20.dp)) { BackRow("Программы", onClose); Text(vm.error ?: "Загружаю программу…", color = if (vm.error == null) Fc.Muted else Fc.Pink) }
+        return
+    }
     var discard by rememberSaveable { mutableStateOf(false) }
     val close = { if (!vm.saving) { if (vm.dirty) discard = true else onClose() } }
     BackHandler { close() }
@@ -433,18 +437,18 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         }
         item {
             Section("Обложка") {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ProgramIcons.all.forEach { icon ->
                         val on = d.icon == icon && d.coverPhoto == null
                         Box(
-                            Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface)
+                            Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(Fc.Surface)
                                 .border(1.5.dp, if (on) Color(d.colorArgb) else Fc.Line, RoundedCornerShape(12.dp))
                                 .semantics { contentDescription = "Обложка: ${IconPaths.titles[icon]}"; selected = on }
                                 .clickable(role = Role.RadioButton) { vm.update { it.copy(icon = icon, coverPhoto = null) } },
                             contentAlignment = Alignment.Center
                         ) { StrokeIcon(icon, if (on) Color(d.colorArgb) else Fc.Muted, Modifier.size(22.dp), strokeWidth = 2f) }
                     }
-                    ProgramPhotoButton(d.coverPhoto, { photo -> vm.update { it.copy(coverPhoto = photo) } }, Modifier.weight(1f), onBusy = { photoBusy = it })
+                    ProgramPhotoButton(d.coverPhoto, { photo -> vm.update { it.copy(coverPhoto = photo) } }, Modifier.size(48.dp), onBusy = { photoBusy = it })
                 }
             }
         }
