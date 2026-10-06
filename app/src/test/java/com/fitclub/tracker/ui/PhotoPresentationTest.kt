@@ -34,7 +34,7 @@ class PhotoPresentationTest {
         assertEquals(Color.RED, result.getPixel(0, 0))
     }
 
-    @Test fun contourPreservesDetachedEquipmentButFadesGapsInsideBoundingBox() {
+    @Test fun contourPreservesEquipmentAndRetainsBackgroundWithMildContrast() {
         val source = Bitmap.createBitmap(100, 80, Bitmap.Config.ARGB_8888)
         source.eraseColor(Color.rgb(80, 100, 130))
         val mask = Bitmap.createBitmap(100, 80, Bitmap.Config.ARGB_8888)
@@ -44,8 +44,9 @@ class PhotoPresentationTest {
         val result = renderExercisePhoto(source, mask)
         assertEquals(255, Color.alpha(result.getPixel(50, 40)))
         assertEquals(255, Color.alpha(result.getPixel(10, 40))) // equipment outside person bounds
-        assertTrue(Color.alpha(result.getPixel(20, 40)) <= 64) // gap between weight and athlete
-        assertTrue(Color.alpha(result.getPixel(0, 0)) <= 64)
+        assertEquals(255, Color.alpha(result.getPixel(20, 40))) // full background between weight and athlete
+        assertEquals(Color.rgb(85, 103, 130), result.getPixel(20, 40)) // contrast 90%, no blur
+        assertEquals(Color.rgb(85, 103, 130), result.getPixel(0, 0))
         assertEquals(255, Color.alpha(source.getPixel(0, 0)))
         assertEquals(source.getPixel(50, 40), result.getPixel(50, 40))
     }

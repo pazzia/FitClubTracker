@@ -22,8 +22,8 @@ internal fun trimPhotoPadding(source: Bitmap, reference: Bitmap = source): Bitma
     return Bitmap.createBitmap(source, left, top, right - left + 1, bottom - top + 1)
 }
 
-/** Only thumbnails use this renderer. The foreground keeps original pixels and all
- * apparatus included in its pixel matte; gaps reveal a blurred, quarter-opacity gym. */
+/** Thumbnails retain the full photograph. Foreground pixels stay unchanged;
+ * the background has 90% of its original contrast, without blur or fading. */
 internal fun renderExercisePhoto(source: Bitmap, matte: Bitmap): Bitmap {
     val w = source.width; val h = source.height
     val scaled = if (matte.width == w && matte.height == h) matte
@@ -32,56 +32,17 @@ internal fun renderExercisePhoto(source: Bitmap, matte: Bitmap): Bitmap {
     val mask = IntArray(pixels.size)
     source.getPixels(pixels, 0, w, 0, 0, w, h)
     scaled.getPixels(mask, 0, w, 0, 0, w, h)
-    val blurred = blurPhotoBackground(pixels, w, h, maxOf(2, minOf(w, h) / 65))
     val result = IntArray(pixels.size)
     for (i in pixels.indices) {
         val subject = Color.red(mask[i]) / 255f
         val c = pixels[i]
-        val bg = blurred[i]
-        val gray = .299f * Color.red(bg) + .587f * Color.green(bg) + .114f * Color.blue(bg)
-        val foregroundAlpha = subject * Color.alpha(c) / 255f
-        val backgroundAlpha = .25f * (1f - subject) * Color.alpha(bg) / 255f
-        val alpha = foregroundAlpha + backgroundAlpha
-        fun channel(value: Int, background: Int): Int {
-            val muted = gray + (background - gray) * .18f
-            return if (alpha == 0f) 0 else ((value * foregroundAlpha + muted * backgroundAlpha) / alpha)
-                .roundToInt().coerceIn(0, 255)
+        fun channel(value: Int): Int {
+            val muted = 127.5f + (value - 127.5f) * .9f
+            return (value * subject + muted * (1f - subject)).roundToInt().coerceIn(0, 255)
         }
-        result[i] = Color.argb((alpha * 255).roundToInt(), channel(Color.red(c), Color.red(bg)),
-            channel(Color.green(c), Color.green(bg)), channel(Color.blue(c), Color.blue(bg)))
+        result[i] = Color.argb(Color.alpha(c), channel(Color.red(c)),
+            channel(Color.green(c)), channel(Color.blue(c)))
     }
     if (scaled !== matte) scaled.recycle()
     return Bitmap.createBitmap(result, w, h, Bitmap.Config.ARGB_8888)
-}
-
-/** Sliding separable box blur, three passes: bounded memory and linear work. */
-private fun blurPhotoBackground(source: IntArray, w: Int, h: Int, radius: Int): IntArray {
-    var input = source
-    repeat(3) {
-        val horizontal = IntArray(source.size)
-        val vertical = IntArray(source.size)
-        fun pass(src: IntArray, dst: IntArray, lines: Int, length: Int, step: Int, lineStep: Int) {
-            val size = radius * 2 + 1
-            for (line in 0 until lines) {
-                val offset = line * lineStep
-                var red = 0; var green = 0; var blue = 0
-                fun add(position: Int, sign: Int) {
-                    val color = src[offset + position.coerceIn(0, length - 1) * step]
-                    red += Color.red(color) * sign
-                    green += Color.green(color) * sign
-                    blue += Color.blue(color) * sign
-                }
-                for (position in -radius..radius) add(position, 1)
-                for (position in 0 until length) {
-                    dst[offset + position * step] = Color.rgb(red / size, green / size, blue / size)
-                    add(position - radius, -1)
-                    add(position + radius + 1, 1)
-                }
-            }
-        }
-        pass(input, horizontal, h, w, 1, w)
-        pass(horizontal, vertical, w, h, w, 1)
-        input = vertical
-    }
-    return input
 }

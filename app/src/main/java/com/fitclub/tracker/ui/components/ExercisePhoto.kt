@@ -34,7 +34,7 @@ private val photoCache = object : LruCache<String, Bitmap>(12 * 1024 * 1024) {
 
 @Composable
 fun ExerciseThumbnail(exercise: ExerciseEntity, modifier: Modifier = Modifier) {
-    ExercisePhoto(FreeExerciseCatalog.media[exercise.id]?.images?.firstOrNull(),
+    ExercisePhoto(FreeExerciseCatalog.media[exercise.id]?.images?.let { it.getOrNull(1) ?: it.firstOrNull() },
         "${exercise.name} — миниатюра техники", modifier.clip(RoundedCornerShape(11.dp)), thumbnail = true)
 }
 
