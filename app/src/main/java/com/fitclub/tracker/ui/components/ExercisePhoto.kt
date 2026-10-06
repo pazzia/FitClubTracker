@@ -59,7 +59,12 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                             val mask = context.assets.open(maskPath).use { stream -> BitmapFactory.decodeStream(stream) }
                                 ?: throw IOException("Missing foreground matte: $maskPath")
                             // Process before trimming so matte coordinates remain aligned at both sample sizes.
-                            val processed = renderExercisePhoto(decoded, mask)
+                            val clothingPath = "exercise_clothing/" + it.removePrefix("free_exercise_db/").removeSuffix(".jpg") + ".png"
+                            val clothing = try {
+                                context.assets.open(clothingPath).use { stream -> BitmapFactory.decodeStream(stream) }
+                            } catch (_: IOException) { null }
+                            val processed = renderExercisePhoto(decoded, mask, clothing)
+                            clothing?.recycle()
                             mask.recycle()
                             val result = trimPhotoPadding(processed, decoded)
                             decoded.recycle()
@@ -79,3 +84,4 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
         } ?: Text(if (thumbnail) "…" else "Загрузка фотографии…", color = Fc.Muted)
     }
 }
+
