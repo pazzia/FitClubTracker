@@ -17,7 +17,8 @@ internal object AnatomyCutouts {
         val source = requireNotNull(BitmapFactory.decodeResource(resources, resource))
         val pixels = IntArray(source.width * source.height)
         source.getPixels(pixels, 0, source.width, 0, 0, source.width, source.height)
-        val cutout = trimAtlasBackdrop(pixels, source.width, source.height)
+        val cutout = trimAtlasBackdrop(pixels, source.width, source.height,
+            atlasClothingBands(resources.getResourceEntryName(resource)))
         val result = Bitmap.createBitmap(cutout.pixels, cutout.width, cutout.height, Bitmap.Config.ARGB_8888)
         source.recycle()
         cache.put(resource, result)
@@ -27,20 +28,60 @@ internal object AnatomyCutouts {
 
 internal data class AtlasCutout(val pixels: IntArray, val width: Int, val height: Int)
 
-internal fun trimAtlasBackdrop(source: IntArray, width: Int, height: Int): AtlasCutout {
+internal data class AtlasBand(val left: Float, val right: Float, val top: Float, val bottom: Float)
+
+/** Clothing bands belong to the pinned atlas framing, not to the card's crop or theme. */
+internal fun atlasClothingBands(name: String): List<AtlasBand> {
+    if (!name.startsWith("group_female_")) return emptyList()
+    return when (name.removePrefix("group_female_").toIntOrNull()) {
+        0 -> listOf(AtlasBand(0f, 1f, .4f, .89f))
+        1 -> listOf(AtlasBand(.65f, 1f, .5f, .95f), AtlasBand(.2f, .4f, .7f, .95f))
+        2 -> listOf(AtlasBand(.85f, 1f, .55f, .9f))
+        3 -> listOf(AtlasBand(0f, .35f, .27f, .75f), AtlasBand(.3f, .87f, .53f, .81f),
+            AtlasBand(.65f, .84f, .02f, .6f))
+        5 -> listOf(AtlasBand(0f, 1f, .08f, .30f), AtlasBand(0f, 1f, .77f, .92f))
+        7 -> listOf(AtlasBand(0f, .8f, .8f, .95f))
+        8 -> listOf(AtlasBand(0f, 1f, .04f, .25f))
+        9 -> listOf(AtlasBand(0f, 1f, 0f, .18f))
+        10 -> listOf(AtlasBand(0f, 1f, 0f, .14f))
+        11 -> listOf(AtlasBand(0f, .5f, .7f, 1f), AtlasBand(.5f, 1f, .7f, 1f))
+        else -> emptyList()
+    }
+}
+
+internal fun trimAtlasBackdrop(source: IntArray, width: Int, height: Int,
+    clothingBands: List<AtlasBand> = emptyList()): AtlasCutout {
     require(width > 0 && height > 0 && source.size == width * height)
     val pixels = source.copyOf()
     val visited = BooleanArray(pixels.size)
+    val protected = BooleanArray(pixels.size)
+    fun isBackdrop(color: Int, tolerance: Int): Boolean = color ushr 24 == 0 ||
+        (abs(((color ushr 16) and 255) - 20) <= tolerance &&
+            abs(((color ushr 8) and 255) - 25) <= tolerance && abs((color and 255) - 29) <= tolerance)
+    // Close only clothing spans between actual foreground pixels. Separate shoe bands keep
+    // the real background between the legs transparent; no generic rectangular masks are used.
+    for (band in clothingBands) {
+        val x0 = (band.left * width).toInt().coerceIn(0, width)
+        val x1 = kotlin.math.ceil((band.right * width).toDouble()).toInt().coerceIn(0, width)
+        val y0 = (band.top * height).toInt().coerceIn(0, height)
+        val y1 = kotlin.math.ceil((band.bottom * height).toDouble()).toInt().coerceIn(0, height)
+        for (y in y0 until y1) {
+            var first = -1; var last = -1
+            for (x in x0 until x1) if (!isBackdrop(source[y * width + x], 6)) {
+                if (first < 0) first = x
+                last = x
+            }
+            if (first >= 0) for (x in first..last) protected[y * width + x] = true
+        }
+    }
     val queue = IntArray(pixels.size)
     var tail = 0
     fun enqueue(index: Int) {
         if (visited[index]) return
         visited[index] = true
         val color = pixels[index]
-        val alpha = color ushr 24
         // The source WebP backdrop is #14191D with small compression variations.
-        if (alpha == 0 || (abs(((color ushr 16) and 255) - 20) <= 18 &&
-                abs(((color ushr 8) and 255) - 25) <= 18 && abs((color and 255) - 29) <= 18)) {
+        if (!protected[index] && isBackdrop(color, 18)) {
             pixels[index] = 0
             queue[tail++] = index
         }

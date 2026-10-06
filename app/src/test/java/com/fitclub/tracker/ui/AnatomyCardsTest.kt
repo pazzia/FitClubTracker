@@ -10,6 +10,7 @@ import android.graphics.RectF
 import androidx.test.core.app.ApplicationProvider
 import com.fitclub.tracker.FitApp
 import com.fitclub.tracker.ui.components.AnatomyCutouts
+import com.fitclub.tracker.ui.components.AtlasBand
 import com.fitclub.tracker.ui.components.trimAtlasBackdrop
 import org.junit.Assert.*
 import org.junit.Test
@@ -34,6 +35,17 @@ class AnatomyCardsTest {
         assertEquals(backdrop, result.pixels[2 * 5 + 2])
         assertEquals(skin, result.pixels.first())
         assertEquals(backdrop, source.first()) // the source remains untouched
+    }
+
+    @Test fun garmentTouchingTheBackdropIsNotErased() {
+        val backdrop = Color.rgb(20, 25, 29)
+        val skin = Color.rgb(170, 90, 60)
+        val source = IntArray(49) { backdrop }
+        for (y in 1..5) for (x in 1..5) source[y * 7 + x] = skin
+        for (x in 2..4) source[5 * 7 + x] = backdrop // black garment open to the lower frame
+        val result = trimAtlasBackdrop(source, 7, 7, listOf(AtlasBand(0f, 1f, .6f, .9f)))
+        assertEquals(5, result.width); assertEquals(5, result.height)
+        assertEquals(backdrop, result.pixels[4 * 5 + 2])
     }
 
     @Test fun allAtlasesHaveTransparentTrimmedBackdropAndRenderInBothThemes() {
