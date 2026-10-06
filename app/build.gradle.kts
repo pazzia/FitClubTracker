@@ -65,6 +65,8 @@ val prepareExercisePhotos by tasks.registering {
 
 tasks.named("preBuild").configure { dependsOn(prepareExercisePhotos) }
 
+val experimentalBuild = providers.gradleProperty("fitclubExperimental").orNull?.toBoolean() ?: false
+
 android {
     namespace = "com.fitclub.tracker"
     compileSdk = 34
@@ -73,14 +75,17 @@ android {
         applicationId = "com.fitclub.tracker"
         minSdk = 28
         targetSdk = 34
-        versionCode = 20
-        versionName = "0.8.0-test"
+        versionCode = 21
+        versionName = "0.8.0"
     }
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".experimental"
-            resValue("string", "app_name", "FitClub · Тест")
+            if (experimentalBuild) {
+                applicationIdSuffix = ".experimental"
+                versionNameSuffix = "-test"
+                resValue("string", "app_name", "FitClub · Тест")
+            }
         }
         release {
             isMinifyEnabled = false

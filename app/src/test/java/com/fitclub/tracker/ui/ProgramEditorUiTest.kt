@@ -29,19 +29,23 @@ class ProgramEditorUiTest {
         rule.onNodeWithText("+ Создать программу").performClick()
         waitFor("Название программы")
     }
-    @Test fun categoriesComeFirstAndCommentSurvivesProgramSaveAndReopen() {
+    @Test fun bulkPickerAndCommentSurviveProgramSaveAndReopen() {
         val app = ApplicationProvider.getApplicationContext<FitApp>()
         app.container.profile.update(app.container.profile.settings.value.copy(sex = Sex.FEMALE))
         editor()
         rule.onNodeWithText("Название программы").performTextReplacement("Личный план")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+  Добавить упражнение"))
         rule.onNodeWithText("+  Добавить упражнение").performClick()
-        waitFor("Выберите группу мышц")
-        rule.onAllNodesWithText("Жим штанги лёжа").assertCountEquals(0)
-        rule.onNodeWithContentDescription("Грудь, женский атлас").performClick()
-        waitFor("${ExerciseSeed.all.count { it.group == MuscleGroup.CHEST }} упражнений")
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Жим штанги лёжа"))
-        rule.onNodeWithText("Жим штанги лёжа").performClick()
+        waitFor("Добавить упражнения")
+        rule.onNodeWithTag("exercise-search").performTextReplacement("штанг лежа")
+        waitFor("Жим штанги лёжа")
+        rule.onNodeWithTag("picker-exercise-bench").performClick()
+        rule.onNodeWithTag("exercise-search").performTextReplacement("жим гант")
+        rule.waitUntil(15_000) { rule.onAllNodesWithText("Поиск…").fetchSemanticsNodes().isEmpty() }
+        rule.onNodeWithTag("picker-list").performScrollToNode(hasTestTag("picker-exercise-dbbench"))
+        rule.onNodeWithTag("picker-exercise-dbbench").performClick()
+        rule.onNodeWithText("Выбрано: 2").assertExists()
+        rule.onNodeWithTag("picker-add").performClick()
         rule.waitForIdle()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("exercise-comment-bench"))
         rule.onNodeWithContentDescription("Жим штанги лёжа — миниатюра техники").assertExists()
@@ -59,6 +63,8 @@ class ProgramEditorUiTest {
         waitFor("Название программы")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("exercise-comment-bench"))
         rule.onNodeWithTag("exercise-comment-bench").assertTextContains("Без рывков")
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("exercise-comment-dbbench"))
+        rule.onNodeWithTag("exercise-comment-dbbench").assertExists()
     }
     @Test fun cameraButtonOffersPhotoSourcesAndGalleryRequiresConsent() {
         editor()
@@ -72,20 +78,14 @@ class ProgramEditorUiTest {
         rule.onNodeWithText("Отмена").performClick()
         rule.onAllNodesWithText("Разрешить использовать фото?").assertCountEquals(0)
     }
-    @Test fun categoryBackReturnsToGridWithoutDiscardingEditor() {
+    @Test fun emptyPickerBackPreservesEditor() {
         editor()
+        rule.onNodeWithText("Название программы").performTextReplacement("Мой новый план")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+  Добавить упражнение"))
         rule.onNodeWithText("+  Добавить упражнение").performClick()
-        waitFor("Выберите группу мышц")
-        val sex = ApplicationProvider.getApplicationContext<FitApp>().container.profile.settings.value.sex.title.lowercase()
-        rule.onNodeWithContentDescription("Грудь, $sex атлас").performClick()
-        waitFor("Группы мышц")
-        rule.onNodeWithText("Группы мышц").performClick()
-        rule.onNodeWithText("Выберите группу мышц").assertExists()
+        waitFor("Добавить упражнения")
         rule.onNodeWithText("К программе").performClick()
-        rule.waitForIdle()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Название программы"))
-        rule.onNodeWithText("Название программы").assertExists()
+        rule.onNodeWithText("Название программы").assertTextContains("Мой новый план")
     }
 }
-

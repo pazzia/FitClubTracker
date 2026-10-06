@@ -24,20 +24,32 @@ import com.fitclub.tracker.data.seed.FreeExerciseCatalog
 import com.fitclub.tracker.ui.components.*
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.theme.Fc
-import com.fitclub.tracker.ui.library.matchesExercise
+import com.fitclub.tracker.ui.library.ExerciseSearchIndex
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 private class PickerProfileViewModel(c: AppContainer) : ViewModel() { val settings = c.profile.settings }
 
 @Composable
 internal fun ExercisePicker(
     catalog: List<ExerciseEntity>, already: Set<String>, subtitle: String,
-    onBack: () -> Unit, onPick: (String) -> Unit
+    onBack: () -> Unit, onPick: (String) -> Unit, onPickMany: ((List<String>) -> Unit)? = null
 ) {
+    if (onPickMany != null) {
+        ProgramExercisePicker(catalog, already, subtitle, onBack, onPickMany)
+        return
+    }
     val vm = appViewModel { PickerProfileViewModel(it) }
     val profile by vm.settings.collectAsStateWithLifecycle()
     var group by rememberSaveable { mutableStateOf<MuscleGroup?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf<ExerciseType?>(null) }
+    val searchIndex = remember(catalog) { ExerciseSearchIndex(catalog) }
+    val searchResults by produceState(catalog, query, searchIndex) {
+        delay(100)
+        value = withContext(Dispatchers.Default) { searchIndex.search(query) }
+    }
     fun categories() { group = null; query = ""; type = null }
     BackHandler(enabled = group != null) { categories() }
     val selectedGroup = group
@@ -67,9 +79,8 @@ internal fun ExercisePicker(
                 Segmented(listOf(null, ExerciseType.BASIC, ExerciseType.ISOLATION), type, { type = it },
                     { when (it) { null -> "Все"; ExerciseType.BASIC -> "Базовые"; else -> "Изоляция" } }, selectedBg = Fc.Lime)
             }
-            val shown = catalog.filter { it.group == selectedGroup && (type == null ||
-                (it.type == type && FreeExerciseCatalog.media[it.id]?.category != "Растяжка")) &&
-                matchesExercise(it, query) }
+            val shown = searchResults.filter { it.group == selectedGroup && (type == null ||
+                (it.type == type && FreeExerciseCatalog.media[it.id]?.category != "Растяжка")) }
             if (shown.isEmpty()) item { Text("Нет упражнений с такими фильтрами", color = Fc.Muted) }
             items(shown, key = { it.id }) { exercise ->
                 val has = exercise.id in already
@@ -90,3 +101,4 @@ internal fun ExercisePicker(
         }
     }
 }
+

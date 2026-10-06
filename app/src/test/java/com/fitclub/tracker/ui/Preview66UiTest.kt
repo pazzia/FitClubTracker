@@ -116,8 +116,8 @@ class Preview66UiTest {
         rule.onAllNodesWithText("Цвет").assertCountEquals(0)
         screenshot("new-program")
         rule.onNodeWithText("+  Добавить упражнение").performClick()
-        waitFor("Выберите группу мышц")
-        rule.onNodeWithText("Выберите группу мышц").assertExists()
+        waitFor("Добавить упражнения")
+        rule.onNodeWithText("Добавить упражнения").assertExists()
     }
     @Test fun plannerShowsPrimaryProgramChoiceAndSecondaryManualAdd() {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }

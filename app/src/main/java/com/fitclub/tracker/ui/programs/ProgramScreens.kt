@@ -247,6 +247,17 @@ class ProgramEditorViewModel(private val c: AppContainer, private val programId:
         d.copy(days = d.days.mapIndexed { i, dd -> if (i != day) dd else dd.copy(items = dd.items + item) })
     }
 
+    fun addExercises(day: Int, exerciseIds: List<String>) = update { d ->
+        d.copy(days = d.days.mapIndexed { i, dd ->
+            if (i != day) dd else {
+                val existing = dd.items.map { it.exerciseId }.toSet()
+                val additions = exerciseIds.distinct().filter { it !in existing && it in catalog.value }
+                    .map { ItemDraft(it, 3, d.goal.defaultReps, d.goal.defaultRest) }
+                dd.copy(items = dd.items + additions)
+            }
+        })
+    }
+
     fun addDay() = update { it.copy(days = it.days + DayDraft()) }
 
     fun save(onDone: () -> Unit) {
@@ -316,7 +327,8 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             already = d.days[day].items.map { it.exerciseId }.toSet(),
             subtitle = "в день ${'A' + day} программы «${d.name}»",
             onBack = { picking = false },
-            onPick = { vm.addExercise(day, it); picking = false }
+            onPick = { vm.addExercise(day, it); picking = false },
+            onPickMany = { vm.addExercises(day, it); picking = false }
         )
         return
     }
