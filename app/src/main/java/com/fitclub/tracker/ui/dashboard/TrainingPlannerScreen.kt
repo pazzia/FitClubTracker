@@ -138,7 +138,7 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
                 Text("Основа тренировки", color = Fc.Text, style = MaterialTheme.typography.titleSmall)
                 Text("Выберите программу и день — упражнения появятся в плане.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
-                PrimaryButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу →", onChooseProgram)
+                ActionButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу →", onChooseProgram)
                 val program = programs.firstOrNull { it.id == draft.programId }
                 if (program != null && program.days.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
@@ -156,15 +156,13 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
                 onChange = { fn -> vm.update { it.copy(items = it.items.mapIndexed { i, old -> if (i == index) fn(old) else old }) } },
                 onRemove = { vm.update { it.copy(items = it.items.filterIndexed { i, _ -> i != index }) } }, exercise = exercise)
         }
-        item { OutlinedButton(onClick = { picker = true }, modifier = Modifier.fillMaxWidth().height(56.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) { Text("+ Добавить упражнение") } }
+        item { ActionButton("+ Добавить упражнение", { picker = true }, outlined = true) }
         if (error != null) item { Text(error.orEmpty(), color = Fc.Pink) }
         item {
-            Button(onClick = { vm.save { onClose() } }, enabled = canSave, modifier = Modifier.fillMaxWidth().height(56.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime)) {
-                Text(if (saving) "Сохраняю…" else "Сохранить план")
-            }
+            ActionButton(if (saving) "Сохраняю…" else "Сохранить план", { vm.save { onClose() } }, enabled = canSave)
             if (draft.items.isEmpty()) Text("Добавьте хотя бы одно упражнение", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(10.dp))
-            if (!completed) OutlinedButton(onClick = { vm.save(onStart) }, enabled = canSave, modifier = Modifier.fillMaxWidth().height(56.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) { Text("Сохранить и начать") }
+            if (!completed) ActionButton("Сохранить и начать", { vm.save(onStart) }, outlined = true, enabled = canSave)
             if (draft.id != 0L) TextButton(onClick = { confirmDelete = true }, enabled = !saving, modifier = Modifier.fillMaxWidth()) { Text("Удалить план на этот день", color = Fc.Pink) }
         }
     }

@@ -35,7 +35,7 @@ class WorkoutResultViewModel(private val c: AppContainer) : ViewModel() {
         viewModelScope.launch {
             runCatching {
                 c.fitness.updateWorkout(log.session.id, log.session.startedAt,
-                    log.session.startedAt + minutes * 60_000L,
+                    if (minutes == log.durationMin) log.session.finishedAt ?: log.session.startedAt else log.session.startedAt + minutes * 60_000L,
                     rows.map { (old, row) -> old.copy(weightKg = row.weight.replace(',', '.').toFloat(), reps = row.reps.toInt(), done = row.done) })
             }.onSuccess { error = null; onSaved() }.onFailure { error = "Не удалось сохранить: ${it.message}" }
             saving = false
@@ -121,6 +121,12 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
                         }
                         Text("Тоннаж: ${sets.filter { !it.isTimed }.sumOf { (it.weightKg * it.reps).toDouble() }.toInt()} кг", color = Fc.Lime)
                         val seconds = log.exercises.filter { it.exerciseId == id }.sumOf { it.durationMillis } / 1000
+                        val best = sets.maxWithOrNull(compareBy<SetLogEntity> { it.weightKg }.thenBy { it.reps })
+                        if (best != null) Text("Самый тяжёлый: ${best.weightKg} кг × ${best.reps}${if (best.isTimed) " сек." else ""}", color = Fc.Text)
+                        val previous = workouts.filter { it.session.startedAt < log.session.startedAt }.flatMap { it.sets }
+                            .filter { it.done && it.exerciseId == id && it.isTimed == best?.isTimed }
+                            .maxWithOrNull(compareBy<SetLogEntity> { it.weightKg }.thenBy { it.reps })
+                        Text(previous?.let { "Рекорд до тренировки: ${it.weightKg} кг × ${it.reps}" } ?: "Первый результат в истории", color = Fc.Muted)
                         Text("Время упражнения: ${seconds / 60} мин ${seconds % 60} сек", color = Fc.Muted)
                     }
                 }

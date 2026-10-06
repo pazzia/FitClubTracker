@@ -55,6 +55,8 @@ class Preview66UiTest {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) {
             WorkoutScreen(id, onClose = {}, onTechnique = {})
         } }
+        waitFor("Выберите любое упражнение. Удерживайте ≡, чтобы изменить порядок.")
+        rule.onNodeWithText("Жим штанги лёжа").performClick()
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
         rule.onNodeWithTag("exercise-photo-pager").assertIsDisplayed()
         screenshot("workout-technique-1")
@@ -106,6 +108,8 @@ class Preview66UiTest {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
         val date = calendarDate(LocalDate.now().toEpochDay())
         rule.onNodeWithContentDescription("$date, запланировать тренировку").performClick()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+ Запланировать тренировку"))
+        rule.onNodeWithText("+ Запланировать тренировку").performClick()
         waitFor("Выбрать программу →")
         screenshot("training-plan")
         rule.onNodeWithText("Выбрать программу →").performClick()
@@ -113,8 +117,9 @@ class Preview66UiTest {
         waitFor("Фулбоди 3×")
         rule.onNodeWithText("Фулбоди 3×").performClick()
         waitFor("План тренировки")
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+ Добавить отдельное упражнение"))
-        rule.onNodeWithText("+ Добавить отдельное упражнение").performClick()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+ Добавить упражнение"))
+        rule.onNodeWithText("+ Добавить упражнение").performClick()
         waitFor("Выберите группу мышц")
     }
 }
+
