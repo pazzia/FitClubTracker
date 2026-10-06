@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -153,7 +154,7 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
         Column(Modifier.padding(20.dp)) { BackRow("Справочник", onBack); Text(if (all.isEmpty()) "Загрузка упражнения…" else "Упражнение не найдено", color = Fc.Muted) }
         return
     }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("exercise-detail-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { BackRow(e.group.title, onBack); ScreenTitle(e.name) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -55,6 +55,8 @@ class ReviewUiTest {
         rule.setContent { FitClubTheme { WorkoutResultScreen(id, {}) } }
         waitFor("Общий тоннаж: 1058.2 фунт.")
         rule.onNodeWithText("Редактировать результат").performClick()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Общий тоннаж: 1058.2 фунт."))
+        rule.onNodeWithText("Общий тоннаж: 1058.2 фунт.").assertExists()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("weight-0"))
         rule.onNodeWithTag("weight-0").assertTextEquals("132.3")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить изменения"))

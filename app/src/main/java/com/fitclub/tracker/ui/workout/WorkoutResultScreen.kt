@@ -40,7 +40,7 @@ class WorkoutResultViewModel(private val c: AppContainer) : ViewModel() {
             runCatching {
                 c.fitness.updateWorkout(log.session.id, log.session.startedAt,
                     if (minutes == log.durationMin) log.session.finishedAt ?: log.session.startedAt else log.session.startedAt + minutes * 60_000L,
-                    rows.map { (old, row) -> old.copy(weightKg = if (row.weight == units.number(units.fromKg(old.weightKg))) old.weightKg else units.toKg(row.weight.replace(',', '.').toFloat()), reps = row.reps.toInt(), done = row.done, warmup = row.warmup, rir = row.rir.toIntOrNull(), assisted = row.assisted) })
+                    rows.map { (old, row) -> old.copy(weightKg = resultWeight(old, row, units), reps = row.reps.toInt(), done = row.done, warmup = row.warmup, rir = row.rir.toIntOrNull(), assisted = row.assisted) })
             }.onSuccess { error = null; onSaved() }.onFailure { error = "Не удалось сохранить: ${it.message}" }
             saving = false
         }
@@ -91,7 +91,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
     val groups = if (editing) rows.map { it.first.exerciseId to it.first.exercisePosition }.distinct() else
         (log.sets.map { it.exerciseId to it.exercisePosition } + log.exercises.filter { ex -> log.sets.none { it.exerciseId == ex.exerciseId && it.exercisePosition == -1 } }.map { it.exerciseId to it.position }).distinct().sortedBy { it.second }
     val volume = if (editing) rows.filter { !it.first.isTimed && !it.second.assisted && it.second.done && validSet(it.second) }
-        .sumOf { editUnits.toKg(it.second.weight.replace(',', '.').toFloat()).toDouble() * it.second.reps.toInt() } else log.volumeKg.toDouble()
+        .sumOf { resultWeight(it.first, it.second, editUnits).toDouble() * it.second.reps.toInt() } else log.volumeKg.toDouble()
     val count = if (editing) rows.count { it.second.done } else log.completedSets
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { BackRow("Календарь", close) }
@@ -163,3 +163,8 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
     }
 }
 
+
+/** Retain canonical precision when the user leaves the rounded display untouched. */
+private fun resultWeight(old: SetLogEntity, row: SetEntry, units: WeightUnits): Float =
+    if (row.weight == units.number(units.fromKg(old.weightKg))) old.weightKg
+    else units.toKg(row.weight.replace(',', '.').toFloat())
