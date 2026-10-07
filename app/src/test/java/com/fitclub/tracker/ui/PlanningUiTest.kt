@@ -64,6 +64,7 @@ class PlanningUiTest {
         waitFor("${ExerciseSeed.all.count { it.group == MuscleGroup.CHEST }} упражнений")
         rule.onNodeWithTag("library-group-list").performScrollToNode(hasText("Жим штанги лёжа"))
         rule.onNodeWithText("Жим штанги лёжа").performClick()
+        rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasContentDescription("Грудь, женский атлас"))
         rule.onAllNodesWithContentDescription("Грудь, женский атлас").onFirst().assertExists()
         rule.onAllNodesWithText("Мужская").assertCountEquals(0)
         rule.onAllNodesWithText("Женская").assertCountEquals(0)
