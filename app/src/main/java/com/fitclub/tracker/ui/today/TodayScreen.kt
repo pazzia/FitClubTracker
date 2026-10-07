@@ -122,7 +122,8 @@ fun TodayScreen(
     onEditPlan: (Long, Long) -> Unit,
     onCalendar: (Long) -> Unit,
     onPrograms: () -> Unit,
-    onProfile: () -> Unit
+    onProfile: () -> Unit,
+    onResult: (Long) -> Unit = {}
 ) {
     val vm = appViewModel { TodayViewModel(it) }
     val s by vm.state.collectAsStateWithLifecycle()
@@ -137,6 +138,7 @@ fun TodayScreen(
         .minByOrNull { it.startMinute }
     val program = s.program
     val nextDay = program?.let { nextProgramDay(it, s.workouts) }
+    val doneToday = s.workouts.filter { it.session.epochDay == todayEpoch && it.completedSets > 0 }.maxByOrNull { it.session.startedAt }
 
     LazyColumn(Modifier.fillMaxSize().testTag("today"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item { Header(today, profile, onProfile) }
@@ -151,6 +153,15 @@ fun TodayScreen(
             }
         }
         item { WeekStrip(today, s, program, onCalendar) }
+        if (doneToday != null && todayPlan == null) item {
+            FcCard(Modifier.fillMaxWidth().testTag("today-done")) {
+                Pill("Сегодня выполнено", Fc.LimeSoft, Fc.Lime)
+                Text(doneToday.session.title.ifBlank { "Тренировка" }, style = MaterialTheme.typography.displaySmall, color = Fc.Text, modifier = Modifier.padding(top = 8.dp))
+                Text("${doneToday.completedSets} подходов · ${doneToday.durationMin} мин · ${units.format(doneToday.volumeKg)}", color = Fc.Muted,
+                    style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp, bottom = 14.dp))
+                ActionButton("Посмотреть итог", { onResult(doneToday.session.id) }, outlined = true)
+            }
+        }
         item {
             when {
                 todayPlan != null -> HeroCard(
@@ -159,7 +170,7 @@ fun TodayScreen(
                     onEdit = { onEditPlan(todayEpoch, todayPlan.id) }
                 )
                 program != null && nextDay != null -> HeroCard(
-                    label = "День ${'A' + nextDay} · ${program.name}", title = program.days[nextDay].items
+                    label = (if (doneToday != null) "Следующая · " else "") + "День ${'A' + nextDay} · ${program.name}", title = program.days[nextDay].items
                         .mapNotNull { s.catalog[it.exerciseId]?.group?.title }.distinct().take(2).joinToString(" + ").ifBlank { "Тренировка" },
                     items = program.days[nextDay].items, s = s, units = units,
                     action = if (starting) "Готовлю тренировку…" else "Начать тренировку", enabled = !starting,

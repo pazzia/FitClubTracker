@@ -125,7 +125,8 @@ fun AppRoot() {
             composable(Routes.TODAY) {
                 TodayScreen(onStart = { nav.navigate(Routes.workout(it)) }, onPlan = { nav.navigate(Routes.plan(it)) },
                     onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onCalendar = { nav.navigate(Routes.calendar(it)) },
-                    onPrograms = { nav.navigate(Routes.PROGRAMS) { launchSingleTop = true } }, onProfile = { nav.navigate(Routes.PROFILE) })
+                    onPrograms = { nav.navigate(Routes.PROGRAMS) { launchSingleTop = true } }, onProfile = { nav.navigate(Routes.PROFILE) },
+                    onResult = { nav.navigate(Routes.result(it)) })
             }
             composable(Routes.CALENDAR, arguments = listOf(navArgument("day") { type = NavType.LongType; defaultValue = -1L })) { entry ->
                 CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.navigate(Routes.PROFILE) }, onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onResult = { nav.navigate(Routes.result(it)) },
