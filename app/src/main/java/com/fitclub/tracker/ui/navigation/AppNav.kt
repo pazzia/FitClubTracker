@@ -110,7 +110,6 @@ private val tabs = listOf(
     Tab(Routes.LIBRARY, "Справочник", LineIcons.BOOK, listOf("library", "exercise/")),
     Tab(Routes.PROGRESS, "Прогресс", LineIcons.CHART, listOf("progress"))
 )
-)
 
 @Composable
 fun AppRoot() {

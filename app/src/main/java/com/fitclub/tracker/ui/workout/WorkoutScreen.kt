@@ -331,7 +331,9 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
     KeepScreenOn()
     RestEndSignal(vm.restEnded)
     LaunchedEffect(vm.rest == 0) { if (vm.rest == 0) restOpen = false }
-    BackHandler { when { restOpen -> restOpen = false; vm.inOverview -> confirmFinish = true; else -> vm.overview() } }
+    BackHandler {
+        if (restOpen) restOpen = false else if (vm.inOverview) confirmFinish = true else vm.overview()
+    }
     if (!source.loaded || !vm.restored) {
         Box(Modifier.fillMaxSize().background(Fc.Bg), contentAlignment = Alignment.Center) {
             if (vm.error == null) CircularProgressIndicator(color = Fc.Lime)
