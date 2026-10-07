@@ -1,6 +1,10 @@
 package com.fitclub.tracker.ui.workout
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -59,7 +63,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
     val plans by vm.plans.collectAsStateWithLifecycle()
     val log = workouts.firstOrNull { it.session.id == sessionId }
     if (log == null) {
-        Column(Modifier.padding(20.dp)) { BackRow("Календарь", onClose); Text(if (loaded) "Результат не найден или удалён" else "Загружаю результат…", color = Fc.Muted) }
+        Column(Modifier.padding(20.dp)) { BackRow("Назад", onClose); Text(if (loaded) "Результат не найден или удалён" else "Загружаю результат…", color = Fc.Muted) }
         return
     }
     var editing by remember { mutableStateOf(false) }
@@ -95,13 +99,54 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
         .sumOf { resultWeight(it.first, it.second, editUnits).toDouble() * it.second.reps.toInt() } else log.volumeKg.toDouble()
     val count = if (editing) rows.count { it.second.done } else log.completedSets
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { BackRow("Календарь", close) }
+        item { BackRow("Назад", close) }
         item {
-            Text(calendarDate(log.session.epochDay), color = Fc.Muted)
-            ScreenTitle(if (editing) "Редактирование" else "Результат тренировки")
-            Text(log.session.title.ifBlank { "Тренировка" }, color = Fc.Text)
-            Text(log.status, color = Fc.Muted)
-            log.session.plannedEpochDay?.takeIf { it != log.session.epochDay }?.let { Text("Была запланирована на ${calendarDate(it)}", color = Fc.Muted) }
+            Eyebrow(calendarDate(log.session.epochDay))
+            ScreenTitle(if (editing) "Редактирование" else "Результат тренировки", Modifier.padding(top = 4.dp))
+            Text(log.session.title.ifBlank { "Тренировка" }, color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+            Pill(log.status, if (log.completedSets > 0) Fc.LimeSoft else Fc.Surface2, if (log.completedSets > 0) Fc.Lime else Fc.Muted, Modifier.padding(top = 8.dp))
+            log.session.plannedEpochDay?.takeIf { it != log.session.epochDay }?.let { Text("Была запланирована на ${calendarDate(it)}", color = Fc.Muted, modifier = Modifier.padding(top = 6.dp)) }
+        }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf((if (editing) minutes else log.durationMin.toString()) to "минут",
+                    (if (editing) editUnits else units).number((if (editing) editUnits else units).fromKg(volume.toFloat())) to "${(if (editing) editUnits else units).label} объём",
+                    "$count" to "подходов").forEach { (value, label) ->
+                    Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(Fc.Surface).padding(14.dp)) {
+                        NumberText(value, 28.sp)
+                        Text(label, color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        }
+        if (!editing) {
+            val earlier = workouts.filter { it.session.startedAt < log.session.startedAt }.flatMap { it.sets }
+            val records = log.sets.filter { it.done && !it.warmup && !it.assisted }.map { it.exerciseId to it.isTimed }.distinct().mapNotNull { (id, timed) ->
+                val best = bestWorkingSet(log.sets, id, timed) ?: return@mapNotNull null
+                val previous = bestWorkingSet(earlier, id, timed) ?: return@mapNotNull null
+                val better = if (timed) best.reps > previous.reps else best.weightKg > previous.weightKg || (best.weightKg == previous.weightKg && best.reps > previous.reps)
+                if (!better) null else Triple(catalog.firstOrNull { it.id == id }?.name ?: id,
+                    if (timed) "${best.reps} сек." else "${units.format(best.weightKg)} × ${best.reps}",
+                    if (timed) "+${best.reps - previous.reps} сек." else if (best.weightKg > previous.weightKg) "+${units.format(best.weightKg - previous.weightKg)}" else "+${best.reps - previous.reps} повт.")
+            }
+            if (records.isNotEmpty()) item {
+                FcCard(border = Fc.Lime) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LineIcon(LineIcons.TROPHY, Fc.Lime)
+                        Text(if (records.size == 1) "Новый рекорд" else "Новых рекордов: ${records.size}", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                    }
+                    records.forEach { (name, value, delta) ->
+                        HorizontalDivider(color = Fc.Line2, modifier = Modifier.padding(vertical = 8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(name, color = Fc.Text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                            Column(horizontalAlignment = Alignment.End) {
+                                NumberText(value, 18.sp)
+                                Text(delta, color = Fc.Lime, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                }
+            }
         }
         item {
             FcCard {

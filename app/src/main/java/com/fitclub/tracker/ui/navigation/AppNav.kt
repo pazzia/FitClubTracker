@@ -69,6 +69,9 @@ import com.fitclub.tracker.ui.workout.WorkoutResultScreen
 import com.fitclub.tracker.ui.programs.ProgramEditorScreen
 import com.fitclub.tracker.ui.programs.ProgramsScreen
 import com.fitclub.tracker.ui.theme.Fc
+import com.fitclub.tracker.ui.today.TodayScreen
+import com.fitclub.tracker.ui.components.LineIcon
+import com.fitclub.tracker.ui.components.LineIcons
 
 @Composable
 inline fun <reified VM : ViewModel> appViewModel(key: String? = null, crossinline create: (AppContainer) -> VM): VM {
@@ -78,7 +81,7 @@ inline fun <reified VM : ViewModel> appViewModel(key: String? = null, crossinlin
 
 object Routes {
     const val TODAY = "today"
-    const val CALENDAR = "calendar"
+    const val CALENDAR = "calendar?day={day}"
     const val PROGRAMS = "programs"
     const val PROGRAM = "program/{id}?add={add}"
     const val LIBRARY = "library"
@@ -95,16 +98,18 @@ object Routes {
     fun exercise(id: String) = "exercise/$id"
     fun workout(schedule: Long) = "workout/$schedule"
     fun plan(epochDay: Long, schedule: Long = 0L) = "plan/$epochDay?schedule=$schedule"
+    fun calendar(epochDay: Long = -1L) = "calendar?day=$epochDay"
+    fun result(session: Long) = "result/$session"
 }
 
-private data class Tab(val route: String, val title: String, val icon: ImageVector, val prefixes: List<String>)
+private data class Tab(val route: String, val title: String, val icon: String, val prefixes: List<String>)
 
 private val tabs = listOf(
-    Tab(Routes.CALENDAR, "Календарь", Icons.Outlined.CalendarMonth, listOf("calendar")),
-    Tab(Routes.PROGRAMS, "Программы", Icons.Outlined.ListAlt, listOf("programs", "program/")),
-    Tab(Routes.LIBRARY, "Справочник", Icons.Outlined.FitnessCenter, listOf("library", "exercise/")),
-    Tab(Routes.PROGRESS, "Прогресс", Icons.Outlined.ShowChart, listOf("progress")),
-    Tab(Routes.PROFILE, "Профиль", Icons.Outlined.Person, listOf("profile"))
+    Tab(Routes.TODAY, "Сегодня", LineIcons.BOLT, listOf("today", "calendar")),
+    Tab(Routes.PROGRAMS, "Программы", LineIcons.LIST, listOf("programs", "program/")),
+    Tab(Routes.LIBRARY, "Справочник", LineIcons.BOOK, listOf("library", "exercise/")),
+    Tab(Routes.PROGRESS, "Прогресс", LineIcons.CHART, listOf("progress"))
+)
 )
 
 @Composable
@@ -117,9 +122,15 @@ fun AppRoot() {
         containerColor = Fc.Bg,
         bottomBar = { BottomBar(nav) }
     ) { padding ->
-        NavHost(nav, startDestination = Routes.CALENDAR, modifier = Modifier.fillMaxSize().padding(padding)) {
-            composable(Routes.CALENDAR) {
-                CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.navigate(Routes.PROFILE) }, onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onResult = { nav.navigate("result/$it") })
+        NavHost(nav, startDestination = Routes.TODAY, modifier = Modifier.fillMaxSize().padding(padding)) {
+            composable(Routes.TODAY) {
+                TodayScreen(onStart = { nav.navigate(Routes.workout(it)) }, onPlan = { nav.navigate(Routes.plan(it)) },
+                    onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onCalendar = { nav.navigate(Routes.calendar(it)) },
+                    onPrograms = { nav.navigate(Routes.PROGRAMS) { launchSingleTop = true } }, onProfile = { nav.navigate(Routes.PROFILE) })
+            }
+            composable(Routes.CALENDAR, arguments = listOf(navArgument("day") { type = NavType.LongType; defaultValue = -1L })) { entry ->
+                CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.navigate(Routes.PROFILE) }, onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onResult = { nav.navigate(Routes.result(it)) },
+                    initialEpoch = entry.arguments?.getLong("day")?.takeIf { it >= 0 })
             }
             composable(Routes.PLANNER, arguments = listOf(navArgument("epochDay") { type = NavType.LongType }, navArgument("schedule") { type = NavType.LongType; defaultValue = 0L })) { entry ->
                 val selectedProgram by entry.savedStateHandle.getStateFlow("selectedProgramId", 0L).collectAsStateWithLifecycle()
@@ -144,18 +155,21 @@ fun AppRoot() {
                 WorkoutScreen(
                     scheduleId = entry.arguments?.getLong("schedule") ?: 0L,
                     onClose = { nav.popBackStack() },
-                    onTechnique = { nav.navigate(Routes.exercise(it) + "?training=true") }
+                    onTechnique = { nav.navigate(Routes.exercise(it) + "?training=true") },
+                    onFinished = { session -> nav.navigate(Routes.result(session)) { popUpTo(Routes.WORKOUT) { inclusive = true } } }
                 )
             }
             composable(Routes.LIBRARY) {
                 LibraryHomeScreen(
                     onGroup = { nav.navigate(Routes.group(it)) },
-                    onExercise = { nav.navigate(Routes.exercise(it)) }
+                    onExercise = { nav.navigate(Routes.exercise(it)) },
+                    onProfile = { nav.navigate(Routes.PROFILE) }
                 )
             }
             composable(Routes.GROUP, arguments = listOf(navArgument("group") { type = NavType.StringType })) { entry ->
                 val group = MuscleGroup.valueOf(entry.arguments?.getString("group") ?: MuscleGroup.CHEST.name)
-                LibraryGroupScreen(group, onBack = { nav.popBackStack() }, onExercise = { nav.navigate(Routes.exercise(it)) })
+                LibraryGroupScreen(group, onBack = { nav.popBackStack() }, onExercise = { nav.navigate(Routes.exercise(it)) },
+                    onAdd = { nav.navigate("programs?add=$it") })
             }
             composable(Routes.EXERCISE, arguments = listOf(navArgument("id") { type = NavType.StringType }, navArgument("training") { type = NavType.BoolType; defaultValue = false })) { entry ->
                 ExerciseDetailScreen(
@@ -185,7 +199,7 @@ private fun BottomBar(nav: NavHostController) {
     val route = entry?.destination?.route ?: ""
     if (route.startsWith("program/") || route.startsWith("result/") || route.startsWith("workout") || route.startsWith("plan/") || route.startsWith("plan-programs/") || runCatching { nav.getBackStackEntry(Routes.WORKOUT) }.getOrNull() != null) return
     Column(Modifier.background(Fc.Nav).navigationBarsPadding()) {
-        HorizontalDivider(color = Fc.Line, thickness = 1.dp)
+        HorizontalDivider(color = Fc.Line2, thickness = 1.dp)
         Row(Modifier.fillMaxWidth().height(72.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
             tabs.forEach { tab ->
                 val on = tab.prefixes.any { route.startsWith(it) }
@@ -206,20 +220,19 @@ private fun BottomBar(nav: NavHostController) {
                 ) {
                     Box(
                         Modifier
-                            .width(52.dp).height(28.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .width(52.dp).height(30.dp)
+                            .clip(RoundedCornerShape(15.dp))
                             .background(if (on) Fc.LimeSoft else Fc.Nav),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(tab.icon, contentDescription = null, tint = if (on) Fc.Lime else Fc.Muted2, modifier = Modifier.size(22.dp))
+                        LineIcon(tab.icon, if (on) Fc.Lime else Fc.Muted, Modifier.size(22.dp))
                     }
                     Text(
-                        tab.title, fontSize = 11.sp, fontWeight = if (on) FontWeight.ExtraBold else FontWeight.SemiBold,
-                        color = if (on) Fc.Lime else Fc.Muted2, modifier = Modifier.padding(top = 3.dp)
+                        tab.title, fontSize = 11.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (on) Fc.Lime else Fc.Muted, modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
         }
     }
 }
-

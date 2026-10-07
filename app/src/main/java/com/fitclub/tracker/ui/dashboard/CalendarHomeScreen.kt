@@ -71,13 +71,14 @@ fun scheduleTime(minute: Int) = "%02d:%02d".format(Locale.US, minute / 60, minut
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfile: () -> Unit,
-    onEditPlan: (Long, Long) -> Unit = { date, _ -> onPlan(date) }, onResult: (Long) -> Unit = {}) {
+    onEditPlan: (Long, Long) -> Unit = { date, _ -> onPlan(date) }, onResult: (Long) -> Unit = {}, initialEpoch: Long? = null) {
     val vm = appViewModel { CalendarViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     val units = LocalWeightUnits.current
     val today = LocalDate.now()
-    var selectedEpoch by rememberSaveable { mutableLongStateOf(today.toEpochDay()) }
-    var monthValue by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
+    val start = initialEpoch?.let(LocalDate::ofEpochDay) ?: today
+    var selectedEpoch by rememberSaveable { mutableLongStateOf(start.toEpochDay()) }
+    var monthValue by rememberSaveable { mutableStateOf(YearMonth.from(start).toString()) }
     val month = YearMonth.parse(monthValue)
     val selectedDate = LocalDate.ofEpochDay(selectedEpoch)
     val plans = state.plans.filter { it.epochDay == selectedEpoch }.sortedBy { it.startMinute }
@@ -99,7 +100,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("ТВОЙ РИТМ ТРЕНИРОВОК", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+                    Eyebrow("История и планы")
                     ScreenTitle("Календарь")
                 }
                 IconButton(onClick = onProfile, modifier = Modifier.background(Fc.Surface2, CircleShape)) {

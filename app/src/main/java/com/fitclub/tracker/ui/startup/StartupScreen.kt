@@ -21,21 +21,21 @@ import kotlinx.coroutines.delay
 object ReleaseNotes {
     const val VERSION = BuildConfig.VERSION_NAME
     val items = listOf(
-        "Тестовая версия: изменения не затрагивают установленную основную FitClub.",
-        "Черновик тренировки сохраняется; можно продолжить после закрытия приложения.",
-        "Единицы веса в настройках: кг или фунты для истории, прогресса и замеров.",
-        "Обновлены ввод подходов, отдых, результаты, редакторы программы и плана.",
-        "Добавлены разминка, RIR и вес помощи; исправлены даты и недельная статистика."
-    )
-}
+        "Новый стартовый экран «Сегодня»: следующий день активной программы запускается одним касанием.",
+        "Подходы вводятся крупными кнопками ±; рядом — результат прошлой тренировки.",
+        "Отдых закреплён внизу экрана, есть полноэкранный таймер, ±15 секунд и вибрация в конце.",
+        "Экран не гаснет во время тренировки; после завершения сразу открывается итог с рекордами.",
+        "Новое оформление в тёмной и светлой темах, обновлённые справочник и прогресс."
+    )}
 
 @Composable
 fun AppStartup(app: FitApp) {
     val state by app.startup.collectAsStateWithLifecycle()
     val prefs = remember { app.getSharedPreferences("startup", Context.MODE_PRIVATE) }
     var notesAccepted by rememberSaveable { mutableStateOf(prefs.getString("seenVersion", null) == ReleaseNotes.VERSION) }
-    var minimumElapsed by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(Unit) { delay(800); minimumElapsed = true }
+    // The short pause exists only to read release notes; a returning user goes straight in.
+    var minimumElapsed by rememberSaveable { mutableStateOf(notesAccepted) }
+    LaunchedEffect(Unit) { if (!minimumElapsed) { delay(800); minimumElapsed = true } }
     if (state == StartupState.Ready && minimumElapsed && notesAccepted) AppRoot()
     else StartupScreen(state, minimumElapsed, onContinue = {
         prefs.edit().putString("seenVersion", ReleaseNotes.VERSION).apply()

@@ -243,7 +243,7 @@ fun ProfileScreen(onBack: () -> Unit) {
                 if (vm.error != null) Text(vm.error.orEmpty(), color = Fc.Pink)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(onClick = { adding = false }, modifier = Modifier.weight(1f)) { Text("Отмена", color = Fc.Muted) }
-                    Button(onClick = { vm.add(num(weight)?.let(entryUnits::toKg), num(waist), num(fat), num(chest), num(arm)) { adding = false; weight = ""; waist = ""; fat = ""; chest = ""; arm = "" } }, enabled = measurementValid && !vm.saving, colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime), modifier = Modifier.weight(1f)) { Text(if (vm.saving) "Сохраняю…" else "Сохранить", color = com.fitclub.tracker.ui.theme.foregroundFor(Fc.Lime)) }
+                    Button(onClick = { vm.add(num(weight)?.let(entryUnits::toKg), num(waist), num(fat), num(chest), num(arm)) { adding = false; weight = ""; waist = ""; fat = ""; chest = ""; arm = "" } }, enabled = measurementValid && !vm.saving, colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime), modifier = Modifier.weight(1f)) { Text(if (vm.saving) "Сохраняю…" else "Сохранить", color = Fc.OnAccent) }
                 }
             }
         }

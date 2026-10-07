@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
             val settings by (application as FitApp).container.profile.settings.collectAsStateWithLifecycle()
             val light = settings.theme == "Светлая"
             SideEffect {
-                window.statusBarColor = if (light) android.graphics.Color.WHITE else android.graphics.Color.rgb(14, 19, 23)
+                window.statusBarColor = if (light) android.graphics.Color.rgb(243, 244, 239) else android.graphics.Color.rgb(10, 12, 13)
                 window.navigationBarColor = window.statusBarColor
                 WindowCompat.getInsetsController(window, window.decorView).apply {
                     isAppearanceLightStatusBars = light
