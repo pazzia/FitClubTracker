@@ -1,7 +1,6 @@
-# FitClub 0.8.0 — программы, тренировки и статистика
+# FitClub 0.8.1 — программы, тренировки и статистика
 
-Версия: **0.8.0**, `versionCode = 21`. Изменения проходят проверку в
-`fork/ux-review-0.8.0` ([PR #10](https://github.com/pazzia/FitClubTracker/pull/10)) перед слиянием в `main`.
+Версия: **0.8.1**, `versionCode = 22`. Изменения проверяются в тестовой ветке перед слиянием в `main`.
 
 CI собирает основную установку `com.fitclub.tracker` для `main`/`master` и
 тестовую `com.fitclub.tracker.experimental`, **FitClub · Тест**, для pull request и остальных веток.
@@ -10,6 +9,12 @@ CI собирает основную установку `com.fitclub.tracker` д
 
 Kotlin · Jetpack Compose · Material 3 · Room · Navigation Compose.
 Android 9+ (minSdk 28), compileSdk / targetSdk 34. Данные и фотографии упражнений доступны локально; видео открывается во внешнем приложении и требует интернета.
+
+## Что изменено в 0.8.1
+
+- При добавлении упражнений возвращены карточки групп мышц с прежними атласами и миниатюры упражнений; пол модели берётся из профиля.
+- Поиск и массовый выбор сохранены. «Весь справочник» переключает карточки на дерево, «С иконками» возвращает картинки; выбор и поисковый запрос сохраняются.
+- Подпись «Тестовая сборка» отображается только в пакете `.experimental`; основной пакет подписан «Основная версия».
 
 ## Что изменено в 0.8.0
 
@@ -45,7 +50,7 @@ Android 9+ (minSdk 28), compileSdk / targetSdk 34. Данные и фотогр�
 
 [Android CI](https://github.com/pazzia/FitClubTracker/actions/workflows/android.yml) запускается при push в main, для pull request и вручную.
 CI проверяет изображения, выполняет тесты, собирает debug APK, проверяет package/version и выводит сертификат подписи.
-В успешном запуске откройте Artifacts → `FitClub-v0.8.0-buildN-debug` (main) или `FitClub-v0.8.0-test-buildN-debug` (тестовая ветка): внутри ZIP находится APK.
+В успешном запуске откройте Artifacts → `FitClub-v0.8.1-buildN-debug` (main) или `FitClub-v0.8.1-test-buildN-debug` (тестовая ветка): внутри ZIP находится APK.
 Артефакты хранятся 14 дней. Debug APK — текущий канал распространения; магазинная release-сборка этим workflow не публикуется.
 
 APK из main обновляет основную установку. APK из pull request обновляет тестовую установку.
@@ -78,4 +83,5 @@ gradle -PfitclubExperimental=true assembleDebug  # тестовая устано
 Остальные feature/fix/preview-ветки уже включены в main; повторное наложение их старых файлов не требуется.
 Исторические документы с номерами 0.3–0.6 описывают прошлые этапы.
 [FORK.md](FORK.md) хранит историю интеграции; [изменения 0.7.0](docs/V0.7.0_CHANGELOG.md).
+
 

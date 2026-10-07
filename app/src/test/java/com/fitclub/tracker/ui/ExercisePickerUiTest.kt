@@ -110,4 +110,32 @@ class ExercisePickerUiTest {
         assertTrue(closed)
         assertTrue(added.isEmpty())
     }
+    @Test fun iconCategoriesOpenExercisesAndSwitchingViewKeepsSelection() {
+        picker()
+        rule.onNodeWithText("Группы мышц").assertExists()
+        rule.onNodeWithContentDescription("Грудь, мужской атлас").assertExists()
+        rule.onNodeWithTag("picker-exercise-bench").assertDoesNotExist()
+        screenshot("exercise-picker-icon-categories")
+        rule.onNodeWithText("Грудь").performClick()
+        rule.onNodeWithTag("picker-list").performScrollToNode(hasTestTag("picker-exercise-bench"))
+        rule.onNodeWithTag("picker-exercise-bench").performClick()
+        rule.onNodeWithTag("picker-view").performClick()
+        rule.onNodeWithText("С иконками").assertExists()
+        rule.onNodeWithTag("picker-group-CHEST").performClick()
+        rule.onNodeWithTag("picker-exercise-bench").assertIsOn()
+        rule.onNodeWithTag("picker-view").performClick()
+        rule.onNodeWithTag("picker-list").performScrollToNode(hasTestTag("picker-exercise-bench"))
+        rule.onNodeWithTag("picker-exercise-bench").assertIsOn()
+        rule.onNodeWithText("Группы мышц").performClick()
+        rule.onNodeWithContentDescription("Грудь, мужской атлас").assertExists()
+        rule.onNodeWithText("Выбрано: 1").assertExists()
+        query("штанг лежа")
+        rule.onNodeWithContentDescription("Жим штанги лёжа — миниатюра техники").assertExists()
+        rule.onNodeWithTag("picker-exercise-bench").assertIsOn()
+        screenshot("exercise-picker-icon-search")
+        rule.onNodeWithTag("picker-add").performClick()
+        assertEquals(listOf("bench"), added)
+    }
+
 }
+
