@@ -267,7 +267,7 @@ fun ProfileScreen(onBack: () -> Unit) {
                 Text("История, тоннаж и замеры отображаются в выбранных единицах. Активная тренировка и открытый редактор сохраняют единицы ввода до завершения.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Fc.Line)
                 Text("Версия приложения: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", color = Fc.Text)
-                Text("Тестовая сборка", color = Fc.Muted)
+                Text(if (BuildConfig.APPLICATION_ID.endsWith(".experimental")) "Тестовая сборка" else "Основная версия", color = Fc.Muted)
             }
         }
     }
@@ -277,4 +277,5 @@ fun ProfileScreen(onBack: () -> Unit) {
 private fun num(s: String) = s.replace(',', '.').toFloatOrNull()
 private fun fmt(v: Float) = if (v == v.roundToInt().toFloat()) v.roundToInt().toString() else "%.1f".format(Locale.US, v).replace('.', ',')
 private fun signed(v: Float) = (if (v > 0) "+" else "") + fmt(v)
+
 

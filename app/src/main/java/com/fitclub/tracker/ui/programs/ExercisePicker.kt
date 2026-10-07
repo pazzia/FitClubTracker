@@ -36,12 +36,12 @@ internal fun ExercisePicker(
     catalog: List<ExerciseEntity>, already: Set<String>, subtitle: String,
     onBack: () -> Unit, onPick: (String) -> Unit, onPickMany: ((List<String>) -> Unit)? = null
 ) {
-    if (onPickMany != null) {
-        ProgramExercisePicker(catalog, already, subtitle, onBack, onPickMany)
-        return
-    }
     val vm = appViewModel { PickerProfileViewModel(it) }
     val profile by vm.settings.collectAsStateWithLifecycle()
+    if (onPickMany != null) {
+        ProgramExercisePicker(catalog, already, subtitle, onBack, onPickMany, sex = profile.sex)
+        return
+    }
     var group by rememberSaveable { mutableStateOf<MuscleGroup?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf<ExerciseType?>(null) }
@@ -101,4 +101,5 @@ internal fun ExercisePicker(
         }
     }
 }
+
 

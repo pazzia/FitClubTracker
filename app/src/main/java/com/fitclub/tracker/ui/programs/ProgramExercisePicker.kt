@@ -23,8 +23,8 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import com.fitclub.tracker.data.db.ExerciseEntity
 import com.fitclub.tracker.data.model.MuscleGroup
-import com.fitclub.tracker.ui.components.BackRow
-import com.fitclub.tracker.ui.components.ScreenTitle
+import com.fitclub.tracker.data.model.Sex
+import com.fitclub.tracker.ui.components.*
 import com.fitclub.tracker.ui.library.ExerciseSearchIndex
 import com.fitclub.tracker.ui.theme.Fc
 import kotlinx.coroutines.Dispatchers
@@ -34,8 +34,9 @@ import kotlinx.coroutines.withContext
 /** Selection remains local until one batch is confirmed by the program editor. */
 @Composable
 internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<String>, subtitle: String,
-    onBack: () -> Unit, onPick: (List<String>) -> Unit) {
+    onBack: () -> Unit, onPick: (List<String>) -> Unit, sex: Sex = Sex.MALE) {
     var query by rememberSaveable { mutableStateOf("") }
+    var selectedGroup by rememberSaveable { mutableStateOf<MuscleGroup?>(null) }
     var tree by rememberSaveable { mutableStateOf(false) }
     var selected by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
     var openGroups by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
@@ -52,14 +53,25 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
         appliedQuery = query
     }
     val ready = appliedQuery == query
-    val available = remember(matches, already) { matches.filter { it.id !in already }.map { it.id } }
+    val shown = remember(matches, tree, reviewing, query, selectedGroup) {
+        if (!tree && !reviewing && query.isBlank() && selectedGroup != null)
+            matches.filter { it.group == selectedGroup } else matches
+    }
+    val available = remember(shown, already) { shown.filter { it.id !in already }.map { it.id } }
     val selectedSet = selected.toSet()
     val validSelected = selected.filter { id -> id !in already && catalog.any { it.id == id } }
     val hidden = validSelected.count { id -> matches.none { it.id == id } }
     val groups = remember(matches) { matches.groupBy { it.group } }
     val listState = rememberLazyListState()
-    LaunchedEffect(appliedQuery, tree, reviewing) { listState.scrollToItem(0) }
-    fun close() { if (reviewing) reviewing = false else if (validSelected.isNotEmpty()) discard = true else onBack() }
+    LaunchedEffect(appliedQuery, tree, reviewing, selectedGroup) { listState.scrollToItem(0) }
+    fun close() {
+        when {
+            reviewing -> reviewing = false
+            !tree && selectedGroup != null -> selectedGroup = null
+            validSelected.isNotEmpty() -> discard = true
+            else -> onBack()
+        }
+    }
     fun toggle(ids: List<String>) {
         selected = ArrayList(if (ids.all { it in selectedSet }) selected.filter { it !in ids.toSet() }
             else (selected + ids).distinct())
@@ -74,7 +86,7 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
     val compact = maxHeight < 550.dp
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            val backLabel = if (reviewing) "К выбору упражнений" else "К программе"
+            val backLabel = if (reviewing) "К выбору упражнений" else if (!tree && selectedGroup != null) "Группы мышц" else "К программе"
             val title = if (reviewing) "Выбранные упражнения" else "Добавить упражнения"
             if (compact) Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { close() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, backLabel) }
@@ -91,10 +103,10 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
                         if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Filled.Close, "Очистить поиск") }
                     })
                 OutlinedButton(onClick = { tree = !tree }, modifier = Modifier.fillMaxWidth().testTag("picker-view")) {
-                    Text(if (tree) "Результаты списком" else "Весь справочник")
+                    Text(if (tree) "С иконками" else "Весь справочник")
                 }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (ready) "Найдено: ${matches.size}" else "Поиск…", modifier = Modifier.weight(1f), color = Fc.Muted)
+                    Text(if (ready) "Найдено: ${shown.size}" else "Поиск…", modifier = Modifier.weight(1f), color = Fc.Muted)
                     TextButton(onClick = { toggle(available) }, enabled = ready && available.isNotEmpty(), modifier = Modifier.testTag("picker-select-all")) {
                         Text(if (available.isNotEmpty() && available.all { it in selectedSet }) "Снять все" else "Выбрать все")
                     }
@@ -107,8 +119,25 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
                 items(validSelected.mapNotNull { id -> catalog.firstOrNull { it.id == id } }, key = { it.id }) { e ->
                     PickerExerciseRow(e, true, false) { toggle(listOf(e.id)) }
                 }
+            } else if (!tree && query.isBlank() && selectedGroup == null) {
+                item(key = "categories-title") {
+                    Text("Группы мышц", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                }
+                val counts = catalog.groupingBy { it.group }.eachCount()
+                items(AnatomyGroupOrder.filter { counts.getOrDefault(it, 0) > 0 }.chunked(2),
+                    key = { "categories-${it.first().name}" }) { pair ->
+                    MuscleCategoryRow(pair, sex, counts) { selectedGroup = it }
+                }
             } else if (!tree) {
-                items(matches, key = { it.id }) { e ->
+                if (query.isBlank()) selectedGroup?.let { group ->
+                    item(key = "category-image") {
+                        Column {
+                            GroupImage(sex, group, Modifier.fillMaxWidth().height(if (compact) 96.dp else 180.dp))
+                            Text(group.title, color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
+                }
+                items(shown, key = { it.id }) { e ->
                     PickerExerciseRow(e, e.id in selectedSet, e.id in already) { toggle(listOf(e.id)) }
                 }
             } else {
@@ -136,12 +165,12 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
                             }
                         }
                         if (expanded) items(exercises, key = { it.id }) { e ->
-                            PickerExerciseRow(e, e.id in selectedSet, e.id in already) { toggle(listOf(e.id)) }
+                            PickerExerciseRow(e, e.id in selectedSet, e.id in already, thumbnail = false) { toggle(listOf(e.id)) }
                         }
                     }
                 }
             }
-            if (matches.isEmpty() && !reviewing) item { Text("Ничего не найдено. Попробуйте другое название.", color = Fc.Muted) }
+            if (shown.isEmpty() && !reviewing) item { Text("Ничего не найдено. Попробуйте другое название.", color = Fc.Muted) }
         }
         Surface(shadowElevation = 4.dp) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
@@ -163,11 +192,12 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
 }
 
 @Composable
-private fun PickerExerciseRow(e: ExerciseEntity, checked: Boolean, already: Boolean, onToggle: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).testTag("picker-exercise-${e.id}")
+private fun PickerExerciseRow(e: ExerciseEntity, checked: Boolean, already: Boolean, thumbnail: Boolean = true, onToggle: () -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = if (thumbnail) 76.dp else 64.dp).testTag("picker-exercise-${e.id}")
         .toggleable(value = checked || already, enabled = !already, role = Role.Checkbox, onValueChange = { onToggle() })
         .padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = checked || already, onCheckedChange = null, enabled = !already)
+        if (thumbnail) ExerciseThumbnail(e, Modifier.width(72.dp).height(56.dp))
         Column(Modifier.weight(1f).padding(start = 8.dp)) {
             Text(e.name, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
             Text(if (already) "Уже в этом дне" else "${e.group.title} · ${e.equipment}", color = Fc.Muted,
@@ -175,3 +205,4 @@ private fun PickerExerciseRow(e: ExerciseEntity, checked: Boolean, already: Bool
         }
     }
 }
+

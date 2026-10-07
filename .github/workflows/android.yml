@@ -224,8 +224,8 @@ jobs:
           expected = 'com.fitclub.tracker.experimental' if experimental else 'com.fitclub.tracker'
           assert metadata['applicationId'] == expected, metadata
           element = metadata['elements'][0]
-          assert element['versionName'] == ('0.8.0-test' if experimental else '0.8.0'), element
-          assert element['versionCode'] == 21, element
+          assert element['versionName'] == ('0.8.1-test' if experimental else '0.8.1'), element
+          assert element['versionCode'] == 22, element
           print(f"Distribution verified: {expected}, {element['versionName']} ({element['versionCode']})")
           PY
 
@@ -295,4 +295,5 @@ jobs:
           name: ui-preview-screens
           path: app/build/ui-preview/
           if-no-files-found: ignore
+
 
