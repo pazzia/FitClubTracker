@@ -131,8 +131,10 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
             } else if (!tree) {
                 if (query.isBlank()) selectedGroup?.let { group ->
                     item(key = "category-image") {
-                        GroupImage(sex, group, Modifier.fillMaxWidth().height(if (compact) 96.dp else 180.dp))
-                        Text(group.title, color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                        Column {
+                            GroupImage(sex, group, Modifier.fillMaxWidth().height(if (compact) 96.dp else 180.dp))
+                            Text(group.title, color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
                 items(shown, key = { it.id }) { e ->
@@ -163,7 +165,7 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
                             }
                         }
                         if (expanded) items(exercises, key = { it.id }) { e ->
-                            PickerExerciseRow(e, e.id in selectedSet, e.id in already) { toggle(listOf(e.id)) }
+                            PickerExerciseRow(e, e.id in selectedSet, e.id in already, thumbnail = false) { toggle(listOf(e.id)) }
                         }
                     }
                 }
@@ -190,12 +192,12 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
 }
 
 @Composable
-private fun PickerExerciseRow(e: ExerciseEntity, checked: Boolean, already: Boolean, onToggle: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 76.dp).testTag("picker-exercise-${e.id}")
+private fun PickerExerciseRow(e: ExerciseEntity, checked: Boolean, already: Boolean, thumbnail: Boolean = true, onToggle: () -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = if (thumbnail) 76.dp else 64.dp).testTag("picker-exercise-${e.id}")
         .toggleable(value = checked || already, enabled = !already, role = Role.Checkbox, onValueChange = { onToggle() })
         .padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = checked || already, onCheckedChange = null, enabled = !already)
-        ExerciseThumbnail(e, Modifier.width(72.dp).height(56.dp))
+        if (thumbnail) ExerciseThumbnail(e, Modifier.width(72.dp).height(56.dp))
         Column(Modifier.weight(1f).padding(start = 8.dp)) {
             Text(e.name, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
             Text(if (already) "Уже в этом дне" else "${e.group.title} · ${e.equipment}", color = Fc.Muted,
