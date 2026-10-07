@@ -28,8 +28,7 @@ class WorkoutUiTest {
         val id = runBlocking { app.container.schedule.save(ScheduledDraft(epochDay = 22000,
             items = listOf(ItemDraft("bench", 1, RepRange.R8_12, 0), ItemDraft("bbrow", 1, RepRange.R8_12, 0)))) }
         rule.setContent { FitClubTheme { WorkoutScreen(id, onClose = {}, onTechnique = {}) } }
-        waitFor("Выберите любое упражнение. Удерживайте ≡, чтобы изменить порядок.")
-        rule.onNodeWithText("Жим штанги лёжа").performClick()
+        // A workout opens directly on its first exercise.
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
         return app
     }

@@ -69,9 +69,10 @@ class ReviewUiTest {
         app.container.profile.update(app.container.profile.settings.value.copy(unitsKg = true))
         runBlocking { app.container.fitness.finishWorkout(null, null, System.currentTimeMillis() - 60000, listOf(CompletedSet("bench", 0, 60f, 8)), title = "История единиц") }
         rule.setContent { FitClubTheme { AppRoot() } }
-        rule.onNodeWithText("Профиль").performClick()
+        rule.onNodeWithContentDescription("Профиль").performClick()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Фунты (lb)"))
         rule.onNodeWithText("Фунты (lb)").performClick()
+        rule.onNodeWithText("Сегодня").performClick()
         rule.onNodeWithText("Календарь").performClick()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Общий тоннаж: 1058.2 фунт."))
         rule.onAllNodesWithText("Общий тоннаж: 1058.2 фунт.").onFirst().assertExists()

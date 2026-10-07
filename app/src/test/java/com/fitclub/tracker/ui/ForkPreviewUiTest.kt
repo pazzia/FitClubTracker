@@ -51,7 +51,10 @@ class ForkPreviewUiTest {
         val morning = runBlocking { app.container.schedule.save(ScheduledDraft(epochDay = date, title = "Утренняя", startMinute = 480, items = items)) }
         runBlocking { app.container.schedule.save(ScheduledDraft(epochDay = date, title = "Вечерняя", startMinute = 1200, items = items)) }
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
+        // Today shows the earliest plan; the calendar lists every plan of the day.
         waitFor("Утренняя")
+        rule.onNodeWithText("Календарь").performClick()
+        waitFor("Вечерняя")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Утренняя"))
         screenshot("fork-calendar")
         rule.onNodeWithText("Утренняя", useUnmergedTree = true).performTouchInput { longClick() }
@@ -69,20 +72,19 @@ class ForkPreviewUiTest {
         val id = runBlocking { app.container.schedule.save(ScheduledDraft(epochDay = 22000,
             items = listOf(ItemDraft("bench", 1, RepRange.R8_12, 0)))) }
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { WorkoutScreen(id, {}, {}) } }
-        waitFor("Жим штанги лёжа")
-        screenshot("fork-overview")
-        rule.onNodeWithText("Жим штанги лёжа").performClick()
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 1")
+        screenshot("fork-exercise")
         rule.onNodeWithTag("workout-list").performScrollToNode(hasTestTag("weight-0"))
         rule.onNodeWithTag("weight-0").performTextReplacement("60")
         screenshot("test-080-active-sets")
         rule.onNodeWithTag("done-0").performClick()
         rule.onNodeWithTag("complete-exercise").performClick()
         waitFor("Упражнение завершено")
-        val left = rule.onNodeWithText("Все упражнения").fetchSemanticsNode().boundsInRoot
-        val right = rule.onNodeWithTag("next-exercise").fetchSemanticsNode().boundsInRoot
-        assertEquals(left.height, right.height, 1f)
-        assertEquals(left.width, right.width, 1f)
+        // After an exercise is finished, moving on is the one primary action and spans the width.
+        val next = rule.onNodeWithTag("next-exercise").fetchSemanticsNode().boundsInRoot
+        val root = rule.onRoot().fetchSemanticsNode().boundsInRoot
+        assertTrue(next.width > root.width * 0.8f)
+        rule.onNodeWithTag("complete-exercise").assertDoesNotExist()
         screenshot("fork-completed-exercise")
     }
     @Test fun testSettingsShowWeightChoiceAndVersion() {

@@ -69,7 +69,7 @@ object Fc {
     val Bg: Color @Composable get() = p.bg
     val Surface: Color @Composable get() = p.surface
     val Surface2: Color @Composable get() = p.surface2
-    val AnatomyBackground: Color @Composable get() = p.surface2
+    val AnatomyBackground: Color @Composable get() = p.surface
     val AnatomyLabel: Color @Composable get() = p.surface
     val Line: Color @Composable get() = p.line
     val Line2: Color @Composable get() = p.line2

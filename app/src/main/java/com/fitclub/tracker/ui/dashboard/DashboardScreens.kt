@@ -2,6 +2,8 @@ package com.fitclub.tracker.ui.dashboard
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
@@ -80,39 +82,74 @@ fun ProgressScreen(onProfile: () -> Unit) {
     val vm = appViewModel { DashboardViewModel(it) }
     val s by vm.state.collectAsStateWithLifecycle()
     val units = LocalWeightUnits.current
-    var weeksBack by rememberSaveable { mutableStateOf(6) }
+    var weeksBack by rememberSaveable { mutableStateOf(12) }
     var selectedExercise by rememberSaveable { mutableStateOf("") }
-    val total = s.workouts.sumOf { it.volumeKg.toDouble() }.toFloat()
-    val completedSets = s.workouts.sumOf { it.completedSets }
+    val today = LocalDate.now()
     val latest = s.measurements.lastOrNull { it.weightKg != null }
     val first = s.measurements.firstOrNull { it.weightKg != null }
-    val weekData = com.fitclub.tracker.domain.weeklyVolume(s.workouts, LocalDate.now(), weeksBack)
+    val weekData = com.fitclub.tracker.domain.weeklyVolume(s.workouts, today, weeksBack)
     val weekDates = weekData.map { it.monday }
     val weekly = weekData.map { it.volumeKg }
+    val thisWeek = weekly.lastOrNull() ?: 0f
+    val lastWeek = weekly.getOrNull(weekly.lastIndex - 1) ?: 0f
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ScreenTitle("Прогресс", Modifier.weight(1f))
-                TextButton(onClick = onProfile) { Text("Кабинет", color = Fc.Lime) }
+                CircleIconButton("Профиль", onProfile, filled = true) { Icon(Icons.Filled.Person, null, tint = Fc.Text) }
             }
         }
-        item { Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MiniStat("Тренировки", "${s.workouts.count { it.completedSets > 0 }}", "${completedSets} подходов", Modifier.weight(1f))
-            MiniStat("Общий объём", units.format(total), "за всё время", Modifier.weight(1f))
-        } }
+        item { Segmented(listOf(4, 12, 26), weeksBack, { weeksBack = it }, { when (it) { 4 -> "4 недели"; 12 -> "12 недель"; else -> "Полгода" } }) }
         item {
             FcCard {
-                Text("ОБЪЁМ ПО НЕДЕЛЯМ · ${units.label}", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                Spacer(Modifier.height(12.dp))
-                Segmented(listOf(6, 12), weeksBack, { weeksBack = it }, { "$it недель" })
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Объём за эту неделю", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                        NumberText(units.format(thisWeek), 40.sp)
+                    }
+                    if (lastWeek > 0f) {
+                        val change = ((thisWeek - lastWeek) / lastWeek * 100).roundToInt()
+                        Pill("${if (change > 0) "+" else ""}$change% к прошлой", if (change >= 0) Fc.LimeSoft else Fc.Surface2, if (change >= 0) Fc.Lime else Fc.Muted)
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
                 val max = weekly.maxOrNull()?.coerceAtLeast(1f) ?: 1f
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).heightIn(min = 150.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+                Row(Modifier.fillMaxWidth().height(120.dp), horizontalArrangement = Arrangement.spacedBy(if (weekly.size > 12) 3.dp else 6.dp), verticalAlignment = Alignment.Bottom) {
                     weekly.forEachIndexed { i, v ->
-                        Column(Modifier.width(52.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
-                            Text(if (v > 0) fmt(units.fromKg(v)) else "0", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
-                            Box(Modifier.fillMaxWidth().height((112 * v / max).coerceAtLeast(4f).dp).background(if (i == weekly.lastIndex) Fc.Lime else Fc.Surface2, RoundedCornerShape(6.dp)))
-                            Text(weekDates[i].format(DateTimeFormatter.ofPattern("d.MM")), color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+                        Box(Modifier.weight(1f).height((112 * v / max).coerceAtLeast(3f).dp)
+                            .background(if (i == weekly.lastIndex) Fc.Lime else Fc.Line, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp, bottomStart = 3.dp, bottomEnd = 3.dp)))
+                    }
+                }
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    listOf(weekDates.first(), weekDates[weekDates.size / 2], weekDates.last()).forEach {
+                        Text(it.format(DateTimeFormatter.ofPattern("d MMM", Locale("ru"))), color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+        }
+        item {
+            val doneDays = s.workouts.filter { it.completedSets > 0 }.map { it.session.epochDay }.toSet()
+            val start = com.fitclub.tracker.domain.weekStart(today).minusWeeks(11)
+            val streak = com.fitclub.tracker.domain.weekStreak(s.workouts, today)
+            FcCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Регулярность", color = Fc.Text, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+                    Text(if (streak > 0) "$streak нед. подряд" else "12 недель", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                }
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    (0 until 12).forEach { week ->
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            (0 until 7).forEach { day ->
+                                val date = start.plusWeeks(week.toLong()).plusDays(day.toLong())
+                                val shape = RoundedCornerShape(3.dp)
+                                Box(Modifier.fillMaxWidth().height(12.dp).then(when {
+                                    date.toEpochDay() in doneDays -> Modifier.background(Fc.Lime, shape)
+                                    date.isAfter(today) -> Modifier
+                                    else -> Modifier.background(Fc.Surface2, shape)
+                                }))
+                            }
                         }
                     }
                 }
@@ -122,16 +159,16 @@ fun ProgressScreen(onProfile: () -> Unit) {
             FcCard(onClick = onProfile) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("ВЕС ТЕЛА", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                        Text(latest?.weightKg?.let { units.format(it) } ?: "Нет замеров", style = MaterialTheme.typography.headlineSmall, color = Fc.Text)
-                        if (latest?.weightKg != null && first?.weightKg != null) Text("${signed(units.fromKg(latest.weightKg - first.weightKg))} ${units.label} с первого замера", color = Fc.Lime)
+                        Eyebrow("Вес тела")
+                        if (latest?.weightKg != null) NumberText(units.format(latest.weightKg), 28.sp) else Text("Нет замеров", style = MaterialTheme.typography.headlineSmall, color = Fc.Text)
+                        if (latest?.weightKg != null && first?.weightKg != null) Text("${signed(units.fromKg(latest.weightKg - first.weightKg))} ${units.label} с первого замера", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                     }
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Fc.Muted)
                 }
             }
         }
         item {
-            Text("ПО УПРАЖНЕНИЯМ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
+            Eyebrow("По упражнениям")
             val allIds = s.workouts.flatMap { it.sets }.map { it.exerciseId }.distinct().sortedBy { s.exercises[it]?.name }
             var exerciseMenu by remember { mutableStateOf(false) }
             Box {
@@ -150,10 +187,10 @@ fun ProgressScreen(onProfile: () -> Unit) {
             byExercise.forEach { (key, sets) ->
                 val (id, timed) = key
                 val best = bestWorkingSet(sets, id, timed)!!
-                FcCard(Modifier.padding(top = 8.dp).testTag("progress-$id-$timed")) {
+                FcCard(Modifier.fillMaxWidth().padding(top = 8.dp).testTag("progress-$id-$timed")) {
                     Text(s.exercises[id]?.name ?: id, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
                     Text(if (timed) "На время · секунды" else "С повторениями · ${units.label}", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
-                    Text(if (timed) "Самое долгое удержание: ${best.reps} сек." else "Самый тяжёлый подход: ${units.format(best.weightKg)} × ${best.reps}", color = Fc.Muted)
+                    Text(if (timed) "Самое долгое удержание: ${best.reps} сек." else "Самый тяжёлый подход: ${units.format(best.weightKg)} × ${best.reps}", color = Fc.Text, modifier = Modifier.padding(top = 6.dp))
                     Text("${sets.size} подходов за выбранный период", color = Fc.Muted)
                     TextButton(onClick = { selectedExercise = id }) { Text("История упражнения", color = Fc.Lime) }
                     if (selectedExercise == id) periodWorkouts.sortedBy { it.session.startedAt }.forEach { log ->
@@ -208,7 +245,7 @@ fun ProfileScreen(onBack: () -> Unit) {
         item { BackRow("Личный кабинет", onBack) }
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                Box(Modifier.size(68.dp).background(Fc.Lime, CircleShape), contentAlignment = Alignment.Center) { Text(st.name.split(" ").filter { it.isNotBlank() }.take(2).map { it.first().uppercaseChar() }.joinToString("").ifBlank { "Я" }, style = MaterialTheme.typography.headlineSmall, color = Fc.Bg) }
+                Box(Modifier.size(68.dp).background(Fc.Lime, CircleShape), contentAlignment = Alignment.Center) { Text(st.name.split(" ").filter { it.isNotBlank() }.take(2).map { it.first().uppercaseChar() }.joinToString("").ifBlank { "Я" }, style = MaterialTheme.typography.headlineSmall, color = Fc.OnAccent) }
                 Column { ScreenTitle(st.name); Text("${if (st.level == 1) "Новичок" else if (st.level == 2) "Продвинутый" else "Профи"}", color = Fc.Muted) }
             }
         }
@@ -223,7 +260,7 @@ fun ProfileScreen(onBack: () -> Unit) {
         }
         item { FcCard { Text("Модель тела", style = MaterialTheme.typography.titleSmall, color = Fc.Text); Spacer(Modifier.height(12.dp)); BodyPair(st.sex) } }
         item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MiniStat("Тренировок", "${workouts.size}", "сохранено", Modifier.weight(1f)); MiniStat("Замеров", "${measurements.size}", "параметров", Modifier.weight(1f))
+            MiniStat("Тренировок", "${workouts.count { it.completedSets > 0 }}", "выполнено", Modifier.weight(1f)); MiniStat("Замеров", "${measurements.size}", "параметров", Modifier.weight(1f))
         } }
         item {
             FcCard {
@@ -252,7 +289,7 @@ fun ProfileScreen(onBack: () -> Unit) {
                 Text("ОФОРМЛЕНИЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
                 listOf("Светлая", "Темная").forEach { name ->
                     Row(Modifier.fillMaxWidth().clickable { vm.update(st.copy(theme = name)) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(14.dp).background(if (name == "Светлая") Color.White else Color(0xFF69B7FF), CircleShape))
+                        Box(Modifier.size(14.dp).background(if (name == "Светлая") Color(0xFFF3F4EF) else Color(0xFF0A0C0D), CircleShape).border(1.dp, Fc.Line, CircleShape))
                         Text(name, color = Fc.Text, modifier = Modifier.padding(start = 10.dp).weight(1f))
                         if (st.theme == name) Icon(Icons.Filled.Check, null, tint = Fc.Lime)
                     }

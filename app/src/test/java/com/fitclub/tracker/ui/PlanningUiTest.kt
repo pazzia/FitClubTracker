@@ -29,6 +29,7 @@ class PlanningUiTest {
     @Test fun dateShowsDayAndExplicitActionOpensIndependentPlanner() {
         open()
         val date = calendarDate(LocalDate.now().toEpochDay())
+        rule.onNodeWithText("Календарь").performClick()
         rule.onNodeWithContentDescription("$date, запланировать тренировку").performClick()
         rule.onNodeWithText("План тренировки").assertDoesNotExist()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+ Запланировать тренировку"))
@@ -53,7 +54,7 @@ class PlanningUiTest {
     }
     @Test fun sexChosenInProfileControlsLibraryAndExercise() {
         open()
-        rule.onNodeWithText("Профиль").performClick()
+        rule.onNodeWithContentDescription("Профиль").performClick()
         waitFor("Женский")
         rule.onNodeWithText("Женский").performClick()
         val app = ApplicationProvider.getApplicationContext<FitApp>()

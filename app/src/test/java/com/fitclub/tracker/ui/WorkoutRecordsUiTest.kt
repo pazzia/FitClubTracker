@@ -43,7 +43,7 @@ class WorkoutRecordsUiTest {
         rule.setContent { FitClubTheme {
             CompositionLocalProvider(LocalWeightUnits provides WeightUnits(kg.value)) { ProgressScreen({}) }
         } }
-        await("6 недель")
+        await("12 недель")
         val weightedCard = hasTestTag("progress-$exercise-false")
         val timedCard = hasTestTag("progress-$exercise-true")
         scrollTo(weightedCard)

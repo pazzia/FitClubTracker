@@ -59,8 +59,6 @@ class Preview66UiTest {
             if (technique.isBlank()) WorkoutScreen(id, onClose = {}, onTechnique = { technique = it })
             else ExerciseDetailScreen(technique, onBack = { technique = "" }, onOpenExercise = { technique = it }, onAddToProgram = {}, trainingContext = true)
         } }
-        waitFor("Выберите любое упражнение. Удерживайте ≡, чтобы изменить порядок.")
-        rule.onNodeWithText("Жим штанги лёжа").performClick()
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
         rule.onNodeWithTag("exercise-photo-pager").assertDoesNotExist()
         rule.onNodeWithContentDescription("Жим штанги лёжа — миниатюра техники").assertIsDisplayed()

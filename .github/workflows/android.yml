@@ -199,7 +199,8 @@ jobs:
 
       - name: Unit tests
         run: |
-          gradle testDebugUnitTest --stacktrace
+          set -o pipefail
+          gradle testDebugUnitTest --stacktrace 2>&1 | tee build-test.log
           python3 - <<'PY'
           from pathlib import Path
           from xml.etree import ElementTree as ET
@@ -212,7 +213,38 @@ jobs:
           PY
 
       - name: Build debug APK
-        run: FITCLUB_DEBUG_KEYSTORE_PATH="$HOME/.android/debug.keystore" gradle assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          FITCLUB_DEBUG_KEYSTORE_PATH="$HOME/.android/debug.keystore" gradle assembleDebug --stacktrace 2>&1 | tee build-apk.log
+
+      # Compiler errors and failing tests become annotations on the pull request, so they can be read without the raw log.
+      - name: Report build and test failures
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          def emit(title, lines):
+              if lines:
+                  body = "%0A".join(l.replace("%", "%25").replace("\r", "").replace("\n", " ")[:400] for l in lines[:60])
+                  print(f"::error title={title}::{body}")
+          compile_errors = []
+          for log in ("build-test.log", "build-apk.log"):
+              path = Path(log)
+              if path.exists():
+                  for line in path.read_text(errors="replace").splitlines():
+                      if re.match(r"^e: ", line) or "error:" in line and ".kt" in line:
+                          compile_errors.append(re.sub(r"file://.*?/app/src/", "app/src/", line))
+          emit("Kotlin compile errors", compile_errors)
+          failures = []
+          for report in Path("app/build/test-results/testDebugUnitTest").glob("TEST-*.xml"):
+              for case in ET.parse(report).getroot().iter("testcase"):
+                  for problem in list(case.findall("failure")) + list(case.findall("error")):
+                      message = (problem.get("message") or problem.text or "").strip().splitlines()
+                      failures.append(f"{case.get('classname','').split('.')[-1]}.{case.get('name')}: {' | '.join(message[:3])}")
+          emit("Failing unit tests", failures)
+          PY
 
       - name: Verify distribution package and version
         run: |
@@ -224,8 +256,8 @@ jobs:
           expected = 'com.fitclub.tracker.experimental' if experimental else 'com.fitclub.tracker'
           assert metadata['applicationId'] == expected, metadata
           element = metadata['elements'][0]
-          assert element['versionName'] == ('0.8.1-test' if experimental else '0.8.1'), element
-          assert element['versionCode'] == 22, element
+          assert element['versionName'] == ('0.9.0-test' if experimental else '0.9.0'), element
+          assert element['versionCode'] == 23, element
           print(f"Distribution verified: {expected}, {element['versionName']} ({element['versionCode']})")
           PY
 
