@@ -100,6 +100,8 @@ class Preview66UiTest {
         screenshot("multiple-delete")
         rule.onAllNodesWithText("Удалить").onLast().performClick()
         waitFor("+ Создать программу")
+        // Deletion is asynchronous; wait for the list to reflect it instead of racing the database.
+        rule.waitUntil(15_000) { rule.onAllNodesWithText("Фулбоди 3×").fetchSemanticsNodes().isEmpty() }
         rule.onAllNodesWithText("Фулбоди 3×").assertCountEquals(0)
         rule.onAllNodesWithText("Сила 5×5").assertCountEquals(0)
         rule.onNodeWithText("Учебный пример: ошибки программы").assertExists()
