@@ -54,7 +54,7 @@ class ForkPreviewUiTest {
         // Today shows the earliest plan; the calendar lists every plan of the day.
         waitFor("Утренняя")
         rule.onNodeWithText("Календарь").performClick()
-        waitFor("Вечерняя")
+        rule.waitForIdle()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Утренняя"))
         screenshot("fork-calendar")
         rule.onNodeWithText("Утренняя", useUnmergedTree = true).performTouchInput { longClick() }

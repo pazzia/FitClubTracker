@@ -208,6 +208,8 @@ private fun BottomBar(nav: NavHostController) {
                         .fillMaxHeight()
                         .semantics { selected = on }
                         .clickable(role = Role.Tab) {
+                            // Screens opened on top of Today (profile, calendar) must not come back as its saved state.
+                            if (tab.route == Routes.TODAY && nav.popBackStack(Routes.TODAY, inclusive = false)) return@clickable
                             nav.navigate(tab.route) {
                                 popUpTo(nav.graph.startDestinationId) { saveState = true }
                                 launchSingleTop = true

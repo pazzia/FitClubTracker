@@ -120,6 +120,7 @@ class Preview66UiTest {
     @Test fun plannerShowsPrimaryProgramChoiceAndSecondaryManualAdd() {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
         val date = calendarDate(LocalDate.now().toEpochDay())
+        rule.onNodeWithText("Календарь").performClick()
         rule.onNodeWithContentDescription("$date, запланировать тренировку").performClick()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+ Запланировать тренировку"))
         rule.onNodeWithText("+ Запланировать тренировку").performClick()

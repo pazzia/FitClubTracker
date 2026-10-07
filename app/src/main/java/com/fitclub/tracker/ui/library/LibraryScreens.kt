@@ -156,7 +156,7 @@ fun LibraryGroupScreen(group: MuscleGroup, onBack: () -> Unit, onExercise: (Stri
     val inGroup = all.filter { it.group == group }
     fun typeMatches(e: ExerciseEntity, t: ExerciseType?) = t == null || (e.type == t && categoryOf(e) != "Растяжка")
     val shown = inGroup.filter { typeMatches(it, type) && (level == null || it.level == level) && matchesExercise(it, query) }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("library-group-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { BackRow("Справочник", onBack) }
         item {
             Row(Modifier.fillMaxWidth().height(176.dp).clip(RoundedCornerShape(24.dp)).background(Fc.Surface), verticalAlignment = Alignment.Bottom) {

@@ -375,7 +375,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                     }
                     Text(
                         "+ День", style = MaterialTheme.typography.labelLarge, color = Fc.Muted,
-                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).border(1.5.dp, Color(0xFF4A4A55), RoundedCornerShape(14.dp))
+                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).border(1.5.dp, Fc.Line, RoundedCornerShape(14.dp))
                             .clickable(role = Role.Button) { vm.addDay(); dayIndex = d.days.size }
                             .padding(horizontal = 14.dp, vertical = 12.dp)
                     )

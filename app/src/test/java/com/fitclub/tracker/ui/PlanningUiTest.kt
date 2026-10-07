@@ -62,7 +62,7 @@ class PlanningUiTest {
         rule.onNodeWithText("Справочник").performClick()
         rule.onNodeWithContentDescription("Грудь, женский атлас").performClick()
         waitFor("${ExerciseSeed.all.count { it.group == MuscleGroup.CHEST }} упражнений")
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Жим штанги лёжа"))
+        rule.onNodeWithTag("library-group-list").performScrollToNode(hasText("Жим штанги лёжа"))
         rule.onNodeWithText("Жим штанги лёжа").performClick()
         rule.onAllNodesWithContentDescription("Грудь, женский атлас").onFirst().assertExists()
         rule.onAllNodesWithText("Мужская").assertCountEquals(0)

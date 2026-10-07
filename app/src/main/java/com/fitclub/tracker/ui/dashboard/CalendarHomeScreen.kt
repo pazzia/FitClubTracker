@@ -144,9 +144,9 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                                     .semantics { this.selected = selected; contentDescription = calendarDate(epoch) + when { done -> ", выполнено"; hasPlan -> ", тренировка запланирована"; else -> ", запланировать тренировку" } }
                                     .clickable(role = Role.Button) { selectedEpoch = epoch },
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                    Text("$number", color = if (selected) Fc.Bg else if (hasPlan || done) Fc.Lime else Fc.Text,
+                                    Text("$number", color = if (selected) Fc.OnAccent else if (hasPlan || done) Fc.Lime else Fc.Text,
                                         style = MaterialTheme.typography.bodyMedium, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Normal)
-                                    if (done || hasPlan) Box(Modifier.padding(top = 3.dp).size(4.dp).background(if (selected) Fc.Bg else if (done) Fc.Lime else Fc.Lime, CircleShape))
+                                    if (done || hasPlan) Box(Modifier.padding(top = 3.dp).size(4.dp).background(if (selected) Fc.OnAccent else Fc.Lime, CircleShape))
                                 }
                             }
                         }

@@ -74,7 +74,7 @@ class WorkoutRecordsUiTest {
                 CompletedSet(exercise, 0, 40f, 8), CompletedSet(exercise, 1, 0f, 60, isTimed = true)))
         }
         rule.setContent { FitClubTheme { WorkoutResultScreen(id, {}) } }
-        await("Редактировать результат")
+        await("Результат тренировки")
         scrollTo(hasText("Самый тяжёлый: 40 кг × 8"))
         rule.onNodeWithText("Самый тяжёлый: 40 кг × 8").assertExists()
         rule.onNodeWithText("Рекорд до тренировки: 35 кг × 6").assertExists()
@@ -90,7 +90,7 @@ class WorkoutRecordsUiTest {
             app.container.fitness.finishWorkout(null, null, now - 60000, listOf(CompletedSet(exercise, 0, 40f, 8)))
         }
         rule.setContent { FitClubTheme { WorkoutResultScreen(id, {}) } }
-        await("Редактировать результат")
+        await("Результат тренировки")
         scrollTo(hasText("Самый тяжёлый: 40 кг × 8"))
         rule.onNodeWithText("Первый результат с повторениями в истории").assertExists()
         rule.onNodeWithText("Рекорд до тренировки: 60 сек.").assertDoesNotExist()
