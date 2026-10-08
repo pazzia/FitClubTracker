@@ -90,6 +90,7 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
     var picker by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var confirmBack by rememberSaveable { mutableStateOf(false) }
+    var supersetFor by remember { mutableStateOf<Int?>(null) }
     val close = { if (vm.dirty) confirmBack = true else onClose() }
     BackHandler { if (picker) picker = false else close() }
     val draft = value
@@ -132,6 +133,12 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
     val canSave = draft.canSave && minute != null && !saving
     val completed = workouts.any { it.session.scheduleId == draft.id && draft.id != 0L }
 
+    supersetFor?.let { target ->
+            com.fitclub.tracker.ui.workout.SupersetDialog(target, draft.items.map { catalog[it.exerciseId]?.name ?: it.exerciseId },
+                com.fitclub.tracker.domain.supersetLabels(draft.items),
+                onPick = { partner -> vm.update { it.copy(items = com.fitclub.tracker.domain.assignSuperset(it.items, target, partner)) }; supersetFor = null },
+                onDismiss = { supersetFor = null })
+    }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { BackRow("Календарь", close) }
         item {
@@ -180,7 +187,8 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
             ItemCard(exercise?.name ?: item.exerciseId, exercise?.equipment.orEmpty(), item, Goal.GENERAL,
                 onChange = { fn -> vm.update { it.copy(items = it.items.mapIndexed { i, old -> if (i == index) fn(old) else old }) } },
                 onRemove = { vm.update { it.copy(items = it.items.filterIndexed { i, _ -> i != index }) } }, exercise = exercise,
-                canLink = index < draft.items.lastIndex)
+                supersetLabel = com.fitclub.tracker.domain.supersetLabels(draft.items)[index],
+                onSuperset = if (draft.items.size > 1) ({ supersetFor = index }) else null)
         }
         item { ActionButton("+ Добавить упражнение", { picker = true }, outlined = true) }
         if (error != null) item { Text(error.orEmpty(), color = Fc.Pink) }

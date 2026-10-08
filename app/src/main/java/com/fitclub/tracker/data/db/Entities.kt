@@ -89,7 +89,10 @@ data class ProgramExerciseEntity(
     @ColumnInfo(defaultValue = "''") val comment: String = "",
     @ColumnInfo(defaultValue = "''") val technique: String = "",
     @ColumnInfo(defaultValue = "''") val techniqueScope: String = "",
-    @ColumnInfo(defaultValue = "0") val linkNext: Boolean = false
+    @Deprecated("Superseded by superset groups in schema 9; kept to match the stored table.")
+    @ColumnInfo(defaultValue = "0") val linkNext: Boolean = false,
+    /** Superset group number within the day/plan; 0 — not in a superset. */
+    @ColumnInfo(defaultValue = "0") val superset: Int = 0
 )
 
 data class DayWithItems(
@@ -187,7 +190,10 @@ data class ScheduledExerciseEntity(
     @ColumnInfo(defaultValue = "''") val comment: String = "",
     @ColumnInfo(defaultValue = "''") val technique: String = "",
     @ColumnInfo(defaultValue = "''") val techniqueScope: String = "",
-    @ColumnInfo(defaultValue = "0") val linkNext: Boolean = false
+    @Deprecated("Superseded by superset groups in schema 9; kept to match the stored table.")
+    @ColumnInfo(defaultValue = "0") val linkNext: Boolean = false,
+    /** Superset group number within the day/plan; 0 — not in a superset. */
+    @ColumnInfo(defaultValue = "0") val superset: Int = 0
 )
 
 data class ScheduledWorkoutWithItems(

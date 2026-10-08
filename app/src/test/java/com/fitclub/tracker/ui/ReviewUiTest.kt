@@ -53,12 +53,12 @@ class ReviewUiTest {
         app.container.profile.update(app.container.profile.settings.value.copy(unitsKg = false))
         val id = runBlocking { app.container.fitness.finishWorkout(null, null, System.currentTimeMillis() - 60000, listOf(CompletedSet("bench", 0, 60f, 8))) }
         rule.setContent { FitClubTheme { WorkoutResultScreen(id, {}) } }
-        waitFor("Общий тоннаж: 1058.2 фунт.")
+        waitFor("Общий тоннаж: 1058,2 фунт.")
         rule.onNodeWithText("Редактировать результат").performClick()
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Общий тоннаж: 1058.2 фунт."))
-        rule.onNodeWithText("Общий тоннаж: 1058.2 фунт.").assertExists()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Общий тоннаж: 1058,2 фунт."))
+        rule.onNodeWithText("Общий тоннаж: 1058,2 фунт.").assertExists()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("weight-0"))
-        rule.onNodeWithTag("weight-0").assertTextEquals("132.3")
+        rule.onNodeWithTag("weight-0").assertTextEquals("132,3")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить изменения"))
         rule.onNodeWithText("Сохранить изменения").performClick()
         waitFor("Редактировать результат")
@@ -74,11 +74,11 @@ class ReviewUiTest {
         rule.onNodeWithText("Фунты (lb)").performClick()
         rule.onNodeWithText("Сегодня").performClick()
         rule.onNodeWithText("Календарь").performClick()
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Общий тоннаж: 1058.2 фунт."))
-        rule.onAllNodesWithText("Общий тоннаж: 1058.2 фунт.").onFirst().assertExists()
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Общий тоннаж: 1058,2 фунт."))
+        rule.onAllNodesWithText("Общий тоннаж: 1058,2 фунт.").onFirst().assertExists()
         rule.onNodeWithText("Прогресс").performClick()
-        waitFor("1058.2 фунт.")
-        rule.onNodeWithText("1058.2 фунт.").assertExists()
+        waitFor("1058,2 фунт.")
+        rule.onNodeWithText("1058,2 фунт.").assertExists()
         assertEquals(60f, runBlocking { app.container.fitness.observeWorkouts().first().single().sets.single().weightKg }, 0f)
     }
     @Test fun durableSnapshotRestoresDuplicatesUnitsAndRestAndZeroSetsCannotComplete() {

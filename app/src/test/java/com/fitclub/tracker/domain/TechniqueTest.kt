@@ -5,8 +5,6 @@ import com.fitclub.tracker.data.db.WorkoutSessionEntity
 import com.fitclub.tracker.data.model.RepRange
 import com.fitclub.tracker.data.repo.ItemDraft
 import com.fitclub.tracker.data.repo.WorkoutLog
-import com.fitclub.tracker.ui.workout.supersetGroups
-import com.fitclub.tracker.ui.workout.supersetLabels
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -38,10 +36,18 @@ class TechniqueTest {
     }
 
     @Test fun linkedExercisesFormLabelledSupersets() {
-        fun item(link: Boolean) = ItemDraft("x", 3, RepRange.R8_12, 90, linkNext = link)
-        val items = listOf(item(false), item(true), item(true), item(false), item(true), item(true))
-        assertEquals(listOf(listOf(1, 2, 3), listOf(4, 5)), supersetGroups(items))
-        assertEquals(mapOf(1 to "A1", 2 to "A2", 3 to "A3", 4 to "B1", 5 to "B2"), supersetLabels(items))
+        fun item(group: Int) = ItemDraft("x", 3, RepRange.R8_12, 90, superset = group)
+        // Any exercises can be paired, not only neighbours.
+        val items = listOf(item(2), item(1), item(0), item(1), item(2), item(3))
+        assertEquals(listOf(listOf(0, 4), listOf(1, 3)), supersetGroups(items))
+        assertEquals(mapOf(0 to "A1", 4 to "A2", 1 to "B1", 3 to "B2"), supersetLabels(items))
+        val plain = List(4) { item(0) }
+        val paired = assignSuperset(plain, 0, 3)
+        assertEquals(listOf(listOf(0, 3)), supersetGroups(paired))
+        val three = assignSuperset(paired, 2, 0)
+        assertEquals(listOf(listOf(0, 2, 3)), supersetGroups(three))
+        assertEquals(listOf(listOf(0, 3)), supersetGroups(assignSuperset(three, 2, null)))
+        assertEquals(emptyList<List<Int>>(), supersetGroups(assignSuperset(paired, 3, null)))
     }
 
     @Test fun epleyEstimate() {

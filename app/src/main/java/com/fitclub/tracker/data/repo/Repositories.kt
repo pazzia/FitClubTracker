@@ -47,8 +47,8 @@ data class ItemDraft(
     val technique: String = "",
     /** "all" or "last": which planned sets use [technique]. */
     val techniqueScope: String = "",
-    /** Performed as a superset with the next exercise. */
-    val linkNext: Boolean = false
+    /** Superset group: exercises with the same non-zero number alternate without rest, in any positions. */
+    val superset: Int = 0
 )
 
 object ProgramIcons {
@@ -71,7 +71,7 @@ fun ProgramWithDays.toDraft() = ProgramDraft(
     isActive = program.isActive,
     coverPhoto = program.coverPhoto,
     days = days.sortedBy { it.day.position }.map { d ->
-        DayDraft(d.items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec, it.comment, it.technique, it.techniqueScope, it.linkNext) })
+        DayDraft(d.items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec, it.comment, it.technique, it.techniqueScope, it.superset) })
     }
 )
 
@@ -106,7 +106,7 @@ class ProgramRepository(private val db: AppDatabase) {
             val dayId = dao.insertDay(ProgramDayEntity(programId = id, position = index))
             dao.insertItems(day.items.mapIndexed { pos, it ->
                 ProgramExerciseEntity(dayId = dayId, exerciseId = it.exerciseId, position = pos, sets = it.sets, reps = it.reps, restSec = it.restSec, comment = it.comment,
-                    technique = it.technique, techniqueScope = it.techniqueScope, linkNext = it.linkNext && pos < day.items.lastIndex)
+                    technique = it.technique, techniqueScope = it.techniqueScope, superset = it.superset)
             })
         }
         if (draft.isActive) dao.setActive(id)

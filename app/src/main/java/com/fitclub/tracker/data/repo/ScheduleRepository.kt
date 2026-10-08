@@ -24,7 +24,7 @@ data class ScheduledDraft(
 
 fun ScheduledWorkoutWithItems.toDraft() = ScheduledDraft(
     workout.id, workout.epochDay, workout.title, workout.startMinute, workout.programId, workout.dayPosition,
-    items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec, it.comment, it.technique, it.techniqueScope, it.linkNext) }
+    items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec, it.comment, it.technique, it.techniqueScope, it.superset) }
 )
 
 class ScheduleRepository(private val db: AppDatabase) {
@@ -40,7 +40,7 @@ class ScheduleRepository(private val db: AppDatabase) {
         dao.insertItems(items.mapIndexed { position, item ->
             ScheduledExerciseEntity(scheduleId = id, exerciseId = item.exerciseId, position = position,
                 sets = item.sets, reps = item.reps, restSec = item.restSec, comment = item.comment,
-                technique = item.technique, techniqueScope = item.techniqueScope, linkNext = item.linkNext && position < items.lastIndex)
+                technique = item.technique, techniqueScope = item.techniqueScope, superset = item.superset)
         })
     }
     suspend fun getForDate(epochDay: Long) = dao.getForDate(epochDay)?.toDraft()
@@ -54,7 +54,7 @@ class ScheduleRepository(private val db: AppDatabase) {
             dao.insertItems(draft.items.mapIndexed { position, item ->
                 ScheduledExerciseEntity(scheduleId = id, exerciseId = item.exerciseId, position = position,
                     sets = item.sets, reps = item.reps, restSec = item.restSec, comment = item.comment,
-                    technique = item.technique, techniqueScope = item.techniqueScope, linkNext = item.linkNext && position < draft.items.lastIndex)
+                    technique = item.technique, techniqueScope = item.techniqueScope, superset = item.superset)
             })
             id
         }

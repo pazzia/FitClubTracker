@@ -240,6 +240,10 @@ class ProgramEditorViewModel(private val c: AppContainer, private val programId:
         })
     }
 
+    fun setSuperset(day: Int, index: Int, partner: Int?) = update { d ->
+        d.copy(days = d.days.mapIndexed { i, dd -> if (i != day) dd else dd.copy(items = com.fitclub.tracker.domain.assignSuperset(dd.items, index, partner)) })
+    }
+
     fun removeItem(day: Int, index: Int) = update { d ->
         d.copy(days = d.days.mapIndexed { i, dd -> if (i != day) dd else dd.copy(items = dd.items.filterIndexed { j, _ -> j != index }) })
     }
@@ -298,6 +302,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         return
     }
     var discard by rememberSaveable { mutableStateOf(false) }
+    var supersetFor by remember { mutableStateOf<Int?>(null) }
     val close = { if (!vm.saving) { if (vm.dirty) discard = true else onClose() } }
     BackHandler { close() }
     if (discard) AlertDialog(onDismissRequest = { discard = false }, title = { Text("Выйти без сохранения?") },
@@ -335,6 +340,11 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         return
     }
 
+    supersetFor?.let { target ->
+            com.fitclub.tracker.ui.workout.SupersetDialog(target, d.days[day].items.map { catalog[it.exerciseId]?.name ?: it.exerciseId },
+                com.fitclub.tracker.domain.supersetLabels(d.days[day].items),
+                onPick = { partner -> vm.setSuperset(day, target, partner); supersetFor = null }, onDismiss = { supersetFor = null })
+    }
     LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -392,7 +402,8 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                 item = item, goal = d.goal, exercise = e,
                 onChange = { fn -> vm.updateItem(day, index, fn) },
                 onRemove = { vm.removeItem(day, index) },
-                canLink = index < d.days[day].items.lastIndex
+                supersetLabel = com.fitclub.tracker.domain.supersetLabels(d.days[day].items)[index],
+                onSuperset = if (d.days[day].items.size > 1) ({ supersetFor = index }) else null
             )
         }
         item {
@@ -557,7 +568,7 @@ private fun FitDetails(fit: FitResult, goal: Goal) {
 internal fun ItemCard(
     name: String, meta: String, item: ItemDraft, goal: Goal,
     onChange: ((ItemDraft) -> ItemDraft) -> Unit, onRemove: () -> Unit, exercise: ExerciseEntity? = null,
-    canLink: Boolean = false
+    supersetLabel: String? = null, onSuperset: (() -> Unit)? = null
 ) {
     val repsOk = item.reps in goal.idealReps || item.reps in goal.okReps
     val restOk = item.restSec in goal.restOk
@@ -610,17 +621,18 @@ internal fun ItemCard(
                             "${t.title} · все подходы" to { onChange { it.copy(technique = t.id, techniqueScope = "all") } })
                     }
             )
-            if (canLink) Row(
+            if (onSuperset != null) Row(
                 Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp))
-                    .clickable(role = Role.Switch) { onChange { it.copy(linkNext = !it.linkNext) } }.testTag("link-next-${item.exerciseId}"),
+                    .clickable(role = Role.Button, onClick = onSuperset).testTag("superset-${item.exerciseId}"),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Суперсет со следующим", style = MaterialTheme.typography.labelLarge, color = Fc.Text)
-                    Text("Без отдыха между упражнениями, отдых после круга", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
+                    Text(if (supersetLabel != null) "Суперсет ${supersetLabel.first()} · $supersetLabel" else "Суперсет", style = MaterialTheme.typography.labelLarge,
+                        color = if (supersetLabel != null) Fc.Lime else Fc.Text)
+                    Text(if (supersetLabel != null) "Изменить пару или убрать" else "Чередовать с любым упражнением этого дня без отдыха",
+                        style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
                 }
-                Switch(checked = item.linkNext, onCheckedChange = { v -> onChange { it.copy(linkNext = v) } },
-                    colors = SwitchDefaults.colors(checkedTrackColor = Fc.Lime, checkedThumbColor = Fc.OnAccent))
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = Fc.Muted)
             }
         }
         Spacer(Modifier.height(12.dp))

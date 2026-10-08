@@ -13,6 +13,8 @@ import com.fitclub.tracker.ui.theme.FitClubTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Development builds must allow screenshots and screen recording for UX review.
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         setContent {
             val settings by (application as FitApp).container.profile.settings.collectAsStateWithLifecycle()
             val light = settings.theme == "Светлая"

@@ -32,7 +32,7 @@ class ReviewRegressionTest {
         val pounds = WeightUnits(false)
         assertEquals(132.27736f, pounds.fromKg(before), .0001f)
         assertEquals(before, pounds.toKg(pounds.fromKg(before)), .0001f)
-        assertEquals("1058.2 фунт.", pounds.format(repo.observeWorkouts().first().single().volumeKg))
+        assertEquals("1058,2 фунт.", pounds.format(repo.observeWorkouts().first().single().volumeKg))
         assertEquals(before, repo.observeWorkouts().first().single().sets.single().weightKg, 0f)
         assertTrue(ProfileSettings().unitsKg)
     }

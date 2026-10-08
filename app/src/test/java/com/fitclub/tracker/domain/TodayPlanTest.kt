@@ -54,10 +54,14 @@ class TodayPlanTest {
 
     @Test fun steppersNeverGoBelowZeroAndKeepTenths() {
         assertEquals("75", stepValue("72.5", 2.5f, true))
-        assertEquals("72.5", stepValue("70", 2.5f, true))
+        assertEquals("75", stepValue("72,5", 2.5f, true))
+        assertEquals("72,5", stepValue("70", 2.5f, true))
         assertEquals("0", stepValue("1", -2.5f, true))
         assertEquals("9", stepValue("10", -1f, false))
         assertEquals("1", stepValue("", 1f, false))
-        assertEquals("62.5", stepValue("60,0", 2.5f, true))
+        assertEquals("62,5", stepValue("60,0", 2.5f, true))
+        assertEquals("17,56", com.fitclub.tracker.domain.decimal(17.56f))
+        assertEquals("17,5", com.fitclub.tracker.domain.normalizeDecimalInput("17.5"))
+        assertEquals("17,55", com.fitclub.tracker.domain.normalizeDecimalInput("17,5.5"))
     }
 }

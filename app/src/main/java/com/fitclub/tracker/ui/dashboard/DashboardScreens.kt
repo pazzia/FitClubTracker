@@ -310,7 +310,7 @@ fun ProfileScreen(onBack: () -> Unit) {
     }
 }
 
-@Composable private fun MeasureField(label: String, value: String, onChange: (String) -> Unit) { OutlinedTextField(value, onChange, label = { Text(label) }, singleLine = true, isError = value.isNotBlank() && num(value)?.let { it.isFinite() && it >= 0 } != true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Fc.Text, unfocusedTextColor = Fc.Text, focusedBorderColor = Fc.Lime, unfocusedBorderColor = Fc.Line)) }
+@Composable private fun MeasureField(label: String, value: String, onChange: (String) -> Unit) { OutlinedTextField(value, { onChange(com.fitclub.tracker.domain.normalizeDecimalInput(it)) }, label = { Text(label) }, singleLine = true, isError = value.isNotBlank() && num(value)?.let { it.isFinite() && it >= 0 } != true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Fc.Text, unfocusedTextColor = Fc.Text, focusedBorderColor = Fc.Lime, unfocusedBorderColor = Fc.Line)) }
 private fun num(s: String) = s.replace(',', '.').toFloatOrNull()
 private fun fmt(v: Float) = if (v == v.roundToInt().toFloat()) v.roundToInt().toString() else "%.1f".format(Locale.US, v).replace('.', ',')
 private fun signed(v: Float) = (if (v > 0) "+" else "") + fmt(v)

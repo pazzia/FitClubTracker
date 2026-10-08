@@ -48,7 +48,7 @@ class WorkoutRecordsTest {
         val history = listOf(set(), set(reps = 60, timed = true))
         val weighted = bestWorkingSet(history, "bench", false)!!
         assertEquals("40 кг", WeightUnits(true).format(weighted.weightKg))
-        assertEquals("88.2 фунт.", WeightUnits(false).format(weighted.weightKg))
+        assertEquals("88,2 фунт.", WeightUnits(false).format(weighted.weightKg))
         assertEquals(60, bestWorkingSet(history, "bench", true)!!.reps)
         assertEquals(40f, weighted.weightKg, 0f)
     }

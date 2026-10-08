@@ -7,6 +7,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.fitclub.tracker.data.db.SetLogEntity
 import com.fitclub.tracker.domain.Technique
+import com.fitclub.tracker.domain.assignSuperset
+import com.fitclub.tracker.domain.supersetGroups
+import com.fitclub.tracker.domain.supersetLabels
 import com.fitclub.tracker.domain.TechniqueScope
 import com.fitclub.tracker.domain.estimatedOneRepMax
 import com.fitclub.tracker.domain.lastSessionSets
@@ -103,23 +106,7 @@ data class SetEntry(val weight: String = "", val reps: String = "", val done: Bo
 /** How undone sets of an exercise are pre-filled. */
 enum class Prefill { EMPTY, REPEAT, PROGRESS }
 
-/** Consecutive exercises linked with [com.fitclub.tracker.data.repo.ItemDraft.linkNext] form a superset. */
-fun supersetGroups(items: List<ItemDraft>): List<List<Int>> {
-    val groups = mutableListOf<List<Int>>()
-    var current = mutableListOf<Int>()
-    items.forEachIndexed { i, item ->
-        current.add(i)
-        if (!(item.linkNext && i < items.lastIndex)) {
-            if (current.size > 1) groups.add(current)
-            current = mutableListOf()
-        }
-    }
-    return groups
-}
 
-/** "A1", "A2", "B1"… for exercises in supersets. */
-fun supersetLabels(items: List<ItemDraft>): Map<Int, String> =
-    supersetGroups(items).flatMapIndexed { g, members -> members.mapIndexed { k, i -> i to "${'A' + g}${k + 1}" } }.toMap()
 
 class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long) : ViewModel() {
     val source = combine(c.schedule.observe(scheduleId), c.exercises.observeAll(), c.profile.settings) { p, e, s ->
@@ -140,10 +127,9 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
     fun overview() { pauseExercise(); inOverview = true; error = null }
     /** Pre-fill mode chosen per exercise position. */
     val prefill = mutableStateMapOf<Int, Prefill>()
-    fun toggleLink(index: Int) {
+    fun setSuperset(index: Int, partner: Int?) {
         val p = editedPlan ?: return
-        if (index !in 0 until p.items.lastIndex) return
-        editedPlan = p.copy(items = p.items.mapIndexed { i, item -> if (i == index) item.copy(linkNext = !item.linkNext) else item })
+        editedPlan = p.copy(items = assignSuperset(p.items, index, partner))
     }
     fun addExercise(id: String) {
         val p = editedPlan ?: return
@@ -236,7 +222,7 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
                 .put("tech", it.technique).put("stages", JSONArray().apply { it.stages.forEach { (w, r) -> put(JSONArray().put(w).put(r)) } })) }
             items.put(JSONObject().put("id", item.exerciseId).put("sets", item.sets).put("reps", item.reps.name)
                 .put("rest", item.restSec).put("comment", item.comment).put("rows", rows)
-                .put("technique", item.technique).put("scope", item.techniqueScope).put("link", item.linkNext)
+                .put("technique", item.technique).put("scope", item.techniqueScope).put("superset", item.superset)
                 .put("prefill", prefill[index]?.name ?: "")
                 .put("completed", completed[index] == true).put("started", started[index] == true)
                 .put("duration", durations[index] ?: 0L))
@@ -248,7 +234,7 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
         // Decode completely before touching live state; failed recovery never silently discards a draft.
         val restoredItems = (0 until items.length()).map { i -> val item = items.getJSONObject(i)
             ItemDraft(item.getString("id"), item.getInt("sets"), RepRange.valueOf(item.getString("reps")), item.getInt("rest"), item.optString("comment"),
-                item.optString("technique"), item.optString("scope"), item.optBoolean("link")) }
+                item.optString("technique"), item.optString("scope"), item.optInt("superset")) }
         val restoredRows = (0 until items.length()).map { i -> val rows = items.getJSONObject(i).getJSONArray("rows")
             (0 until rows.length()).map { r -> val row = rows.getJSONObject(r)
                 val stages = row.optJSONArray("stages")?.let { a -> (0 until a.length()).map { k -> a.getJSONArray(k).let { it.getString(0) to it.getString(1) } } }.orEmpty()
@@ -953,7 +939,7 @@ private fun Stepper(label: String, value: String, step: Float, decimals: Boolean
         Row(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(if (compact) 14.dp else 18.dp)).background(Fc.Surface2), verticalAlignment = Alignment.CenterVertically) {
             StepButton("−", "Меньше: ${description.lowercase()}", compact) { onValue(stepValue(value, -step, decimals)) }
             BasicTextField(value, { text ->
-                onValue(if (decimals) text.filter { it.isDigit() || it == '.' || it == ',' }.take(6) else text.filter(Char::isDigit).take(4))
+                onValue(if (decimals) com.fitclub.tracker.domain.normalizeDecimalInput(text, 6) else text.filter(Char::isDigit).take(4))
             }, modifier = Modifier.weight(1f).testTag(tag).semantics { contentDescription = description },
                 singleLine = true, textStyle = NumberStyle.copy(fontSize = if (compact) 22.sp else 30.sp, color = Fc.Text, textAlign = TextAlign.Center),
                 keyboardOptions = KeyboardOptions(keyboardType = if (decimals) KeyboardType.Decimal else KeyboardType.Number),
@@ -1098,7 +1084,7 @@ private fun RestOverlay(vm: WorkoutViewModel, plan: ScheduledDraft, source: Work
 internal fun SetRow(index: Int, row: SetEntry, canRemove: Boolean, onDone: (Boolean) -> Unit, onRemove: () -> Unit, allowCompletedRemoval: Boolean = false, onEdit: (String, String) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
         Text("${index + 1}", color = if (row.done) Fc.Lime else Fc.Text, textAlign = TextAlign.Center, modifier = Modifier.width(26.dp))
-        OutlinedTextField(row.weight, { onEdit(it, row.reps) }, singleLine = true,
+        OutlinedTextField(row.weight, { onEdit(com.fitclub.tracker.domain.normalizeDecimalInput(it), row.reps) }, singleLine = true,
             isError = row.weight.isNotBlank() && row.weight.replace(',', '.').toFloatOrNull()?.let { !it.isFinite() || it < 0 } != false,
             modifier = Modifier.weight(1f).heightIn(min = 56.dp).semantics { contentDescription = "Вес подхода ${index + 1}" }.testTag("weight-$index"), shape = RoundedCornerShape(14.dp), colors = fieldColors(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
         Spacer(Modifier.width(8.dp))
@@ -1125,7 +1111,7 @@ internal fun validSet(row: SetEntry): Boolean {
 }
 private fun weightKg(text: String, unitsKg: Boolean) = (text.replace(',', '.').toFloatOrNull() ?: 0f) / if (unitsKg) 1f else 2.2046226f
 private fun displayWeight(kg: Float, unitsKg: Boolean) = kg * if (unitsKg) 1f else 2.2046226f
-private fun number(value: Float) = String.format(Locale.US, "%.1f", value).removeSuffix(".0")
+private fun number(value: Float) = com.fitclub.tracker.domain.decimal(value)
 @Composable private fun fieldColors() = OutlinedTextFieldDefaults.colors(focusedTextColor = Fc.Text, unfocusedTextColor = Fc.Text, focusedBorderColor = Fc.Lime, unfocusedBorderColor = Fc.Line, cursorColor = Fc.Lime)
 private fun time(sec: Long) = "%02d:%02d".format(Locale.US, sec / 60, sec % 60)
 private fun suggestedWeight(id: String) = if (id in listOf("plank", "pushup", "pullup", "hangraise")) "0" else ""
@@ -1153,6 +1139,11 @@ private fun WorkoutOverview(vm: WorkoutViewModel, plan: ScheduledDraft, source: 
         dismissButton = { TextButton(onClick = { removing = null }) { Text("Отмена") } })
     val resume = plan.items.indices.firstOrNull { vm.completed[it] != true }
     val labels = supersetLabels(plan.items)
+    var supersetFor by remember { mutableStateOf<Int?>(null) }
+    supersetFor?.let { target ->
+        SupersetDialog(target, plan.items.map { source.catalog[it.exerciseId]?.name ?: it.exerciseId }, labels,
+            onPick = { partner -> vm.setSuperset(target, partner); supersetFor = null }, onDismiss = { supersetFor = null })
+    }
     Column(Modifier.fillMaxSize().background(Fc.Bg)) {
         LazyColumn(Modifier.weight(1f).testTag("workout-overview"), state = list,
             contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1228,14 +1219,14 @@ private fun WorkoutOverview(vm: WorkoutViewModel, plan: ScheduledDraft, source: 
                         TextButton(onClick = { removing = index }) { Text("Убрать", color = Fc.Danger) }
                     }
                 }
-                if (editing && index < plan.items.lastIndex) {
-                    val linked = item.linkNext
+                if (editing && plan.items.size > 1) {
+                    val label = labels[index]
                     Row(Modifier.padding(start = 20.dp, top = 6.dp).heightIn(min = 40.dp).clip(RoundedCornerShape(20.dp))
-                        .then(if (linked) Modifier.background(Fc.LimeSoft) else Modifier.border(1.dp, Fc.Line, RoundedCornerShape(20.dp)))
-                        .semantics { selected = linked }.clickable(role = Role.Button) { vm.toggleLink(index) }.testTag("link-$index").padding(horizontal = 12.dp),
+                        .then(if (label != null) Modifier.background(Fc.LimeSoft) else Modifier.border(1.dp, Fc.Line, RoundedCornerShape(20.dp)))
+                        .clickable(role = Role.Button) { supersetFor = index }.testTag("superset-$index").padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        LineIcon("M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7", if (linked) Fc.Lime else Fc.Muted, Modifier.size(16.dp))
-                        Text(if (linked) "В суперсете со следующим — разделить" else "Объединить в суперсет со следующим", color = if (linked) Fc.Lime else Fc.Muted, style = MaterialTheme.typography.labelMedium)
+                        LineIcon("M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7", if (label != null) Fc.Lime else Fc.Muted, Modifier.size(16.dp))
+                        Text(if (label != null) "Суперсет ${label.first()} · изменить" else "Суперсет с…", color = if (label != null) Fc.Lime else Fc.Muted, style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
@@ -1252,4 +1243,30 @@ private fun WorkoutOverview(vm: WorkoutViewModel, plan: ScheduledDraft, source: 
             } else PrimaryButton("Завершить тренировку", { if (!vm.finishing) onFinish() }, Modifier.testTag("finish-workout"))
         }
     }
+}
+
+/** Pick any other exercise to pair with; an exercise already in a superset brings its group. */
+@Composable
+internal fun SupersetDialog(target: Int, names: List<String>, labels: Map<Int, String>, onPick: (Int?) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss,
+        title = { Text("Суперсет: ${names.getOrNull(target).orEmpty()}") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("С каким упражнением чередовать без отдыха? Порядок в тренировке не меняется.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                names.forEachIndexed { i, name ->
+                    if (i == target) return@forEachIndexed
+                    val together = labels[i] != null && labels[i]?.first() == labels[target]?.first()
+                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(12.dp))
+                        .then(if (together) Modifier.background(Fc.LimeSoft) else Modifier)
+                        .clickable(role = Role.Button) { onPick(i) }.testTag("superset-pick-$i").padding(horizontal = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        NumberText(labels[i] ?: "${i + 1}", 15.sp, color = if (labels[i] != null) Fc.Lime else Fc.Muted)
+                        Text(name, color = Fc.Text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        if (together) LineIcon(LineIcons.CHECK, Fc.Lime, Modifier.size(18.dp))
+                    }
+                }
+            }
+        },
+        confirmButton = { if (labels[target] != null) TextButton(onClick = { onPick(null) }) { Text("Убрать из суперсета", color = Fc.Danger) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } })
 }

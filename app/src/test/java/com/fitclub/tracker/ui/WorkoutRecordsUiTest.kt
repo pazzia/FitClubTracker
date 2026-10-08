@@ -58,7 +58,7 @@ class WorkoutRecordsUiTest {
         rule.onNode(hasText("40 кг × 8") and hasAnyAncestor(timedCard)).assertDoesNotExist()
         rule.runOnIdle { kg.value = false }
         scrollTo(weightedCard)
-        rule.onNodeWithText("Самый тяжёлый подход: 88.2 фунт. × 8").assertExists()
+        rule.onNodeWithText("Самый тяжёлый подход: 88,2 фунт. × 8").assertExists()
         scrollTo(timedCard)
         rule.onNodeWithText("Самое долгое удержание: 60 сек.").assertExists()
         assertEquals(40f, runBlocking { app.container.fitness.observeWorkouts().first().single().sets.first().weightKg }, 0f)
