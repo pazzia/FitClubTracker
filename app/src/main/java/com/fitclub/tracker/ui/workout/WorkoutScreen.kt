@@ -586,8 +586,9 @@ private fun ExerciseMode(vm: WorkoutViewModel, plan: ScheduledDraft, source: Wor
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (exercise != null && FreeExerciseCatalog.media[exercise.id] != null) ExerciseThumbnail(exercise, Modifier.size(64.dp))
                     Column(Modifier.weight(1f)) {
-                        Eyebrow("Упражнение ${index + 1} из ${plan.items.size} · ${item.sets} × ${item.reps.label} · отдых ${restLabel(item.restSec)}")
+                        Eyebrow("Упражнение ${index + 1} из ${plan.items.size}")
                         Text(exercise?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 2.dp))
+                        Text("${item.sets} × ${item.reps.label} · отдых ${restLabel(item.restSec)}", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
