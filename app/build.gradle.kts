@@ -1,3 +1,6 @@
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.io.File
 import java.net.URI
 import java.security.MessageDigest
@@ -82,7 +85,7 @@ android {
         buildConfigField("String", "BUILD_NUMBER", "\"${env("FITCLUB_BUILD_NUMBER") ?: "local"}\"")
         buildConfigField("String", "GIT_SHA", "\"${env("FITCLUB_GIT_SHA")?.take(7) ?: "local"}\"")
         buildConfigField("String", "GIT_BRANCH", "\"${env("FITCLUB_BRANCH") ?: "local"}\"")
-        buildConfigField("String", "BUILD_TIME", "\"${java.time.ZonedDateTime.now(java.time.ZoneId.of("Europe/Moscow")).format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))} МСК\"")
+        buildConfigField("String", "BUILD_TIME", "\"${ZonedDateTime.now(ZoneId.of("Europe/Moscow")).format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))} МСК\"")
     }
 
     buildTypes {
