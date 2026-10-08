@@ -196,9 +196,10 @@ jobs:
 
       - name: Verify released mask hashes, dimensions and foreground/background
         run: |
+          set -o pipefail
           python3 -m pip install Pillow==11.0.0
-          gradle :app:prepareExercisePhotos
-          python3 scripts/validate_exercise_masks.py
+          gradle :app:prepareExercisePhotos --stacktrace 2>&1 | tee build-photos.log
+          python3 scripts/validate_exercise_masks.py 2>&1 | tee -a build-photos.log
 
       - name: Unit tests
         run: |
@@ -233,7 +234,11 @@ jobs:
                   body = "%0A".join(l.replace("%", "%25").replace("\r", "").replace("\n", " ")[:400] for l in lines[:60])
                   print(f"::error title={title}::{body}")
           compile_errors = []
-          for log in ("build-test.log", "build-apk.log"):
+          tail = []
+          if Path("build-photos.log").exists():
+              tail = [l for l in Path("build-photos.log").read_text(errors="replace").splitlines() if l.strip()][-40:]
+          emit("Photo preparation output (last lines)", tail)
+          for log in ("build-test.log", "build-apk.log", "build-photos.log"):
               path = Path(log)
               if path.exists():
                   for line in path.read_text(errors="replace").splitlines():
