@@ -23,6 +23,7 @@ class DatabaseMigrationTest {
     @Test fun migratesVersionFourWithoutLosingHistory() = checkMigration(4)
     @Test fun migratesVersionFiveAndAllowsSecondPlan() = checkMigration(5)
     @Test fun migratesVersionSixWithoutLosingHistory() = checkMigration(6)
+    @Test fun migratesVersionSevenAndAddsTechniqueDefaults() = checkMigration(7)
     private fun checkMigration(version: Int) = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         context.deleteDatabase("fitclub.db")
@@ -44,6 +45,7 @@ class DatabaseMigrationTest {
                     if (version >= 4) AppDatabase.MIGRATION_3_4.migrate(db)
                     if (version >= 5) AppDatabase.MIGRATION_4_5.migrate(db)
                     if (version >= 6) AppDatabase.MIGRATION_5_6.migrate(db)
+                    if (version >= 7) AppDatabase.MIGRATION_6_7.migrate(db)
                 }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
             }).build())
@@ -63,6 +65,9 @@ class DatabaseMigrationTest {
             assertNull(session.scheduleId)
             assertEquals(8, current.workoutDao().observeSets().first().single().reps)
             assertFalse(current.workoutDao().observeSets().first().single().isTimed)
+            assertEquals("", current.workoutDao().observeSets().first().single().technique)
+            assertEquals("", current.workoutDao().observeSets().first().single().stages)
+            assertFalse(program.days.single().items.single().linkNext)
             assertTrue(current.workoutDao().observeExercises().first().isEmpty())
             current.scheduleDao().insert(com.fitclub.tracker.data.db.ScheduledWorkoutEntity(epochDay = 20001, title = "Вторая", startMinute = 1200, programId = null, dayPosition = null))
             val plans = current.scheduleDao().observeAll().first()

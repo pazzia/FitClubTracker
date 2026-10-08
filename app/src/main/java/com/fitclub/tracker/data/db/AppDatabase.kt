@@ -192,7 +192,7 @@ interface ScheduleDao {
         BodyMeasurementEntity::class, WorkoutSessionEntity::class, SetLogEntity::class,
         ScheduledWorkoutEntity::class, ScheduledExerciseEntity::class, ExerciseLogEntity::class, ActiveWorkoutEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -252,9 +252,20 @@ abstract class AppDatabase : RoomDatabase() {
                 // Older sets cannot be unambiguously split between duplicate blocks; preserve as legacy (-1).
             }
         }
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                for (table in listOf("program_exercises", "scheduled_exercises")) {
+                    db.execSQL("ALTER TABLE $table ADD COLUMN technique TEXT NOT NULL DEFAULT ''")
+                    db.execSQL("ALTER TABLE $table ADD COLUMN techniqueScope TEXT NOT NULL DEFAULT ''")
+                    db.execSQL("ALTER TABLE $table ADD COLUMN linkNext INTEGER NOT NULL DEFAULT 0")
+                }
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN technique TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN stages TEXT NOT NULL DEFAULT ''")
+            }
+        }
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                 .build()
     }
 }

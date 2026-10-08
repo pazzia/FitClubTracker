@@ -86,7 +86,10 @@ data class ProgramExerciseEntity(
     val sets: Int,
     val reps: RepRange,
     val restSec: Int,
-    @ColumnInfo(defaultValue = "''") val comment: String = ""
+    @ColumnInfo(defaultValue = "''") val comment: String = "",
+    @ColumnInfo(defaultValue = "''") val technique: String = "",
+    @ColumnInfo(defaultValue = "''") val techniqueScope: String = "",
+    @ColumnInfo(defaultValue = "0") val linkNext: Boolean = false
 )
 
 data class DayWithItems(
@@ -149,7 +152,11 @@ data class SetLogEntity(
     @ColumnInfo(defaultValue = "-1") val exercisePosition: Int = -1,
     @ColumnInfo(defaultValue = "0") val warmup: Boolean = false,
     @ColumnInfo(defaultValue = "NULL") val rir: Int? = null,
-    @ColumnInfo(defaultValue = "0") val assisted: Boolean = false
+    @ColumnInfo(defaultValue = "0") val assisted: Boolean = false,
+    /** "" — обычный подход, иначе [com.fitclub.tracker.domain.Technique.id]. */
+    @ColumnInfo(defaultValue = "''") val technique: String = "",
+    /** Extra drop-set / rest-pause stages as "weightKg×reps;…"; the row itself is the first stage. */
+    @ColumnInfo(defaultValue = "''") val stages: String = ""
 )
 
 /** Снимок тренировки на конкретную дату: изменения программы не меняют этот план. */
@@ -177,7 +184,10 @@ data class ScheduledExerciseEntity(
     val sets: Int,
     val reps: RepRange,
     val restSec: Int,
-    @ColumnInfo(defaultValue = "''") val comment: String = ""
+    @ColumnInfo(defaultValue = "''") val comment: String = "",
+    @ColumnInfo(defaultValue = "''") val technique: String = "",
+    @ColumnInfo(defaultValue = "''") val techniqueScope: String = "",
+    @ColumnInfo(defaultValue = "0") val linkNext: Boolean = false
 )
 
 data class ScheduledWorkoutWithItems(

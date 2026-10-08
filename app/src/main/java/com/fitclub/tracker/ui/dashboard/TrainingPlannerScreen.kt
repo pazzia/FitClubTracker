@@ -179,7 +179,8 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
             val exercise = catalog[item.exerciseId]
             ItemCard(exercise?.name ?: item.exerciseId, exercise?.equipment.orEmpty(), item, Goal.GENERAL,
                 onChange = { fn -> vm.update { it.copy(items = it.items.mapIndexed { i, old -> if (i == index) fn(old) else old }) } },
-                onRemove = { vm.update { it.copy(items = it.items.filterIndexed { i, _ -> i != index }) } }, exercise = exercise)
+                onRemove = { vm.update { it.copy(items = it.items.filterIndexed { i, _ -> i != index }) } }, exercise = exercise,
+                canLink = index < draft.items.lastIndex)
         }
         item { ActionButton("+ Добавить упражнение", { picker = true }, outlined = true) }
         if (error != null) item { Text(error.orEmpty(), color = Fc.Pink) }

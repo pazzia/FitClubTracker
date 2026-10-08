@@ -37,6 +37,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -389,7 +391,8 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                 meta = e?.let { "${it.group.title} · ${it.type.title} · ${it.equipment}" } ?: "",
                 item = item, goal = d.goal, exercise = e,
                 onChange = { fn -> vm.updateItem(day, index, fn) },
-                onRemove = { vm.removeItem(day, index) }
+                onRemove = { vm.removeItem(day, index) },
+                canLink = index < d.days[day].items.lastIndex
             )
         }
         item {
@@ -553,7 +556,8 @@ private fun FitDetails(fit: FitResult, goal: Goal) {
 @Composable
 internal fun ItemCard(
     name: String, meta: String, item: ItemDraft, goal: Goal,
-    onChange: ((ItemDraft) -> ItemDraft) -> Unit, onRemove: () -> Unit, exercise: ExerciseEntity? = null
+    onChange: ((ItemDraft) -> ItemDraft) -> Unit, onRemove: () -> Unit, exercise: ExerciseEntity? = null,
+    canLink: Boolean = false
 ) {
     val repsOk = item.reps in goal.idealReps || item.reps in goal.okReps
     val restOk = item.restSec in goal.restOk
@@ -594,6 +598,30 @@ internal fun ItemCard(
                 title = "Отдых", value = restLabel(item.restSec), ok = restOk, modifier = Modifier.fillMaxWidth(),
                 options = REST_OPTIONS.map { sec -> restLabel(sec) to { onChange { x -> x.copy(restSec = sec) } } }
             )
+            val technique = com.fitclub.tracker.domain.Technique.of(item.technique)
+            Dropdown(
+                title = "Техника подходов",
+                value = if (technique == com.fitclub.tracker.domain.Technique.NORMAL || item.techniqueScope.isBlank()) "Обычные подходы"
+                    else "${technique.title} · ${if (item.techniqueScope == "all") "все подходы" else "последний подход"}",
+                ok = true, modifier = Modifier.fillMaxWidth(),
+                options = listOf("Обычные подходы" to { onChange { it.copy(technique = "", techniqueScope = "") } }) +
+                    com.fitclub.tracker.domain.Technique.entries.drop(1).flatMap { t ->
+                        listOf("${t.title} · последний подход" to { onChange { it.copy(technique = t.id, techniqueScope = "last") } },
+                            "${t.title} · все подходы" to { onChange { it.copy(technique = t.id, techniqueScope = "all") } })
+                    }
+            )
+            if (canLink) Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp))
+                    .clickable(role = Role.Switch) { onChange { it.copy(linkNext = !it.linkNext) } }.testTag("link-next-${item.exerciseId}"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Суперсет со следующим", style = MaterialTheme.typography.labelLarge, color = Fc.Text)
+                    Text("Без отдыха между упражнениями, отдых после круга", style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
+                }
+                Switch(checked = item.linkNext, onCheckedChange = { v -> onChange { it.copy(linkNext = v) } },
+                    colors = SwitchDefaults.colors(checkedTrackColor = Fc.Lime, checkedThumbColor = Fc.OnAccent))
+            }
         }
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = item.comment,

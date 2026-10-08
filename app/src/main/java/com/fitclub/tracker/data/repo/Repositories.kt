@@ -16,6 +16,7 @@ import com.fitclub.tracker.data.model.RepRange
 import com.fitclub.tracker.data.seed.ExerciseSeed
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.fitclub.tracker.domain.setVolumeKg
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 
@@ -41,7 +42,13 @@ data class ItemDraft(
     val sets: Int,
     val reps: RepRange,
     val restSec: Int,
-    val comment: String = ""
+    val comment: String = "",
+    /** Planned technique id ("" — обычные подходы). */
+    val technique: String = "",
+    /** "all" or "last": which planned sets use [technique]. */
+    val techniqueScope: String = "",
+    /** Performed as a superset with the next exercise. */
+    val linkNext: Boolean = false
 )
 
 object ProgramIcons {
@@ -64,7 +71,7 @@ fun ProgramWithDays.toDraft() = ProgramDraft(
     isActive = program.isActive,
     coverPhoto = program.coverPhoto,
     days = days.sortedBy { it.day.position }.map { d ->
-        DayDraft(d.items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec, it.comment) })
+        DayDraft(d.items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec, it.comment, it.technique, it.techniqueScope, it.linkNext) })
     }
 )
 
@@ -98,7 +105,8 @@ class ProgramRepository(private val db: AppDatabase) {
         draft.days.forEachIndexed { index, day ->
             val dayId = dao.insertDay(ProgramDayEntity(programId = id, position = index))
             dao.insertItems(day.items.mapIndexed { pos, it ->
-                ProgramExerciseEntity(dayId = dayId, exerciseId = it.exerciseId, position = pos, sets = it.sets, reps = it.reps, restSec = it.restSec, comment = it.comment)
+                ProgramExerciseEntity(dayId = dayId, exerciseId = it.exerciseId, position = pos, sets = it.sets, reps = it.reps, restSec = it.restSec, comment = it.comment,
+                    technique = it.technique, techniqueScope = it.techniqueScope, linkNext = it.linkNext && pos < day.items.lastIndex)
             })
         }
         if (draft.isActive) dao.setActive(id)
@@ -120,7 +128,7 @@ data class WorkoutLog(
     val sets: List<SetLogEntity>,
     val exercises: List<ExerciseLogEntity> = emptyList()
 ) {
-    val volumeKg: Float get() = sets.filter { it.done && !it.isTimed && !it.assisted }.sumOf { (it.weightKg * it.reps).toDouble() }.toFloat()
+    val volumeKg: Float get() = sets.filter { it.done && !it.isTimed && !it.assisted }.sumOf { setVolumeKg(it).toDouble() }.toFloat()
     val completedSets: Int get() = sets.count { it.done }
     val status: String get() = when {
         completedSets == 0 -> "Без выполненных подходов"
@@ -132,7 +140,8 @@ data class WorkoutLog(
 
 data class CompletedExercise(val exerciseId: String, val position: Int, val durationMillis: Long, val completed: Boolean)
 
-data class CompletedSet(val exerciseId: String, val setIndex: Int, val weightKg: Float, val reps: Int, val isTimed: Boolean = false, val exercisePosition: Int = -1, val warmup: Boolean = false, val rir: Int? = null, val assisted: Boolean = false)
+data class CompletedSet(val exerciseId: String, val setIndex: Int, val weightKg: Float, val reps: Int, val isTimed: Boolean = false, val exercisePosition: Int = -1, val warmup: Boolean = false, val rir: Int? = null, val assisted: Boolean = false,
+    val technique: String = "", val stages: String = "")
 
 class FitnessRepository(private val db: AppDatabase) {
     fun observeActive() = db.workoutDao().observeActive()
@@ -202,7 +211,8 @@ class FitnessRepository(private val db: AppDatabase) {
             db.workoutDao().insertSets(sets.map {
                 SetLogEntity(
                     sessionId = id, exerciseId = it.exerciseId, setIndex = it.setIndex,
-                    weightKg = it.weightKg, reps = it.reps, done = true, isTimed = it.isTimed, exercisePosition = it.exercisePosition, warmup = it.warmup, rir = it.rir, assisted = it.assisted
+                    weightKg = it.weightKg, reps = it.reps, done = true, isTimed = it.isTimed, exercisePosition = it.exercisePosition, warmup = it.warmup, rir = it.rir, assisted = it.assisted,
+                    technique = it.technique, stages = it.stages
                 )
             })
             db.workoutDao().insertExercises(exercises.map {
@@ -221,7 +231,8 @@ object SamplePrograms {
     val all = listOf(
         ProgramDraft(
             name = "Фулбоди 3×", goal = Goal.MASS, colorArgb = 0xFFD4FF3A, icon = ProgramIcons.DUMBBELL,
-            freqPerWeek = 3, isActive = true,
+            // Sample programs are examples; the user makes one active deliberately.
+            freqPerWeek = 3, isActive = false,
             days = listOf(
                 DayDraft(listOf(i("squat", 4, RepRange.R6_8, 120), i("bench", 4, RepRange.R6_8, 90), i("bbrow", 3, RepRange.R8_12, 90), i("plank", 3, RepRange.TIME, 60))),
                 DayDraft(listOf(i("rdl", 4, RepRange.R6_8, 120), i("dbpress", 3, RepRange.R8_12, 90), i("latpull", 3, RepRange.R8_12, 90), i("legpress", 3, RepRange.R12_15, 90), i("lateral", 3, RepRange.R12_15, 60))),

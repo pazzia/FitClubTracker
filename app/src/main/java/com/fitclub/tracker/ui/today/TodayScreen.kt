@@ -61,6 +61,8 @@ import com.fitclub.tracker.domain.workoutsThisWeek
 import com.fitclub.tracker.ui.components.ActionButton
 import com.fitclub.tracker.ui.components.Eyebrow
 import com.fitclub.tracker.ui.components.FcCard
+import com.fitclub.tracker.ui.components.LineIcon
+import com.fitclub.tracker.ui.components.LineIcons
 import com.fitclub.tracker.ui.components.NumberText
 import com.fitclub.tracker.ui.components.Pill
 import com.fitclub.tracker.ui.components.PrimaryButton
@@ -169,15 +171,18 @@ fun TodayScreen(
                     action = "Начать тренировку", enabled = true, onAction = { onStart(todayPlan.id) },
                     onEdit = { onEditPlan(todayEpoch, todayPlan.id) }
                 )
-                program != null && nextDay != null -> HeroCard(
-                    label = (if (doneToday != null) "Следующая · " else "") + "День ${'A' + nextDay} · ${program.name}", title = program.days[nextDay].items
-                        .mapNotNull { s.catalog[it.exerciseId]?.group?.title }.distinct().take(2).joinToString(" + ").ifBlank { "Тренировка" },
-                    items = program.days[nextDay].items, s = s, units = units,
-                    action = if (starting) "Готовлю тренировку…" else "Начать тренировку", enabled = !starting,
-                    onAction = { vm.quickStart(program, nextDay, onStart) }, onEdit = { onPlan(todayEpoch) }
-                )
+                program != null && nextDay != null -> Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    val status = dayStatus(program, s.workouts, today)
+                    val nextPlanned = s.plans.filter { it.epochDay > todayEpoch && it.id !in completedPlanIds }.minByOrNull { it.epochDay }
+                    if (doneToday == null) StatusCard(status, program, s.workouts, today, nextPlanned?.epochDay)
+                    SuggestionCard(
+                        eyebrow = if (doneToday != null || status != DayStatus.OPEN) "Хотите потренироваться вне плана?" else "Следующая тренировка программы",
+                        title = "День ${'A' + nextDay} · ${program.name}",
+                        items = program.days[nextDay].items, s = s, starting = starting,
+                        onStart = { vm.quickStart(program, nextDay, onStart) }, onPlan = { onPlan(todayEpoch) })
+                }
                 s.loaded -> FcCard {
-                    Eyebrow("Сегодня")
+                    Eyebrow("На сегодня тренировок нет")
                     Text("Нет активной программы", style = MaterialTheme.typography.titleLarge, color = Fc.Text, modifier = Modifier.padding(top = 6.dp))
                     Text("Выберите программу — её дни будут чередоваться сами. Или соберите тренировку на сегодня вручную.",
                         color = Fc.Muted, modifier = Modifier.padding(top = 6.dp, bottom = 14.dp))
@@ -290,10 +295,11 @@ private fun HeroCard(
                     modifier = Modifier.padding(start = 8.dp))
             }
         }
-        if (items.size > 3) {
+        val hasHistory = items.take(3).any { lastResult(s.workouts, it, units) != null }
+        if (items.size > 3 || hasHistory) {
             HorizontalDivider(color = Fc.Line2)
-            Text("и ещё ${items.size - 3} · справа результат прошлой тренировки", color = Fc.Muted, style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 8.dp))
+            Text(listOfNotNull(if (items.size > 3) "и ещё ${items.size - 3}" else null, if (hasHistory) "справа — прошлый результат" else null).joinToString(" · "),
+                color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
         }
         Spacer(Modifier.height(14.dp))
         PrimaryButton(action, { if (enabled) onAction() }, Modifier.testTag("today-start"))
@@ -323,5 +329,59 @@ private fun Stat(label: String, value: String, modifier: Modifier) {
     Column(modifier.clip(RoundedCornerShape(20.dp)).background(Fc.Surface).padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
         NumberText(value, 24.sp)
+    }
+}
+
+enum class DayStatus { OPEN, REST, WEEK_DONE }
+
+/** Rest after yesterday's workout for programs up to 4×/week; nothing more to do once the weekly goal is met. */
+fun dayStatus(program: ProgramDraft, workouts: List<WorkoutLog>, today: LocalDate): DayStatus {
+    if (workoutsThisWeek(workouts, today) >= program.freqPerWeek) return DayStatus.WEEK_DONE
+    val yesterday = today.minusDays(1).toEpochDay()
+    if (program.freqPerWeek <= 4 && workouts.any { it.completedSets > 0 && it.session.epochDay == yesterday }) return DayStatus.REST
+    return DayStatus.OPEN
+}
+
+@Composable
+private fun StatusCard(status: DayStatus, program: ProgramDraft, workouts: List<WorkoutLog>, today: LocalDate, nextPlanned: Long?) {
+    val left = (program.freqPerWeek - workoutsThisWeek(workouts, today)).coerceAtLeast(0)
+    val next = nextPlanned?.let { LocalDate.ofEpochDay(it).format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale("ru"))) }
+    val (title, text) = when (status) {
+        DayStatus.REST -> "День отдыха" to "На сегодня тренировок нет, вчера была тренировка. " +
+            (next?.let { "Следующая по плану — $it." } ?: "По программе «${program.name}» можно продолжить завтра.")
+        DayStatus.WEEK_DONE -> "Цель недели выполнена" to "${program.freqPerWeek} из ${program.freqPerWeek} тренировок по «${program.name}». Время восстановиться."
+        DayStatus.OPEN -> "На сегодня тренировок нет" to "По «${program.name}» на этой неделе осталось $left из ${program.freqPerWeek}." +
+            (next?.let { " Ближайшая по плану — $it." } ?: "")
+    }
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Fc.Surface).border(1.dp, Fc.Line2, RoundedCornerShape(24.dp)).padding(18.dp)
+        .testTag("today-status"), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Box(Modifier.size(48.dp).clip(CircleShape).background(Fc.Surface2), contentAlignment = Alignment.Center) {
+            LineIcon(if (status == DayStatus.WEEK_DONE) LineIcons.CHECK else "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z", Fc.Text)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title.uppercase(), color = Fc.Text, style = MaterialTheme.typography.headlineMedium)
+            Text(text, color = Fc.Muted, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+/** A secondary offer: the next program day is available, not prescribed. */
+@Composable
+private fun SuggestionCard(eyebrow: String, title: String, items: List<ItemDraft>, s: TodayState, starting: Boolean, onStart: () -> Unit, onPlan: () -> Unit) {
+    val line = Fc.Line
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).drawBehind {
+        drawRoundRect(line, style = Stroke(1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 9f))),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(24.dp.toPx()))
+    }.padding(18.dp).testTag("today-suggestion"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Eyebrow(eyebrow)
+        Text(title, color = Fc.Text, style = MaterialTheme.typography.titleLarge)
+        val names = items.mapNotNull { s.catalog[it.exerciseId]?.name }
+        val minutes = items.sumOf { it.sets * (45 + it.restSec) } / 60
+        Text(names.take(3).joinToString(", ") + (if (names.size > 3) " и ещё ${names.size - 3}" else "") + " · ≈ $minutes мин",
+            color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ActionButton(if (starting) "Готовлю…" else "Начать сейчас", { if (!starting) onStart() }, Modifier.weight(1f).testTag("today-start"), outlined = true)
+            ActionButton("Запланировать", onPlan, Modifier.weight(1f), outlined = true)
+        }
     }
 }
