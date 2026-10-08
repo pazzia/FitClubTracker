@@ -77,6 +77,12 @@ android {
         targetSdk = 34
         versionCode = 23
         versionName = "0.9.0"
+        // Full build identity for bug reports; CI fills these, local builds say "local".
+        fun env(name: String) = System.getenv(name)?.takeIf { it.isNotBlank() }
+        buildConfigField("String", "BUILD_NUMBER", "\"${env("FITCLUB_BUILD_NUMBER") ?: "local"}\"")
+        buildConfigField("String", "GIT_SHA", "\"${env("FITCLUB_GIT_SHA")?.take(7) ?: "local"}\"")
+        buildConfigField("String", "GIT_BRANCH", "\"${env("FITCLUB_BRANCH") ?: "local"}\"")
+        buildConfigField("String", "BUILD_TIME", "\"${java.time.ZonedDateTime.now(java.time.ZoneId.of("Europe/Moscow")).format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))} МСК\"")
     }
 
     buildTypes {

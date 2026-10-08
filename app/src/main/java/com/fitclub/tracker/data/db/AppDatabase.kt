@@ -186,13 +186,16 @@ interface ScheduleDao {
     suspend fun insertItems(items: List<ScheduledExerciseEntity>)
 }
 
+/** Current Room schema; shown in the app's version details. */
+const val DB_SCHEMA_VERSION = 9
+
 @Database(
     entities = [
         ExerciseEntity::class, ProgramEntity::class, ProgramDayEntity::class, ProgramExerciseEntity::class,
         BodyMeasurementEntity::class, WorkoutSessionEntity::class, SetLogEntity::class,
         ScheduledWorkoutEntity::class, ScheduledExerciseEntity::class, ExerciseLogEntity::class, ActiveWorkoutEntity::class
     ],
-    version = 9,
+    version = DB_SCHEMA_VERSION,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

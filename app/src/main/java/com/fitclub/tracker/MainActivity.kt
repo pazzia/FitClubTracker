@@ -29,6 +29,11 @@ class MainActivity : ComponentActivity() {
             FitClubTheme(accent = settings.accent, lightTheme = light) { AppStartup(application as FitApp) }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+    }
 }
 
 

@@ -89,6 +89,9 @@ jobs:
   build:
     env:
       ORG_GRADLE_PROJECT_fitclubExperimental: ${{ github.event_name == 'pull_request' || (github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master') }}
+      FITCLUB_BUILD_NUMBER: ${{ github.run_number }}
+      FITCLUB_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      FITCLUB_BRANCH: ${{ github.head_ref || github.ref_name }}
     needs: contours
     runs-on: ubuntu-latest
     timeout-minutes: 30

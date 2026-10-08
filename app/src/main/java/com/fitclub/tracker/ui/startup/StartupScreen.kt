@@ -49,7 +49,7 @@ fun StartupScreen(state: StartupState, minimumElapsed: Boolean, onContinue: () -
         Spacer(Modifier.height(40.dp))
         Text("FitClub", color = Fc.Lime, style = MaterialTheme.typography.displayLarge)
         Text("Твой дневник тренировок", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
-        Text("Версия ${ReleaseNotes.VERSION}", color = Fc.Muted, modifier = Modifier.padding(top = 8.dp, bottom = 24.dp))
+        Text("Версия ${ReleaseNotes.VERSION}" + (if (BuildConfig.BUILD_NUMBER != "local") " · сборка ${BuildConfig.BUILD_NUMBER}" else ""), color = Fc.Muted, modifier = Modifier.padding(top = 8.dp, bottom = 24.dp))
         if (state is StartupState.Failed) {
             Text("Не удалось загрузить приложение", color = Fc.Pink)
             Text(state.message, color = Fc.Muted)

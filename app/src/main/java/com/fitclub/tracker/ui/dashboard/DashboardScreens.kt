@@ -305,6 +305,7 @@ fun ProfileScreen(onBack: () -> Unit) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Fc.Line)
                 Text("Версия приложения: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", color = Fc.Text)
                 Text(if (BuildConfig.APPLICATION_ID.endsWith(".experimental")) "Тестовая сборка" else "Основная версия", color = Fc.Muted)
+                VersionDetails()
             }
         }
     }
@@ -316,3 +317,41 @@ private fun fmt(v: Float) = if (v == v.roundToInt().toFloat()) v.roundToInt().to
 private fun signed(v: Float) = (if (v > 0) "+" else "") + fmt(v)
 
 
+
+
+/** Everything needed to identify a build in a bug report, plus the live screenshot protection state. */
+fun buildInfoLines(secureFlag: Boolean?): List<Pair<String, String>> = listOf(
+    "Версия" to "${BuildConfig.VERSION_NAME} (код ${BuildConfig.VERSION_CODE})",
+    "Сборка CI" to if (BuildConfig.BUILD_NUMBER == "local") "локальная" else "№${BuildConfig.BUILD_NUMBER}",
+    "Коммит" to BuildConfig.GIT_SHA,
+    "Ветка" to BuildConfig.GIT_BRANCH,
+    "Собрано" to BuildConfig.BUILD_TIME,
+    "Пакет" to BuildConfig.APPLICATION_ID,
+    "Схема базы" to "v${com.fitclub.tracker.data.db.DB_SCHEMA_VERSION}",
+    "Устройство" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} · Android ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})",
+    "Запрет снимков экрана" to when (secureFlag) { true -> "включён (FLAG_SECURE)"; false -> "выключен"; null -> "неизвестно" }
+)
+
+private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
+    is android.app.Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
+@Composable
+private fun VersionDetails() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    var copied by remember { mutableStateOf(false) }
+    val secure = context.findActivity()?.window?.attributes?.flags?.let { it and android.view.WindowManager.LayoutParams.FLAG_SECURE != 0 }
+    val lines = buildInfoLines(secure)
+    Column(Modifier.padding(top = 10.dp).testTag("version-details"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        lines.forEach { (k, v) ->
+            Row { Text(k, color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.width(150.dp)); Text(v, color = Fc.Text, style = MaterialTheme.typography.bodySmall) }
+        }
+        TextButton(onClick = {
+            clipboard.setText(androidx.compose.ui.text.AnnotatedString("FitClub\n" + lines.joinToString("\n") { "${it.first}: ${it.second}" }))
+            copied = true
+        }, contentPadding = PaddingValues(0.dp)) { Text(if (copied) "Скопировано" else "Скопировать информацию о сборке", color = Fc.Lime) }
+    }
+}
