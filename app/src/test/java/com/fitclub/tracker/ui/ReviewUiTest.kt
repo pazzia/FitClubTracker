@@ -74,7 +74,8 @@ class ReviewUiTest {
         rule.onNodeWithText("Фунты (lb)").performClick()
         rule.onNodeWithText("Сегодня").performClick()
         rule.onNodeWithText("Календарь").performClick()
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Общий тоннаж: 1058,2 фунт."))
+        // The calendar list composes after navigation and the units change; retry the scroll until it is there.
+        rule.waitUntil(15_000) { runCatching { rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Общий тоннаж: 1058,2 фунт.")) }.isSuccess }
         rule.onAllNodesWithText("Общий тоннаж: 1058,2 фунт.").onFirst().assertExists()
         rule.onNodeWithText("Прогресс").performClick()
         waitFor("1058,2 фунт.")
