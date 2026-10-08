@@ -25,8 +25,8 @@ class ProgramEditorUiTest {
     private fun editor() {
         rule.setContent { FitClubTheme { AppRoot() } }
         rule.onNodeWithText("Программы").performClick()
-        waitFor("+ Создать программу")
-        rule.onNodeWithText("+ Создать программу").performClick()
+        waitFor("+ Новая")
+        rule.onNodeWithText("+ Новая").performClick()
         waitFor("Название программы")
     }
     @Test fun bulkPickerAndCommentSurviveProgramSaveAndReopen() {
@@ -57,7 +57,7 @@ class ProgramEditorUiTest {
         rule.onNodeWithText("Итог для цели «Масса»").assertExists()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Сохранить программу"))
         rule.onNodeWithText("Сохранить программу").performClick()
-        waitFor("+ Создать программу")
+        waitFor("+ Новая")
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Личный план"))
         rule.onNodeWithText("Личный план").performClick()
         waitFor("Название программы")

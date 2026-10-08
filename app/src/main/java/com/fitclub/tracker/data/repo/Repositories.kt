@@ -30,7 +30,9 @@ data class ProgramDraft(
     val freqPerWeek: Int = 3,
     val isActive: Boolean = false,
     val days: List<DayDraft> = listOf(DayDraft()),
-    val coverPhoto: String? = null
+    val coverPhoto: String? = null,
+    /** Keeps list order stable across edits and undo; 0 — set on first save. */
+    val createdAt: Long = 0
 ) {
     val exerciseCount: Int get() = days.sumOf { it.items.size }
 }
@@ -70,6 +72,7 @@ fun ProgramWithDays.toDraft() = ProgramDraft(
     freqPerWeek = program.freqPerWeek,
     isActive = program.isActive,
     coverPhoto = program.coverPhoto,
+    createdAt = program.createdAt,
     days = days.sortedBy { it.day.position }.map { d ->
         DayDraft(d.items.sortedBy { it.position }.map { ItemDraft(it.exerciseId, it.sets, it.reps, it.restSec, it.comment, it.technique, it.techniqueScope, it.superset) })
     }
@@ -98,9 +101,28 @@ class ProgramRepository(private val db: AppDatabase) {
         val entity = ProgramEntity(
             id = draft.id, name = draft.name.ifBlank { "Без названия" }, goal = draft.goal,
             colorArgb = draft.colorArgb, icon = draft.icon, freqPerWeek = draft.freqPerWeek,
-            isActive = draft.isActive, coverPhoto = draft.coverPhoto
+            isActive = draft.isActive, coverPhoto = draft.coverPhoto,
+            createdAt = draft.createdAt.takeIf { it > 0 } ?: System.currentTimeMillis()
         )
         val id = if (draft.id == 0L) dao.insertProgram(entity) else { dao.updateProgram(entity); draft.id }
+        writeDays(id, draft)
+        id
+    }
+
+    /** Puts a just-deleted program back with its original id, so plans and history still point to it. */
+    suspend fun restore(draft: ProgramDraft): Long = db.withTransaction {
+        require(draft.id != 0L)
+        dao.insertProgram(ProgramEntity(
+            id = draft.id, name = draft.name.ifBlank { "Без названия" }, goal = draft.goal,
+            colorArgb = draft.colorArgb, icon = draft.icon, freqPerWeek = draft.freqPerWeek,
+            isActive = draft.isActive, coverPhoto = draft.coverPhoto,
+            createdAt = draft.createdAt.takeIf { it > 0 } ?: System.currentTimeMillis()
+        ))
+        writeDays(draft.id, draft)
+        draft.id
+    }
+
+    private suspend fun writeDays(id: Long, draft: ProgramDraft) {
         dao.deleteDays(id)
         draft.days.forEachIndexed { index, day ->
             val dayId = dao.insertDay(ProgramDayEntity(programId = id, position = index))
@@ -110,7 +132,6 @@ class ProgramRepository(private val db: AppDatabase) {
             })
         }
         if (draft.isActive) dao.setActive(id)
-        id
     }
 
     suspend fun delete(id: Long) = dao.deleteProgram(id)
