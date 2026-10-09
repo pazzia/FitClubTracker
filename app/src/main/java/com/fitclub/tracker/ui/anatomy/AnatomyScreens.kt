@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
@@ -45,7 +46,7 @@ fun AnatomyCatalogScreen(onBack: () -> Unit, onMuscle: (String) -> Unit) {
     var expanded by rememberSaveable { mutableStateOf(listOf("Плечо")) }
     val all = result?.getOrNull().orEmpty()
     val shown = remember(all, query, fitness, role, region) { AnatomyCatalog.filter(all, query, fitness, role, region) }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("anatomy-catalog-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { BackRow("Справочник", onBack) }
         item { ScreenTitle("Анатомия мышц"); Text("Строение · функции · участие в фитнесе", color = Fc.Muted) }
         item {
@@ -116,7 +117,7 @@ fun AnatomyDetailScreen(id: String, onBack: () -> Unit, onMuscle: (String) -> Un
     var tab by rememberSaveable(id) { mutableIntStateOf(0) }
     var board by rememberSaveable(id) { mutableIntStateOf(0) }
     val uriHandler = LocalUriHandler.current
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("anatomy-detail-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { BackRow("Анатомия мышц", onBack) }
         if (muscle == null) {
             item { Text(if (result == null) "Загрузка…" else "Запись не найдена", color = Fc.Muted) }

@@ -20,7 +20,7 @@ class AnatomyUiTest {
         rule.setContent { FitClubTheme { AnatomyCatalogScreen({}, { selected = it }) } }
         rule.waitUntil(15000) { rule.onAllNodesWithText("274 из 274 записей").fetchSemanticsNodes().isNotEmpty() }
         rule.onNode(hasSetTextAction()).performTextInput("бицепс")
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Двуглавая мышца плеча"))
+        rule.onNodeWithTag("anatomy-catalog-list").performScrollToNode(hasText("Двуглавая мышца плеча"))
         rule.onNodeWithText("Двуглавая мышца плеча").performClick()
         assertEquals("TA2:2464", selected)
     }
@@ -29,9 +29,9 @@ class AnatomyUiTest {
         rule.setContent { FitClubTheme(lightTheme = true) { AnatomyDetailScreen("TA2:2464", {}, {}, { exercises = true }) } }
         rule.waitUntil(15000) { rule.onAllNodesWithText("Функции").fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText("Функции").performClick()
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("За что отвечает"))
+        rule.onNodeWithTag("anatomy-detail-list").performScrollToNode(hasText("За что отвечает"))
         rule.onNodeWithText("За что отвечает").assertExists()
-        rule.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
+        rule.onNodeWithTag("anatomy-detail-list").performScrollToIndex(0)
         rule.onNodeWithText("В фитнесе").performClick()
         rule.onNodeWithText("Упражнения на бицепс").performClick()
         assertTrue(exercises)
