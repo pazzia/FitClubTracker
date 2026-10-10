@@ -74,8 +74,8 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
         }
         item {
             FcCard(Modifier.fillMaxWidth(), onClick = onAnatomy) {
-                Text("Анатомия мышц", color = Fc.Text, style = MaterialTheme.typography.titleLarge)
-                Text("274 записи · строение и функции мышц", color = Fc.Muted)
+                Text("Атлас мышц", color = Fc.Text, style = MaterialTheme.typography.titleLarge)
+                Text("121 мышца · 12 групп · упражнения для каждой", color = Fc.Muted)
                 Spacer(Modifier.height(8.dp))
                 Text("Открыть атлас →", color = Fc.Lime, style = MaterialTheme.typography.labelLarge)
             }

@@ -266,8 +266,8 @@ jobs:
           expected = 'com.fitclub.tracker.experimental' if experimental else 'com.fitclub.tracker'
           assert metadata['applicationId'] == expected, metadata
           element = metadata['elements'][0]
-          assert element['versionName'] == ('0.9.0-test' if experimental else '0.9.0'), element
-          assert element['versionCode'] == 23, element
+          assert element['versionName'] == ('0.9.1-test' if experimental else '0.9.1'), element
+          assert element['versionCode'] == 24, element
           print(f"Distribution verified: {expected}, {element['versionName']} ({element['versionCode']})")
           PY
 
