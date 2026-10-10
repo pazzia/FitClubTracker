@@ -43,7 +43,7 @@ class WorkoutRecordsUiTest {
         rule.setContent { FitClubTheme {
             CompositionLocalProvider(LocalWeightUnits provides WeightUnits(kg.value)) { ProgressScreen({}) }
         } }
-        await("6 недель")
+        await("12 недель")
         val weightedCard = hasTestTag("progress-$exercise-false")
         val timedCard = hasTestTag("progress-$exercise-true")
         scrollTo(weightedCard)
@@ -58,7 +58,7 @@ class WorkoutRecordsUiTest {
         rule.onNode(hasText("40 кг × 8") and hasAnyAncestor(timedCard)).assertDoesNotExist()
         rule.runOnIdle { kg.value = false }
         scrollTo(weightedCard)
-        rule.onNodeWithText("Самый тяжёлый подход: 88.2 фунт. × 8").assertExists()
+        rule.onNodeWithText("Самый тяжёлый подход: 88,2 фунт. × 8").assertExists()
         scrollTo(timedCard)
         rule.onNodeWithText("Самое долгое удержание: 60 сек.").assertExists()
         assertEquals(40f, runBlocking { app.container.fitness.observeWorkouts().first().single().sets.first().weightKg }, 0f)
@@ -74,7 +74,7 @@ class WorkoutRecordsUiTest {
                 CompletedSet(exercise, 0, 40f, 8), CompletedSet(exercise, 1, 0f, 60, isTimed = true)))
         }
         rule.setContent { FitClubTheme { WorkoutResultScreen(id, {}) } }
-        await("Редактировать результат")
+        await("Результат тренировки")
         scrollTo(hasText("Самый тяжёлый: 40 кг × 8"))
         rule.onNodeWithText("Самый тяжёлый: 40 кг × 8").assertExists()
         rule.onNodeWithText("Рекорд до тренировки: 35 кг × 6").assertExists()
@@ -90,7 +90,7 @@ class WorkoutRecordsUiTest {
             app.container.fitness.finishWorkout(null, null, now - 60000, listOf(CompletedSet(exercise, 0, 40f, 8)))
         }
         rule.setContent { FitClubTheme { WorkoutResultScreen(id, {}) } }
-        await("Редактировать результат")
+        await("Результат тренировки")
         scrollTo(hasText("Самый тяжёлый: 40 кг × 8"))
         rule.onNodeWithText("Первый результат с повторениями в истории").assertExists()
         rule.onNodeWithText("Рекорд до тренировки: 60 сек.").assertDoesNotExist()

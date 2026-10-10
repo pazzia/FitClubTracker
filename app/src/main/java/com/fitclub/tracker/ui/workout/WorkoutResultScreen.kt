@@ -1,6 +1,16 @@
 package com.fitclub.tracker.ui.workout
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.testTag
+import com.fitclub.tracker.domain.Technique
+import com.fitclub.tracker.domain.parseStages
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -48,6 +58,7 @@ class WorkoutResultViewModel(private val c: AppContainer) : ViewModel() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
     val vm = appViewModel(key = "result-$sessionId") { WorkoutResultViewModel(it) }
@@ -59,10 +70,11 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
     val plans by vm.plans.collectAsStateWithLifecycle()
     val log = workouts.firstOrNull { it.session.id == sessionId }
     if (log == null) {
-        Column(Modifier.padding(20.dp)) { BackRow("Календарь", onClose); Text(if (loaded) "Результат не найден или удалён" else "Загружаю результат…", color = Fc.Muted) }
+        Column(Modifier.padding(20.dp)) { BackRow("Назад", onClose); Text(if (loaded) "Результат не найден или удалён" else "Загружаю результат…", color = Fc.Muted) }
         return
     }
     var editing by remember { mutableStateOf(false) }
+    var detail by remember { mutableStateOf<Pair<String, Int>?>(null) }
     var picker by remember { mutableStateOf(false) }
     var discard by remember { mutableStateOf(false) }
     var minutes by remember { mutableStateOf(log.durationMin.toString()) }
@@ -89,19 +101,72 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
         return
     }
     val valid = minutes.toIntOrNull()?.let { it in 1..1440 } == true && rows.all { (_, row) -> validSet(row) }
+    detail?.let { (id, position) ->
+        ModalBottomSheet(onDismissRequest = { detail = null }, containerColor = Fc.Surface,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+            ExerciseResultSheet(log, id, position, catalog.firstOrNull { it.id == id }, workouts, units, vm.saving,
+                onSave = { edited ->
+                    val others = log.sets.filterNot { it.exerciseId == id && it.exercisePosition == position }.map { set ->
+                        set to SetEntry(units.number(units.fromKg(set.weightKg)), set.reps.toString(), set.done, set.warmup, set.rir?.toString().orEmpty(), set.assisted)
+                    }
+                    vm.save(log, others + edited, log.durationMin, units) { detail = null }
+                })
+        }
+    }
     val groups = if (editing) rows.map { it.first.exerciseId to it.first.exercisePosition }.distinct() else
         (log.sets.map { it.exerciseId to it.exercisePosition } + log.exercises.filter { ex -> log.sets.none { it.exerciseId == ex.exerciseId && it.exercisePosition == -1 } }.map { it.exerciseId to it.position }).distinct().sortedBy { it.second }
     val volume = if (editing) rows.filter { !it.first.isTimed && !it.second.assisted && it.second.done && validSet(it.second) }
         .sumOf { resultWeight(it.first, it.second, editUnits).toDouble() * it.second.reps.toInt() } else log.volumeKg.toDouble()
     val count = if (editing) rows.count { it.second.done } else log.completedSets
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { BackRow("Календарь", close) }
+        item { BackRow("Назад", close) }
         item {
-            Text(calendarDate(log.session.epochDay), color = Fc.Muted)
-            ScreenTitle(if (editing) "Редактирование" else "Результат тренировки")
-            Text(log.session.title.ifBlank { "Тренировка" }, color = Fc.Text)
-            Text(log.status, color = Fc.Muted)
-            log.session.plannedEpochDay?.takeIf { it != log.session.epochDay }?.let { Text("Была запланирована на ${calendarDate(it)}", color = Fc.Muted) }
+            Eyebrow(calendarDate(log.session.epochDay))
+            ScreenTitle(if (editing) "Редактирование" else "Результат тренировки", Modifier.padding(top = 4.dp))
+            Text(log.session.title.ifBlank { "Тренировка" }, color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+            Pill(log.status, if (log.completedSets > 0) Fc.LimeSoft else Fc.Surface2, if (log.completedSets > 0) Fc.Lime else Fc.Muted, Modifier.padding(top = 8.dp))
+            log.session.plannedEpochDay?.takeIf { it != log.session.epochDay }?.let { Text("Была запланирована на ${calendarDate(it)}", color = Fc.Muted, modifier = Modifier.padding(top = 6.dp)) }
+        }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf((if (editing) minutes else log.durationMin.toString()) to "минут",
+                    (if (editing) editUnits else units).number((if (editing) editUnits else units).fromKg(volume.toFloat())) to "${(if (editing) editUnits else units).label} объём",
+                    "$count" to "подходов").forEach { (value, label) ->
+                    Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(Fc.Surface).padding(14.dp)) {
+                        NumberText(value, 28.sp)
+                        Text(label, color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        }
+        if (!editing) {
+            val earlier = workouts.filter { it.session.startedAt < log.session.startedAt }.flatMap { it.sets }
+            val records = log.sets.filter { it.done && !it.warmup && !it.assisted }.map { it.exerciseId to it.isTimed }.distinct().mapNotNull { (id, timed) ->
+                val best = bestWorkingSet(log.sets, id, timed) ?: return@mapNotNull null
+                val previous = bestWorkingSet(earlier, id, timed) ?: return@mapNotNull null
+                val better = if (timed) best.reps > previous.reps else best.weightKg > previous.weightKg || (best.weightKg == previous.weightKg && best.reps > previous.reps)
+                if (!better) null else Triple(catalog.firstOrNull { it.id == id }?.name ?: id,
+                    if (timed) "${best.reps} сек." else "${units.format(best.weightKg)} × ${best.reps}",
+                    if (timed) "+${best.reps - previous.reps} сек." else if (best.weightKg > previous.weightKg) "+${units.format(best.weightKg - previous.weightKg)}" else "+${best.reps - previous.reps} повт.")
+            }
+            if (records.isNotEmpty()) item {
+                FcCard(border = Fc.Lime) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LineIcon(LineIcons.TROPHY, Fc.Lime)
+                        Text(if (records.size == 1) "Новый рекорд" else "Новых рекордов: ${records.size}", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                    }
+                    records.forEach { (name, value, delta) ->
+                        HorizontalDivider(color = Fc.Line2, modifier = Modifier.padding(vertical = 8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(name, color = Fc.Text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                            Column(horizontalAlignment = Alignment.End) {
+                                NumberText(value, 18.sp)
+                                Text(delta, color = Fc.Lime, style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+                }
+            }
         }
         item {
             FcCard {
@@ -112,10 +177,11 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
         }
         groups.forEach { (id, position) ->
             item(key = "$id-$position") {
-                FcCard {
+                FcCard(Modifier.fillMaxWidth().testTag("result-exercise-$id-$position"), onClick = if (editing) null else ({ detail = id to position })) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         catalog.firstOrNull { it.id == id }?.let { ExerciseThumbnail(it, Modifier.width(92.dp).height(62.dp)) }
                         Text(catalog.firstOrNull { it.id == id }?.name ?: id, color = Fc.Text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        if (!editing) LineIcon(LineIcons.NEXT, Fc.Dim, Modifier.size(18.dp))
                     }
                     Spacer(Modifier.height(12.dp))
                     if (editing) {
@@ -173,3 +239,93 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
 private fun resultWeight(old: SetLogEntity, row: SetEntry, units: WeightUnits): Float =
     if (row.weight == units.number(units.fromKg(old.weightKg))) old.weightKg
     else units.toKg(row.weight.replace(',', '.').toFloat())
+
+/** One exercise of a finished workout: every set with its technique, records, and in-place editing. */
+@Composable
+private fun ExerciseResultSheet(log: WorkoutLog, id: String, position: Int, exercise: com.fitclub.tracker.data.db.ExerciseEntity?,
+    workouts: List<WorkoutLog>, units: WeightUnits, saving: Boolean, onSave: (List<Pair<SetLogEntity, SetEntry>>) -> Unit) {
+    val sets = log.sets.filter { it.exerciseId == id && it.exercisePosition == position }
+    var editing by remember { mutableStateOf(false) }
+    val rows = remember { mutableStateListOf<Pair<SetLogEntity, SetEntry>>() }
+    fun begin() {
+        rows.clear()
+        rows.addAll(sets.map { it to SetEntry(units.number(units.fromKg(it.weightKg)), it.reps.toString(), it.done, it.warmup, it.rir?.toString().orEmpty(), it.assisted) })
+        editing = true
+    }
+    val earlier = workouts.filter { it.session.startedAt < log.session.startedAt }.flatMap { it.sets }
+    val timed = sets.firstOrNull()?.isTimed == true
+    val seconds = log.exercises.filter { it.exerciseId == id && (position == -1 || it.position == position) }.sumOf { it.durationMillis } / 1000
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            exercise?.let { ExerciseThumbnail(it, Modifier.size(64.dp)) }
+            Column(Modifier.weight(1f)) {
+                Eyebrow(calendarDate(log.session.epochDay))
+                Text(exercise?.name ?: id, color = Fc.Text, style = MaterialTheme.typography.headlineMedium)
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val done = sets.filter { it.done }
+            listOf("${done.size}" to "подходов",
+                (if (timed) "${done.sumOf { it.reps }} с" else units.number(units.fromKg(done.filter { !it.assisted && !it.isTimed }.sumOf { com.fitclub.tracker.domain.setVolumeKg(it).toDouble() }.toFloat()))) to (if (timed) "под нагрузкой" else "${units.label} объём"),
+                "${seconds / 60}:${"%02d".format(seconds % 60)}" to "время").forEach { (value, label) ->
+                Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(Fc.Surface2).padding(12.dp)) {
+                    NumberText(value, 22.sp)
+                    Text(label, color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+        listOf(false, true).forEach { t ->
+            val best = bestWorkingSet(sets, id, t) ?: return@forEach
+            val previous = bestWorkingSet(earlier, id, t)
+            val record = previous == null || (if (t) best.reps > previous.reps else best.weightKg > previous.weightKg || (best.weightKg == previous.weightKg && best.reps > previous.reps))
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(if (record) Fc.LimeSoft else Fc.Surface2).padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                LineIcon(LineIcons.TROPHY, if (record) Fc.Lime else Fc.Muted)
+                Column(Modifier.weight(1f)) {
+                    Text(if (t) "Самое долгое удержание: ${best.reps} сек." else "Самый тяжёлый: ${units.format(best.weightKg)} × ${best.reps}", color = Fc.Text, style = MaterialTheme.typography.bodyMedium)
+                    Text(previous?.let { if (t) "Рекорд до тренировки: ${it.reps} сек." else "Рекорд до тренировки: ${units.format(it.weightKg)} × ${it.reps}" }
+                        ?: if (t) "Первый результат на время в истории" else "Первый результат с повторениями в истории", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                }
+                if (record && previous != null) Pill("Рекорд", Fc.Lime, Fc.OnAccent)
+            }
+        }
+        Eyebrow(if (editing) "Редактирование · ${units.label}" else "Подходы")
+        if (!editing) sets.forEachIndexed { i, set ->
+            val technique = Technique.of(set.technique)
+            val stages = parseStages(set.stages)
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).border(1.dp, Fc.Line2, RoundedCornerShape(14.dp)).padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                NumberText(if (set.warmup) "Р" else "${i + 1}", 16.sp, Modifier.width(22.dp), color = if (set.done) Fc.Lime else Fc.Muted)
+                Column(Modifier.weight(1f)) {
+                    NumberText((if (set.isTimed) "${set.reps} с" else "${units.format(set.weightKg)} × ${set.reps}") +
+                        stages.joinToString("") { " → ${units.number(units.fromKg(it.weightKg))} × ${it.reps}" }, 19.sp)
+                    val notes = listOfNotNull(technique.takeIf { it != Technique.NORMAL }?.title, "разминка".takeIf { set.warmup },
+                        "помощь тренажёра".takeIf { set.assisted }, set.rir?.let { "в запасе $it" }, "не выполнен".takeIf { !set.done })
+                    if (notes.isNotEmpty()) Text(notes.joinToString(" · "), color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        } else {
+            rows.forEachIndexed { index, pair ->
+                SetRow(index, pair.second, true, onDone = { done -> rows[index] = pair.first to pair.second.copy(done = done) },
+                    onRemove = { rows.removeAt(index) }, allowCompletedRemoval = true) { weight, reps -> rows[index] = pair.first to pair.second.copy(weight = weight, reps = reps) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(pair.second.warmup, { rows[index] = pair.first to pair.second.copy(warmup = it) })
+                    Text("Разминка", color = Fc.Muted)
+                    Checkbox(pair.second.assisted, { rows[index] = pair.first to pair.second.copy(assisted = it) })
+                    Text("Помощь", color = Fc.Muted)
+                }
+            }
+            ActionButton("+ Добавить подход", {
+                val last = rows.lastOrNull() ?: return@ActionButton
+                rows.add(last.first.copy(id = 0, setIndex = last.first.setIndex + 1, stages = "") to last.second.copy(done = true))
+            }, outlined = true)
+        }
+        if (editing) {
+            val valid = rows.all { validSet(it.second) }
+            if (!valid) Text("Проверьте вес (от 0) и количество (больше 0).", color = Fc.Danger, style = MaterialTheme.typography.bodySmall)
+            PrimaryButton(if (saving) "Сохраняю…" else "Сохранить", { if (valid && !saving) onSave(rows.toList()) }, Modifier.testTag("exercise-result-save"))
+            ActionButton("Отменить", { editing = false }, outlined = true)
+        } else ActionButton("Редактировать упражнение", ::begin, Modifier.testTag("exercise-result-edit"), outlined = true)
+    }
+}

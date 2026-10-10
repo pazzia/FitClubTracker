@@ -13,11 +13,13 @@ import com.fitclub.tracker.ui.theme.FitClubTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Development builds must allow screenshots and screen recording for UX review.
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         setContent {
             val settings by (application as FitApp).container.profile.settings.collectAsStateWithLifecycle()
             val light = settings.theme == "Светлая"
             SideEffect {
-                window.statusBarColor = if (light) android.graphics.Color.WHITE else android.graphics.Color.rgb(14, 19, 23)
+                window.statusBarColor = if (light) android.graphics.Color.rgb(243, 244, 239) else android.graphics.Color.rgb(10, 12, 13)
                 window.navigationBarColor = window.statusBarColor
                 WindowCompat.getInsetsController(window, window.decorView).apply {
                     isAppearanceLightStatusBars = light
@@ -26,6 +28,11 @@ class MainActivity : ComponentActivity() {
             }
             FitClubTheme(accent = settings.accent, lightTheme = light) { AppStartup(application as FitApp) }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
     }
 }
 

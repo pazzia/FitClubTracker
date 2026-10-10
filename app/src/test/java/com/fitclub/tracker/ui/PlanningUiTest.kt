@@ -29,6 +29,7 @@ class PlanningUiTest {
     @Test fun dateShowsDayAndExplicitActionOpensIndependentPlanner() {
         open()
         val date = calendarDate(LocalDate.now().toEpochDay())
+        rule.onNodeWithText("Календарь").performClick()
         rule.onNodeWithContentDescription("$date, запланировать тренировку").performClick()
         rule.onNodeWithText("План тренировки").assertDoesNotExist()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+ Запланировать тренировку"))
@@ -53,7 +54,7 @@ class PlanningUiTest {
     }
     @Test fun sexChosenInProfileControlsLibraryAndExercise() {
         open()
-        rule.onNodeWithText("Профиль").performClick()
+        rule.onNodeWithContentDescription("Профиль").performClick()
         waitFor("Женский")
         rule.onNodeWithText("Женский").performClick()
         val app = ApplicationProvider.getApplicationContext<FitApp>()
@@ -61,8 +62,9 @@ class PlanningUiTest {
         rule.onNodeWithText("Справочник").performClick()
         rule.onNodeWithContentDescription("Грудь, женский атлас").performClick()
         waitFor("${ExerciseSeed.all.count { it.group == MuscleGroup.CHEST }} упражнений")
-        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Жим штанги лёжа"))
+        rule.onNodeWithTag("library-group-list").performScrollToNode(hasText("Жим штанги лёжа"))
         rule.onNodeWithText("Жим штанги лёжа").performClick()
+        rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasContentDescription("Грудь, женский атлас"))
         rule.onAllNodesWithContentDescription("Грудь, женский атлас").onFirst().assertExists()
         rule.onAllNodesWithText("Мужская").assertCountEquals(0)
         rule.onAllNodesWithText("Женская").assertCountEquals(0)

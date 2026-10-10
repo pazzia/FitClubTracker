@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import com.fitclub.tracker.data.model.MuscleGroup
 import com.fitclub.tracker.data.model.Sex
 import com.fitclub.tracker.ui.theme.Fc
+import com.fitclub.tracker.ui.theme.NumberStyle
+import androidx.compose.ui.unit.sp
 
 val AnatomyGroupOrder = listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS,
     MuscleGroup.FOREARMS, MuscleGroup.CORE, MuscleGroup.BACK, MuscleGroup.GLUTES, MuscleGroup.QUADS,
@@ -26,13 +28,13 @@ val AnatomyGroupOrder = listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleG
 fun MuscleCategoryRow(groups: List<MuscleGroup>, sex: Sex, counts: Map<MuscleGroup, Int>, onGroup: (MuscleGroup) -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         groups.forEach { group ->
-            Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(Fc.AnatomyLabel)
-                .border(1.dp, Fc.Line, RoundedCornerShape(16.dp)).clickable(role = Role.Button) { onGroup(group) }) {
-                GroupImage(sex, group, Modifier.fillMaxWidth().aspectRatio(4f / 3f), scale = ContentScale.Crop,
-                    alignment = if (group == MuscleGroup.CALVES) Alignment.TopCenter else Alignment.Center)
-                Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(Fc.Surface)
+                .border(1.dp, Fc.Line2, RoundedCornerShape(20.dp)).clickable(role = Role.Button) { onGroup(group) }) {
+                GroupImage(sex, group, Modifier.fillMaxWidth().height(112.dp).padding(start = 10.dp, end = 10.dp, top = 10.dp),
+                    scale = ContentScale.Fit, alignment = Alignment.BottomCenter)
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(group.title, color = Fc.Text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                    Text("${counts[group] ?: 0} →", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+                    Text("${counts[group] ?: 0}", color = Fc.Muted, style = NumberStyle.copy(fontSize = 15.sp))
                 }
             }
         }

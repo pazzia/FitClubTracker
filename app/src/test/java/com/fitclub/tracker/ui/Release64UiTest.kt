@@ -42,10 +42,10 @@ class Release64UiTest {
                     modifier = Modifier.semantics { contentDescription = colours(bg, fg) })
             }
         } }
-        rule.onNodeWithContentDescription(colours(Color.White, Color(0xFF17212B))).assertExists()
+        rule.onNodeWithContentDescription(colours(Color(0xFFF3F4EF), Color(0xFF101315))).assertExists()
         rule.onNodeWithText("Светлая").performClick()
         rule.waitUntil(10_000) {
-            rule.onAllNodesWithContentDescription(colours(Color(0xFF0E1317), Color(0xFFF5F5F7)))
+            rule.onAllNodesWithContentDescription(colours(Color(0xFF0A0C0D), Color(0xFFF2F4EE)))
                 .fetchSemanticsNodes().isNotEmpty()
         }
         rule.onNodeWithText("Темная").assertExists()
@@ -58,12 +58,12 @@ class Release64UiTest {
             prefs.edit().putString("theme", old).putLong("accent", 0xFFD4FF3A).commit()
             val st = ProfileRepository(context).settings.value
             assertEquals("Темная", st.theme)
-            assertEquals(0xFF69B7FF, st.accent)
+            assertEquals(0xFFC6FF3D, st.accent)
         }
         prefs.edit().putString("theme", "White Day").commit()
         val st = ProfileRepository(context).settings.value
         assertEquals("Светлая", st.theme)
-        assertEquals(0xFF236B9D, st.accent)
+        assertEquals(0xFFC6FF3D, st.accent)
     }
     @Test fun deletionRequiresExplicitConfirmationAndCancelPreservesProgram() {
         rule.mainClock.autoAdvance = false

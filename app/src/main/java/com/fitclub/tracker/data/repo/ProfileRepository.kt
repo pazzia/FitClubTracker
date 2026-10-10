@@ -13,7 +13,7 @@ data class ProfileSettings(
     val unitsKg: Boolean = true,
     val reminders: Boolean = true,
     val theme: String = "Темная",
-    val accent: Long = 0xFF69B7FF
+    val accent: Long = 0xFFC6FF3D
 )
 
 class ProfileRepository(context: Context) {
@@ -43,5 +43,6 @@ class ProfileRepository(context: Context) {
 
 
 internal fun normalizedTheme(name: String?): String = if (name == "White Day" || name == "Светлая") "Светлая" else "Темная"
-internal fun themeAccent(name: String): Long = if (name == "Светлая") 0xFF236B9D else 0xFF69B7FF
+/** One brand accent; the light palette pairs it with ink instead of using it as text. */
+internal fun themeAccent(@Suppress("UNUSED_PARAMETER") name: String): Long = 0xFFC6FF3D
 

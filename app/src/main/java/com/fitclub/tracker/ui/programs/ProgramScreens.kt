@@ -37,6 +37,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -110,102 +112,6 @@ private val PROGRAM_COLORS = listOf(
     0xFF9B7BFF to "Фиолетовый", 0xFF3DE0FF to "Голубой", 0xFFF5F5F7 to "Белый"
 )
 
-private fun plural(n: Int, one: String, few: String, many: String): String {
-    val t = n % 100; val u = n % 10
-    return when { t in 11..19 -> many; u == 1 -> one; u in 2..4 -> few; else -> many }
-}
-
-// ---------- Список программ ----------
-
-class ProgramsViewModel(private val c: AppContainer) : ViewModel() {
-    val programs: StateFlow<List<ProgramDraft>> =
-        c.programs.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-    val catalog: StateFlow<Map<String, ExerciseEntity>> =
-        c.exercises.observeAll().map { list -> list.associateBy { it.id } }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
-    fun deletePrograms(ids: Set<Long>, onDone: () -> Unit) {
-        viewModelScope.launch {
-            ids.forEach { c.programs.delete(it) }
-            onDone()
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun ProgramsScreen(onOpen: (Long) -> Unit, choosingExercise: Boolean = false,
-    choosingProgram: Boolean = false, onBack: (() -> Unit)? = null, onCreate: () -> Unit = { onOpen(0L) }) {
-    val vm = appViewModel { ProgramsViewModel(it) }
-    val programs by vm.programs.collectAsStateWithLifecycle()
-    val catalog by vm.catalog.collectAsStateWithLifecycle()
-    var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
-    var selecting by rememberSaveable { mutableStateOf(false) }
-    var confirmBulkDelete by remember { mutableStateOf(false) }
-    BackHandler(enabled = selecting) { selecting = false; selectedIds = emptySet() }
-    if (confirmBulkDelete) AlertDialog(
-        onDismissRequest = { confirmBulkDelete = false },
-        title = { Text(if (selectedIds.size == 1) "Удалить программу?" else "Удалить выбранные программы?") },
-        text = { Column {
-            programs.filter { it.id in selectedIds }.forEach { Text(it.name, color = Fc.Text) }
-            Text("История выполненных тренировок сохранится.", color = Fc.Muted)
-        } },
-        dismissButton = { TextButton(onClick = { confirmBulkDelete = false }) { Text("Отмена") } },
-        confirmButton = { TextButton(onClick = {
-            confirmBulkDelete = false
-            vm.deletePrograms(selectedIds) { selectedIds = emptySet(); selecting = false }
-        }) { Text("Удалить", color = Fc.Pink) } }
-    )
-
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (onBack != null) BackRow("План тренировки", onBack)
-                ScreenTitle(if (choosingExercise || choosingProgram) "Выберите программу" else "Программы")
-                Text(
-                    "${programs.size} ${plural(programs.size, "программа", "программы", "программ")} · создавайте сколько угодно",
-                    style = MaterialTheme.typography.bodyMedium, color = Fc.Muted
-                )
-            }
-        }
-        item {
-            if (selecting) Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { selecting = false; selectedIds = emptySet() }) { Text("Отмена") }
-                Text("Выбрано: ${selectedIds.size}", color = Fc.Text, modifier = Modifier.weight(1f))
-                TextButton(onClick = { confirmBulkDelete = true }, enabled = selectedIds.isNotEmpty()) { Text("Удалить", color = Fc.Pink) }
-            } else Column {
-                OutlinedButton(onClick = onCreate, modifier = Modifier.fillMaxWidth()) { Text("+ Создать программу") }
-                Text("Удерживайте программу, чтобы выбрать для удаления.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-            }
-        }
-        items(programs, key = { it.id }) { p ->
-            val fit = remember(p, catalog) { ProgramScorer.score(p, catalog) }
-            FcCard(modifier = Modifier.combinedClickable(
-                onClick = { if (selecting) selectedIds = if (p.id in selectedIds) selectedIds - p.id else selectedIds + p.id else onOpen(p.id) },
-                onLongClickLabel = "Выбрать для удаления",
-                onLongClick = { selecting = true; selectedIds = selectedIds + p.id }
-            ), border = if (p.id in selectedIds || p.isActive) Fc.Lime.copy(alpha = 0.5f) else Fc.Line) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    if (selecting) Checkbox(checked = p.id in selectedIds, onCheckedChange = { checked ->
-                        selectedIds = if (checked) selectedIds + p.id else selectedIds - p.id
-                    })
-                    ProgramCover(p.icon, Color(p.colorArgb), 60.dp, photo = p.coverPhoto)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(p.name, style = MaterialTheme.typography.titleMedium, color = Fc.Text)
-                        Text(
-                            "${p.goal.title} · ${p.days.size} ${plural(p.days.size, "день", "дня", "дней")} · ${p.exerciseCount} упр.",
-                            style = MaterialTheme.typography.bodySmall, color = Fc.Muted
-                        )
-                        if (p.isActive) Text("АКТИВНАЯ", style = MaterialTheme.typography.labelSmall, color = Fc.Lime)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("${fit.percent}/100", style = MaterialTheme.typography.headlineSmall, color = Fc.fit(fit.percent / 100f))
-                        Text("структура", style = MaterialTheme.typography.labelSmall, color = Fc.Muted)
-                    }
-                }
-            }
-        }
-    }
-}
 
 // ---------- Редактор программы ----------
 
@@ -236,6 +142,10 @@ class ProgramEditorViewModel(private val c: AppContainer, private val programId:
         d.copy(days = d.days.mapIndexed { i, dd ->
             if (i != day) dd else dd.copy(items = dd.items.mapIndexed { j, it -> if (j == index) fn(it) else it })
         })
+    }
+
+    fun setSuperset(day: Int, index: Int, partner: Int?) = update { d ->
+        d.copy(days = d.days.mapIndexed { i, dd -> if (i != day) dd else dd.copy(items = com.fitclub.tracker.domain.assignSuperset(dd.items, index, partner)) })
     }
 
     fun removeItem(day: Int, index: Int) = update { d ->
@@ -296,6 +206,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         return
     }
     var discard by rememberSaveable { mutableStateOf(false) }
+    var supersetFor by remember { mutableStateOf<Int?>(null) }
     val close = { if (!vm.saving) { if (vm.dirty) discard = true else onClose() } }
     BackHandler { close() }
     if (discard) AlertDialog(onDismissRequest = { discard = false }, title = { Text("Выйти без сохранения?") },
@@ -333,6 +244,11 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         return
     }
 
+    supersetFor?.let { target ->
+            com.fitclub.tracker.ui.workout.SupersetDialog(target, d.days[day].items.map { catalog[it.exerciseId]?.name ?: it.exerciseId },
+                com.fitclub.tracker.domain.supersetLabels(d.days[day].items),
+                onPick = { partner -> vm.setSuperset(day, target, partner); supersetFor = null }, onDismiss = { supersetFor = null })
+    }
     LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -375,7 +291,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                     }
                     Text(
                         "+ День", style = MaterialTheme.typography.labelLarge, color = Fc.Muted,
-                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).border(1.5.dp, Color(0xFF4A4A55), RoundedCornerShape(14.dp))
+                        modifier = Modifier.clip(RoundedCornerShape(14.dp)).border(1.5.dp, Fc.Line, RoundedCornerShape(14.dp))
                             .clickable(role = Role.Button) { vm.addDay(); dayIndex = d.days.size }
                             .padding(horizontal = 14.dp, vertical = 12.dp)
                     )
@@ -389,7 +305,9 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                 meta = e?.let { "${it.group.title} · ${it.type.title} · ${it.equipment}" } ?: "",
                 item = item, goal = d.goal, exercise = e,
                 onChange = { fn -> vm.updateItem(day, index, fn) },
-                onRemove = { vm.removeItem(day, index) }
+                onRemove = { vm.removeItem(day, index) },
+                supersetLabel = com.fitclub.tracker.domain.supersetLabels(d.days[day].items)[index],
+                onSuperset = if (d.days[day].items.size > 1) ({ supersetFor = index }) else null
             )
         }
         item {
@@ -553,7 +471,8 @@ private fun FitDetails(fit: FitResult, goal: Goal) {
 @Composable
 internal fun ItemCard(
     name: String, meta: String, item: ItemDraft, goal: Goal,
-    onChange: ((ItemDraft) -> ItemDraft) -> Unit, onRemove: () -> Unit, exercise: ExerciseEntity? = null
+    onChange: ((ItemDraft) -> ItemDraft) -> Unit, onRemove: () -> Unit, exercise: ExerciseEntity? = null,
+    supersetLabel: String? = null, onSuperset: (() -> Unit)? = null
 ) {
     val repsOk = item.reps in goal.idealReps || item.reps in goal.okReps
     val restOk = item.restSec in goal.restOk
@@ -594,6 +513,31 @@ internal fun ItemCard(
                 title = "Отдых", value = restLabel(item.restSec), ok = restOk, modifier = Modifier.fillMaxWidth(),
                 options = REST_OPTIONS.map { sec -> restLabel(sec) to { onChange { x -> x.copy(restSec = sec) } } }
             )
+            val technique = com.fitclub.tracker.domain.Technique.of(item.technique)
+            Dropdown(
+                title = "Техника подходов",
+                value = if (technique == com.fitclub.tracker.domain.Technique.NORMAL || item.techniqueScope.isBlank()) "Обычные подходы"
+                    else "${technique.title} · ${if (item.techniqueScope == "all") "все подходы" else "последний подход"}",
+                ok = true, modifier = Modifier.fillMaxWidth(),
+                options = listOf("Обычные подходы" to { onChange { it.copy(technique = "", techniqueScope = "") } }) +
+                    com.fitclub.tracker.domain.Technique.entries.drop(1).flatMap { t ->
+                        listOf("${t.title} · последний подход" to { onChange { it.copy(technique = t.id, techniqueScope = "last") } },
+                            "${t.title} · все подходы" to { onChange { it.copy(technique = t.id, techniqueScope = "all") } })
+                    }
+            )
+            if (onSuperset != null) Row(
+                Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp))
+                    .clickable(role = Role.Button, onClick = onSuperset).testTag("superset-${item.exerciseId}"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(if (supersetLabel != null) "Суперсет ${supersetLabel.first()} · $supersetLabel" else "Суперсет", style = MaterialTheme.typography.labelLarge,
+                        color = if (supersetLabel != null) Fc.Lime else Fc.Text)
+                    Text(if (supersetLabel != null) "Изменить пару или убрать" else "Чередовать с любым упражнением этого дня без отдыха",
+                        style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
+                }
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = Fc.Muted)
+            }
         }
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(value = item.comment,

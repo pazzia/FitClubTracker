@@ -59,11 +59,10 @@ class Preview66UiTest {
             if (technique.isBlank()) WorkoutScreen(id, onClose = {}, onTechnique = { technique = it })
             else ExerciseDetailScreen(technique, onBack = { technique = "" }, onOpenExercise = { technique = it }, onAddToProgram = {}, trainingContext = true)
         } }
-        waitFor("Выберите любое упражнение. Удерживайте ≡, чтобы изменить порядок.")
-        rule.onNodeWithText("Жим штанги лёжа").performClick()
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
         rule.onNodeWithTag("exercise-photo-pager").assertDoesNotExist()
         rule.onNodeWithContentDescription("Жим штанги лёжа — миниатюра техники").assertIsDisplayed()
+        rule.onNodeWithTag("workout-list").performScrollToNode(hasText("Техника выполнения →"))
         rule.onNodeWithText("Техника выполнения →").performClick()
         waitFor("Техника")
         rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasTestTag("exercise-photo-pager"))
@@ -78,6 +77,7 @@ class Preview66UiTest {
         rule.onNodeWithText("Вернуться к тренировке").performClick()
         rule.onNodeWithTag("next-exercise").performClick()
         waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
+        rule.onNodeWithTag("workout-list").performScrollToNode(hasText("Техника выполнения →"))
         rule.onNodeWithText("Техника выполнения →").performClick()
         waitFor("Техника")
         rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasTestTag("exercise-photo-pager"))
@@ -87,30 +87,37 @@ class Preview66UiTest {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
         rule.onNodeWithText("Программы").performClick()
         waitFor("Фулбоди 3×")
+        screenshot("programs-list")
         rule.onNodeWithText("Фулбоди 3×").performTouchInput { longClick() }
-        waitFor("Выбрано: 1")
-        rule.onNodeWithText("Удалить").performClick()
+        waitFor("Выбрано 1")
+        rule.onNodeWithTag("programs-delete").performClick()
         waitFor("Удалить программу?")
         screenshot("single-delete")
         rule.onAllNodesWithText("Отмена").onLast().performClick()
         rule.onNodeWithText("Фулбоди 3×").assertExists()
         rule.onNodeWithText("Сила 5×5").performClick()
-        waitFor("Выбрано: 2")
+        waitFor("Выбрано 2")
         screenshot("selected-programs")
-        rule.onNodeWithText("Удалить").performClick()
-        waitFor("Удалить выбранные программы?")
+        rule.onNodeWithTag("programs-delete").performClick()
+        waitFor("Удалить 2 программы?")
+        rule.onNodeWithText("История тренировок и рекорды сохранятся").assertExists()
         screenshot("multiple-delete")
-        rule.onAllNodesWithText("Удалить").onLast().performClick()
-        waitFor("+ Создать программу")
-        rule.onAllNodesWithText("Фулбоди 3×").assertCountEquals(0)
+        rule.onNodeWithTag("programs-delete-confirm").performClick()
+        // Deletion is asynchronous; wait for the list to reflect it instead of racing the database.
+        rule.waitUntil(15_000) { rule.onAllNodesWithText("Фулбоди 3×").fetchSemanticsNodes().isEmpty() }
         rule.onAllNodesWithText("Сила 5×5").assertCountEquals(0)
         rule.onNodeWithText("Учебный пример: ошибки программы").assertExists()
+        waitFor("Вернуть")
+        screenshot("undo-delete")
+        rule.onNodeWithTag("programs-undo-action").performClick()
+        rule.waitUntil(15_000) { rule.onAllNodesWithText("Фулбоди 3×").fetchSemanticsNodes().isNotEmpty() }
+        waitFor("Сила 5×5")
     }
     @Test fun editorPrioritizesExercisesAndKeepsAppearanceCollapsed() {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
         rule.onNodeWithText("Программы").performClick()
-        waitFor("+ Создать программу")
-        rule.onNodeWithText("+ Создать программу").performClick()
+        waitFor("+ Новая")
+        rule.onNodeWithText("+ Новая").performClick()
         waitFor("Название программы")
         rule.onNodeWithText("+  Добавить упражнение").assertIsDisplayed()
         rule.onAllNodesWithText("Цвет").assertCountEquals(0)
@@ -122,6 +129,7 @@ class Preview66UiTest {
     @Test fun plannerShowsPrimaryProgramChoiceAndSecondaryManualAdd() {
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { AppRoot() } }
         val date = calendarDate(LocalDate.now().toEpochDay())
+        rule.onNodeWithText("Календарь").performClick()
         rule.onNodeWithContentDescription("$date, запланировать тренировку").performClick()
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+ Запланировать тренировку"))
         rule.onNodeWithText("+ Запланировать тренировку").performClick()
