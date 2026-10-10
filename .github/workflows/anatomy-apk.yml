@@ -1,0 +1,249 @@
+name: Anatomy APK
+
+on:
+  push:
+    branches: [ 'fork/anatomy-catalog-0.9.0' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: anatomy-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    env:
+      ORG_GRADLE_PROJECT_fitclubExperimental: ${{ github.event_name == 'pull_request' || (github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master') }}
+      FITCLUB_BUILD_NUMBER: ${{ github.run_number }}
+      FITCLUB_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      FITCLUB_BRANCH: ${{ github.head_ref || github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify cached contours match this source
+        shell: bash
+        run: |
+          test "$(git hash-object scripts/prepare_semantic_masks.py)" = "646aaaf41a066893ec22e1e4b81694e9a67e84f7"
+          test "$(git hash-object scripts/assemble_release_masks.py)" = "1eaf3455f3093839b9c7c899b8308a2e74b988aa"
+          test "$(git hash-object scripts/validate_exercise_masks.py)" = "45ae813103eed8823d7c94c6d6921ac8c23d2aee"
+          test "$(git hash-object app/src/main/assets/free_exercise_db/photos.sha256)" = "0956503f9f5d767f44781940e8896f9dd25d68e9"
+          test "$(git rev-parse HEAD:app/src/main/assets/exercise_masks)" = "afb8bfe4445d5caf7d17f7ab4bb08f0758b6ff1b"
+
+      - name: Download separate prepared mask shards
+        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37449786439
+          pattern: exercise-contours-*
+          path: .gradle/prepared-contour-shards/masks
+
+      - name: Download shard provenance
+        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37449786439
+          pattern: contour-report-*
+          path: .gradle/prepared-contour-shards/reports
+
+      - name: Assemble verified contours without overlapping writes
+        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        run: |
+          python3 -m pip install Pillow==11.0.0
+          python3 scripts/assemble_release_masks.py
+          touch app/src/main/assets/exercise_masks/whole-objects-v2
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Keep debug signing key between builds
+        id: signing-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fitclub-debug-signing-v2
+
+
+      - name: Restore permanent signing key when configured
+        env:
+          FITCLUB_DEBUG_KEYSTORE_BASE64: ${{ secrets.FITCLUB_DEBUG_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          encoded = os.environ.get("FITCLUB_DEBUG_KEYSTORE_BASE64", "").strip()
+          if encoded:
+              target = Path.home() / ".android" / "debug.keystore"
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(base64.b64decode(encoded, validate=True))
+              target.chmod(0o600)
+          PY
+
+      - name: Prepare debug signing key
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -noprompt \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android -keypass android \
+              -alias androiddebugkey -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          chmod 600 "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" \
+            -storepass android -alias androiddebugkey
+          echo "FITCLUB_DEBUG_KEYSTORE_PATH=$HOME/.android/debug.keystore" >> "$GITHUB_ENV"
+
+      - name: Save debug signing key before build
+        if: steps.signing-cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fitclub-debug-signing-v2
+
+      - name: Set up Android 34 SDK
+        run: |
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      # В репозитории нет gradle-wrapper.jar, поэтому Gradle ставится этим шагом.
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Verify released mask hashes, dimensions and foreground/background
+        run: |
+          set -o pipefail
+          python3 -m pip install Pillow==11.0.0
+          gradle :app:prepareExercisePhotos --stacktrace 2>&1 | tee build-photos.log
+          python3 scripts/validate_exercise_masks.py 2>&1 | tee -a build-photos.log
+
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          gradle testDebugUnitTest --stacktrace 2>&1 | tee build-test.log
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          roots = [ET.parse(p).getroot() for p in Path('app/build/test-results/testDebugUnitTest').glob('TEST-*.xml')]
+          tests = sum(int(r.get('tests', 0)) for r in roots)
+          failures = sum(int(r.get('failures', 0)) + int(r.get('errors', 0)) for r in roots)
+          print(f'Test report: {tests} tests, {failures} failures/errors')
+          if not tests or failures:
+              raise SystemExit('Missing or failing test reports')
+          PY
+
+      - name: Build debug APK
+        run: |
+          set -o pipefail
+          FITCLUB_DEBUG_KEYSTORE_PATH="$HOME/.android/debug.keystore" gradle assembleDebug --stacktrace 2>&1 | tee build-apk.log
+
+      # Compiler errors and failing tests become annotations on the pull request, so they can be read without the raw log.
+      - name: Report build and test failures
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          def emit(title, lines):
+              if lines:
+                  body = "%0A".join(l.replace("%", "%25").replace("\r", "").replace("\n", " ")[:400] for l in lines[:60])
+                  print(f"::error title={title}::{body}")
+          compile_errors = []
+          tail = []
+          if Path("build-photos.log").exists():
+              tail = [l for l in Path("build-photos.log").read_text(errors="replace").splitlines() if l.strip()][-40:]
+          emit("Photo preparation output (last lines)", tail)
+          for log in ("build-test.log", "build-apk.log", "build-photos.log"):
+              path = Path(log)
+              if path.exists():
+                  for line in path.read_text(errors="replace").splitlines():
+                      if re.match(r"^e: ", line) or "error:" in line and ".kt" in line:
+                          compile_errors.append(re.sub(r"file://.*?/app/src/", "app/src/", line))
+          emit("Kotlin compile errors", compile_errors)
+          failures = []
+          for report in Path("app/build/test-results/testDebugUnitTest").glob("TEST-*.xml"):
+              for case in ET.parse(report).getroot().iter("testcase"):
+                  for problem in list(case.findall("failure")) + list(case.findall("error")):
+                      message = (problem.get("message") or problem.text or "").strip().splitlines()
+                      failures.append(f"{case.get('classname','').split('.')[-1]}.{case.get('name')}: {' | '.join(message[:3])}")
+          emit("Failing unit tests", failures)
+          PY
+
+      - name: Verify distribution package and version
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          metadata = json.loads(Path('app/build/outputs/apk/debug/output-metadata.json').read_text())
+          experimental = os.environ['ORG_GRADLE_PROJECT_fitclubExperimental'] == 'true'
+          expected = 'com.fitclub.tracker.experimental' if experimental else 'com.fitclub.tracker'
+          assert metadata['applicationId'] == expected, metadata
+          element = metadata['elements'][0]
+          assert element['versionName'] == ('0.9.0-test' if experimental else '0.9.0'), element
+          assert element['versionCode'] == 23, element
+          print(f"Distribution verified: {expected}, {element['versionName']} ({element['versionCode']})")
+          PY
+
+      - name: Verify APK signing identity
+        run: '"$ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/debug/app-debug.apk'
+
+      - name: Name APK using version and build number
+        id: apk
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import shutil
+          from pathlib import Path
+
+          apk_dir = Path("app/build/outputs/apk/debug")
+          metadata = json.loads((apk_dir / "output-metadata.json").read_text())
+          elements = metadata["elements"]
+          if len(elements) != 1:
+              raise RuntimeError("Expected a single debug APK")
+          element = elements[0]
+          version = re.sub(r"[^A-Za-z0-9._-]", "-", element["versionName"])
+          name = f"FitClub-v{version}-build{os.environ['GITHUB_RUN_NUMBER']}-debug"
+          target = Path("dist") / f"{name}.apk"
+          target.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copy2(apk_dir / element["outputFile"], target)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"name={name}\n")
+              output.write(f"path={target.as_posix()}\n")
+          print(f"APK: {target.name}")
+          PY
+
+      - name: Publish APK in private repository release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag="anatomy-0.9.0-build-${GITHUB_RUN_ID}"
+          gh release create "$tag" "${{ steps.apk.outputs.path }}" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "FitClub Anatomy 0.9.0 · build $GITHUB_RUN_NUMBER" \
+            --notes "Experimental APK with the offline anatomy catalog: all 274 database records, 165 fitness flags, Russian/Latin search and 17 available illustration boards. Descriptions are partly populated; illustrations are drafts."
+          printf 'APK release: https://github.com/%s/releases/tag/%s\n' "$GITHUB_REPOSITORY" "$tag" >> "$GITHUB_STEP_SUMMARY"

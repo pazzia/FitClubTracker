@@ -51,7 +51,7 @@ private val EquipmentFilters = listOf("Тренажёр", "Штанга", "Га�
 private fun categoryOf(e: ExerciseEntity) = FreeExerciseCatalog.media[e.id]?.category
 
 @Composable
-fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Unit, onProfile: () -> Unit = {}) {
+fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Unit, onProfile: () -> Unit = {}, onAnatomy: () -> Unit = {}) {
     val vm = appViewModel { LibraryViewModel(it) }
     val all by vm.exercises.collectAsStateWithLifecycle()
     val profile by vm.settings.collectAsStateWithLifecycle()
@@ -70,6 +70,14 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
                     Text("${all.size} упражнений · ${AnatomyGroupOrder.size} групп мышц", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                 }
                 CircleIconButton("Профиль", onProfile, filled = true) { Icon(Icons.Filled.Person, null, tint = Fc.Text) }
+            }
+        }
+        item {
+            FcCard(Modifier.fillMaxWidth(), onClick = onAnatomy) {
+                Text("Анатомия мышц", color = Fc.Text, style = MaterialTheme.typography.titleLarge)
+                Text("274 записи · строение и функции мышц", color = Fc.Muted)
+                Spacer(Modifier.height(8.dp))
+                Text("Открыть атлас →", color = Fc.Lime, style = MaterialTheme.typography.labelLarge)
             }
         }
         item {
@@ -306,3 +314,4 @@ private fun MuscleSummary(e: ExerciseEntity, profileSex: Sex) {
         }
     }
 }
+

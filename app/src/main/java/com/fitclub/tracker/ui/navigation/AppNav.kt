@@ -58,6 +58,8 @@ import com.fitclub.tracker.FitApp
 import com.fitclub.tracker.data.model.MuscleGroup
 import com.fitclub.tracker.ui.library.ExerciseDetailScreen
 import com.fitclub.tracker.ui.library.LibraryGroupScreen
+import com.fitclub.tracker.ui.anatomy.AnatomyCatalogScreen
+import com.fitclub.tracker.ui.anatomy.AnatomyDetailScreen
 import com.fitclub.tracker.ui.library.LibraryHomeScreen
 import com.fitclub.tracker.ui.placeholder.ComingSoonScreen
 import com.fitclub.tracker.ui.dashboard.CalendarHomeScreen
@@ -107,7 +109,7 @@ private data class Tab(val route: String, val title: String, val icon: String, v
 private val tabs = listOf(
     Tab(Routes.TODAY, "Сегодня", LineIcons.BOLT, listOf("today", "calendar")),
     Tab(Routes.PROGRAMS, "Программы", LineIcons.LIST, listOf("programs", "program/")),
-    Tab(Routes.LIBRARY, "Справочник", LineIcons.BOOK, listOf("library", "exercise/")),
+    Tab(Routes.LIBRARY, "Справочник", LineIcons.BOOK, listOf("library", "exercise/", "anatomy")),
     Tab(Routes.PROGRESS, "Прогресс", LineIcons.CHART, listOf("progress"))
 )
 
@@ -163,8 +165,17 @@ fun AppRoot() {
                 LibraryHomeScreen(
                     onGroup = { nav.navigate(Routes.group(it)) },
                     onExercise = { nav.navigate(Routes.exercise(it)) },
-                    onProfile = { nav.navigate(Routes.PROFILE) }
+                    onProfile = { nav.navigate(Routes.PROFILE) },
+                    onAnatomy = { nav.navigate("anatomy") }
                 )
+            }
+            composable("anatomy") {
+                AnatomyCatalogScreen(onBack = { nav.popBackStack() }, onMuscle = { nav.navigate("anatomy/muscle/${android.net.Uri.encode(it)}") })
+            }
+            composable("anatomy/muscle/{muscleId}", arguments = listOf(navArgument("muscleId") { type = NavType.StringType })) { entry ->
+                AnatomyDetailScreen(entry.arguments?.getString("muscleId").orEmpty(), onBack = { nav.popBackStack() },
+                    onMuscle = { nav.navigate("anatomy/muscle/${android.net.Uri.encode(it)}") },
+                    onBicepsExercises = { nav.navigate(Routes.group(MuscleGroup.BICEPS)) })
             }
             composable(Routes.GROUP, arguments = listOf(navArgument("group") { type = NavType.StringType })) { entry ->
                 val group = MuscleGroup.valueOf(entry.arguments?.getString("group") ?: MuscleGroup.CHEST.name)
@@ -238,3 +249,4 @@ private fun BottomBar(nav: NavHostController) {
         }
     }
 }
+
