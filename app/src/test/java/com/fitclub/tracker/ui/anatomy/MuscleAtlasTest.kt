@@ -27,6 +27,13 @@ class MuscleAtlasTest {
         // Wrapped two-line names must not leak into the Latin name.
         assertEquals("Длинный разгибатель большого пальца кисти", atlas.muscle("m043")!!.name)
         assertFalse(atlas.muscles.any { Regex("[а-яё]").containsMatchIn(it.latin) })
+        // Terminologia Anatomica word order: «flexor carpi radialis», not «flexor radialis carpi».
+        assertEquals("Flexor carpi radialis", atlas.muscle("m031")!!.latin)
+        assertEquals("Flexor digitorum superficialis", atlas.muscle("m037")!!.latin)
+        assertEquals("Extensor hallucis longus", atlas.muscle("m094")!!.latin)
+        assertEquals("Diaphragma", atlas.muscle("m118")!!.latin)
+        val wrongOrder = Regex("\\b(radialis|ulnaris|longus|brevis|superficialis|profundus) (carpi|digitorum|pollicis|hallucis)\\b")
+        assertEquals(emptyList<String>(), atlas.muscles.filter { wrongOrder.containsMatchIn(it.latin) }.map { it.latin })
     }
 
     @Test fun everyLinkedExerciseExistsInTheExerciseCatalog() {
