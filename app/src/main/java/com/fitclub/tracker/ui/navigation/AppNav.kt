@@ -58,8 +58,9 @@ import com.fitclub.tracker.FitApp
 import com.fitclub.tracker.data.model.MuscleGroup
 import com.fitclub.tracker.ui.library.ExerciseDetailScreen
 import com.fitclub.tracker.ui.library.LibraryGroupScreen
-import com.fitclub.tracker.ui.anatomy.AnatomyCatalogScreen
-import com.fitclub.tracker.ui.anatomy.AnatomyDetailScreen
+import com.fitclub.tracker.ui.anatomy.AtlasGroupScreen
+import com.fitclub.tracker.ui.anatomy.AtlasHomeScreen
+import com.fitclub.tracker.ui.anatomy.AtlasMuscleScreen
 import com.fitclub.tracker.ui.library.LibraryHomeScreen
 import com.fitclub.tracker.ui.placeholder.ComingSoonScreen
 import com.fitclub.tracker.ui.dashboard.CalendarHomeScreen
@@ -101,6 +102,11 @@ object Routes {
     fun workout(schedule: Long) = "workout/$schedule"
     fun plan(epochDay: Long, schedule: Long = 0L) = "plan/$epochDay?schedule=$schedule"
     fun calendar(epochDay: Long = -1L) = "calendar?day=$epochDay"
+    const val ATLAS = "anatomy"
+    const val ATLAS_GROUP = "anatomy/group/{groupId}"
+    const val ATLAS_MUSCLE = "anatomy/muscle/{muscleId}"
+    fun atlasGroup(id: String) = "anatomy/group/$id"
+    fun atlasMuscle(id: String) = "anatomy/muscle/$id"
     fun result(session: Long) = "result/$session"
 }
 
@@ -166,16 +172,22 @@ fun AppRoot() {
                     onGroup = { nav.navigate(Routes.group(it)) },
                     onExercise = { nav.navigate(Routes.exercise(it)) },
                     onProfile = { nav.navigate(Routes.PROFILE) },
-                    onAnatomy = { nav.navigate("anatomy") }
+                    onAnatomy = { nav.navigate(Routes.ATLAS) }
                 )
             }
-            composable("anatomy") {
-                AnatomyCatalogScreen(onBack = { nav.popBackStack() }, onMuscle = { nav.navigate("anatomy/muscle/${android.net.Uri.encode(it)}") })
+            composable(Routes.ATLAS) {
+                AtlasHomeScreen(onBack = { nav.popBackStack() }, onGroup = { nav.navigate(Routes.atlasGroup(it)) },
+                    onMuscle = { nav.navigate(Routes.atlasMuscle(it)) })
             }
-            composable("anatomy/muscle/{muscleId}", arguments = listOf(navArgument("muscleId") { type = NavType.StringType })) { entry ->
-                AnatomyDetailScreen(entry.arguments?.getString("muscleId").orEmpty(), onBack = { nav.popBackStack() },
-                    onMuscle = { nav.navigate("anatomy/muscle/${android.net.Uri.encode(it)}") },
-                    onBicepsExercises = { nav.navigate(Routes.group(MuscleGroup.BICEPS)) })
+            composable(Routes.ATLAS_GROUP, arguments = listOf(navArgument("groupId") { type = NavType.StringType })) { entry ->
+                AtlasGroupScreen(entry.arguments?.getString("groupId").orEmpty(), onBack = { nav.popBackStack() },
+                    onMuscle = { nav.navigate(Routes.atlasMuscle(it)) })
+            }
+            composable(Routes.ATLAS_MUSCLE, arguments = listOf(navArgument("muscleId") { type = NavType.StringType })) { entry ->
+                AtlasMuscleScreen(entry.arguments?.getString("muscleId").orEmpty(), onBack = { nav.popBackStack() },
+                    // Paging to a neighbour replaces the card, so «back» still returns to the group.
+                    onMuscle = { nav.navigate(Routes.atlasMuscle(it)) { popUpTo(Routes.ATLAS_MUSCLE) { inclusive = true } } },
+                    onExercise = { nav.navigate(Routes.exercise(it)) })
             }
             composable(Routes.GROUP, arguments = listOf(navArgument("group") { type = NavType.StringType })) { entry ->
                 val group = MuscleGroup.valueOf(entry.arguments?.getString("group") ?: MuscleGroup.CHEST.name)
