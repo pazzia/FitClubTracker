@@ -211,35 +211,14 @@ class ProfileViewModel(private val c: AppContainer) : ViewModel() {
     val measurements = c.fitness.observeMeasurements().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val workouts = c.fitness.observeWorkouts().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     fun update(value: ProfileSettings) = c.profile.update(value)
-    var saving by mutableStateOf(false)
-        private set
-    var error by mutableStateOf<String?>(null)
-    fun add(weight: Float?, waist: Float?, fat: Float?, chest: Float?, arm: Float?, onSaved: () -> Unit) {
-        if (saving) return
-        saving = true
-        viewModelScope.launch {
-            runCatching { c.fitness.addMeasurement(weight, waist, fat, chest, arm) }
-                .onSuccess { error = null; onSaved() }.onFailure { error = "Не удалось сохранить замер: ${it.message}" }
-            saving = false
-        }
-    }
 }
 
 @Composable
-fun ProfileScreen(onBack: () -> Unit) {
+fun ProfileScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit = {}) {
     val vm = appViewModel { ProfileViewModel(it) }
     val st by vm.settings.collectAsStateWithLifecycle()
     val measurements by vm.measurements.collectAsStateWithLifecycle()
     val workouts by vm.workouts.collectAsStateWithLifecycle()
-    var adding by rememberSaveable { mutableStateOf(false) }
-    var weight by rememberSaveable { mutableStateOf("") }; var waist by rememberSaveable { mutableStateOf("") }
-    var fat by rememberSaveable { mutableStateOf("") }; var chest by rememberSaveable { mutableStateOf("") }; var arm by rememberSaveable { mutableStateOf("") }
-    val latest = measurements.lastOrNull()
-    val units = WeightUnits(st.unitsKg)
-    var measurementUnitsKg by rememberSaveable { mutableStateOf(st.unitsKg) }
-    val entryUnits = WeightUnits(measurementUnitsKg)
-    val values = listOf(weight, waist, fat, chest, arm)
-    val measurementValid = values.any { it.isNotBlank() } && values.mapIndexed { i, v -> v.isBlank() || num(v)?.let { n -> n.isFinite() && (if (i == 2) n >= 0 else n > 0) } == true }.all { it } && (fat.isBlank() || num(fat)?.let { it in 0f..100f } == true)
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { BackRow("Личный кабинет", onBack) }
@@ -255,35 +234,13 @@ fun ProfileScreen(onBack: () -> Unit) {
                 OutlinedTextField(st.name, { vm.update(st.copy(name = it)) }, label = { Text("Имя") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Text("Пол", color = Fc.Text, modifier = Modifier.padding(top = 10.dp)); Segmented(Sex.entries, st.sex, { vm.update(st.copy(sex = it)) }, { it.title })
                 Text("Уровень подготовки", color = Fc.Text, modifier = Modifier.padding(top = 12.dp)); Segmented(listOf(1,2,3), st.level, { vm.update(st.copy(level = it)) }, { if (it==1) "Новичок" else if (it==2) "Продв." else "Профи" })
-                Text("Пол меняет модель тела в справочнике и отчётах.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+                Text("Пол меняет модель тела в профиле и в справочнике.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
             }
         }
-        item { FcCard { Text("Модель тела", style = MaterialTheme.typography.titleSmall, color = Fc.Text); Spacer(Modifier.height(12.dp)); BodyPair(st.sex) } }
+        item { com.fitclub.tracker.ui.profile.BodyModelSection(st.sex, measurements, onMeasure = { onMeasure(it?.key) }) }
         item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MiniStat("Тренировок", "${workouts.count { it.completedSets > 0 }}", "выполнено", Modifier.weight(1f)); MiniStat("Замеров", "${measurements.size}", "параметров", Modifier.weight(1f))
+            MiniStat("Тренировок", "${workouts.count { it.completedSets > 0 }}", "выполнено", Modifier.weight(1f)); MiniStat("Замеров", "${measurements.size}", "записано", Modifier.weight(1f))
         } }
-        item {
-            FcCard {
-                Text("ПАРАМЕТРЫ ТЕЛА", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
-                Spacer(Modifier.height(8.dp))
-                listOf("Вес" to latest?.weightKg?.let { units.format(it) }, "Талия" to latest?.waistCm?.let { "${fmt(it)} см" }, "Жир" to latest?.fatPercent?.let { "${fmt(it)}%" }, "Грудь" to latest?.chestCm?.let { "${fmt(it)} см" }, "Рука" to latest?.armCm?.let { "${fmt(it)} см" }).forEach { (k,v) ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) { Text(k, color = Fc.Muted, modifier = Modifier.weight(1f)); Text(v ?: "—", color = Fc.Text) }
-                }
-                Spacer(Modifier.height(8.dp)); PrimaryButton("Добавить замер", { measurementUnitsKg = st.unitsKg; adding = true })
-            }
-        }
-        if (adding) item {
-            FcCard(border = Fc.Lime.copy(.5f)) {
-                Text("НОВЫЙ ЗАМЕР · СЕГОДНЯ", style = MaterialTheme.typography.titleMedium, color = Fc.Text)
-                MeasureField("Вес, ${entryUnits.label}", weight) { weight = it }; MeasureField("Талия, см", waist) { waist = it }; MeasureField("Жир, %", fat) { fat = it }; MeasureField("Грудь, см", chest) { chest = it }; MeasureField("Рука, см", arm) { arm = it }
-                if (!measurementValid) Text("Введите хотя бы один положительный замер. Жир — от 0 до 100%.", color = Fc.Muted)
-                if (vm.error != null) Text(vm.error.orEmpty(), color = Fc.Pink)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { adding = false }, modifier = Modifier.weight(1f)) { Text("Отмена", color = Fc.Muted) }
-                    Button(onClick = { vm.add(num(weight)?.let(entryUnits::toKg), num(waist), num(fat), num(chest), num(arm)) { adding = false; weight = ""; waist = ""; fat = ""; chest = ""; arm = "" } }, enabled = measurementValid && !vm.saving, colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime), modifier = Modifier.weight(1f)) { Text(if (vm.saving) "Сохраняю…" else "Сохранить", color = Fc.OnAccent) }
-                }
-            }
-        }
         item {
             FcCard {
                 Text("ОФОРМЛЕНИЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
@@ -311,8 +268,6 @@ fun ProfileScreen(onBack: () -> Unit) {
     }
 }
 
-@Composable private fun MeasureField(label: String, value: String, onChange: (String) -> Unit) { OutlinedTextField(value, { onChange(com.fitclub.tracker.domain.normalizeDecimalInput(it)) }, label = { Text(label) }, singleLine = true, isError = value.isNotBlank() && num(value)?.let { it.isFinite() && it >= 0 } != true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Fc.Text, unfocusedTextColor = Fc.Text, focusedBorderColor = Fc.Lime, unfocusedBorderColor = Fc.Line)) }
-private fun num(s: String) = s.replace(',', '.').toFloatOrNull()
 private fun fmt(v: Float) = if (v == v.roundToInt().toFloat()) v.roundToInt().toString() else "%.1f".format(Locale.US, v).replace('.', ',')
 private fun signed(v: Float) = (if (v > 0) "+" else "") + fmt(v)
 

@@ -107,7 +107,7 @@ data class ProgramWithDays(
     val days: List<DayWithItems>
 )
 
-/** Замеры тела — используются на следующих этапах (личный кабинет). */
+/** Замеры тела: один ряд на день, модель тела в личном кабинете. */
 @Entity(tableName = "body_measurements")
 data class BodyMeasurementEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -116,7 +116,9 @@ data class BodyMeasurementEntity(
     val waistCm: Float?,
     val fatPercent: Float?,
     val chestCm: Float?,
-    val armCm: Float?
+    val armCm: Float?,
+    val hipsCm: Float? = null,
+    val thighCm: Float? = null
 )
 
 /** Факт тренировки и подходы — используются на этапе 2 (активная тренировка). */

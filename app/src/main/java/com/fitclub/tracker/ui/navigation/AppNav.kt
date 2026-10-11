@@ -92,6 +92,8 @@ object Routes {
     const val EXERCISE = "exercise/{id}?training={training}"
     const val PROGRESS = "progress"
     const val PROFILE = "profile"
+    const val MEASURE = "measure?metric={metric}"
+    fun measure(metric: String? = null) = "measure?metric=${metric.orEmpty()}"
     const val WORKOUT = "workout/{schedule}"
     const val PICK_PROGRAM = "plan-programs/{epochDay}"
     const val PLANNER = "plan/{epochDay}?schedule={schedule}"
@@ -158,7 +160,10 @@ fun AppRoot() {
                 WorkoutResultScreen(entry.arguments!!.getLong("session"), onClose = { nav.popBackStack() })
             }
             composable(Routes.PROGRESS) { ProgressScreen(onProfile = { nav.navigate(Routes.PROFILE) }) }
-            composable(Routes.PROFILE) { ProfileScreen(onBack = { nav.popBackStack() }) }
+            composable(Routes.PROFILE) { ProfileScreen(onBack = { nav.popBackStack() }, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } }) }
+            composable(Routes.MEASURE, arguments = listOf(navArgument("metric") { type = NavType.StringType; defaultValue = "" })) { entry ->
+                com.fitclub.tracker.ui.profile.MeasureScreen(entry.arguments?.getString("metric")?.ifBlank { null }, onClose = { nav.popBackStack() })
+            }
             composable(Routes.WORKOUT, arguments = listOf(navArgument("schedule") { type = NavType.LongType })) { entry ->
                 WorkoutScreen(
                     scheduleId = entry.arguments?.getLong("schedule") ?: 0L,

@@ -106,6 +106,9 @@ interface MeasurementDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: BodyMeasurementEntity)
+
+    @Query("SELECT * FROM body_measurements WHERE epochDay = :epochDay ORDER BY id DESC LIMIT 1")
+    suspend fun getForDay(epochDay: Long): BodyMeasurementEntity?
 }
 
 @Dao
@@ -187,7 +190,7 @@ interface ScheduleDao {
 }
 
 /** Current Room schema; shown in the app's version details. */
-const val DB_SCHEMA_VERSION = 9
+const val DB_SCHEMA_VERSION = 10
 
 @Database(
     entities = [
@@ -273,9 +276,15 @@ abstract class AppDatabase : RoomDatabase() {
                 }
             }
         }
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE body_measurements ADD COLUMN hipsCm REAL")
+                db.execSQL("ALTER TABLE body_measurements ADD COLUMN thighCm REAL")
+            }
+        }
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .build()
     }
 }
