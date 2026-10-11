@@ -8,19 +8,22 @@ class BodyModelTest {
     private fun row(day: Long, weight: Float? = null, waist: Float? = null, hips: Float? = null, chest: Float? = null) =
         BodyMeasurementEntity(epochDay = day, weightKg = weight, waistCm = waist, fatPercent = null, chestCm = chest, armCm = null, hipsCm = hips)
 
-    @Test fun everyGirthHasABandOnBothFiguresAndStaysInsideTheDrawing() {
-        for (figure in listOf(BodyFigure.MALE, BodyFigure.FEMALE)) {
+    @Test fun everyGirthHasABandOnAllFourFiguresInsideTheDrawing() {
+        for (figure in BodyFigure.ALL) {
             assertEquals(BodyMetric.entries.filter { it.isGirth }.toSet(), figure.bands.map { it.metric }.toSet())
             for (b in figure.bands) {
-                assertTrue(b.cx - b.half >= 0f && b.cx + b.half <= figure.width)
-                assertTrue(b.y in 0f..figure.height)
+                assertTrue(figure.asset, b.cx - b.half >= 0f && b.cx + b.half <= figure.width)
+                assertTrue(figure.asset, b.y in 0f..figure.height)
             }
-            // Top to bottom: chest above waist above hips above thigh.
             val y = figure.bands.associate { it.metric to it.y }
+            assertTrue(y.getValue(BodyMetric.SHOULDERS) < y.getValue(BodyMetric.CHEST))
             assertTrue(y.getValue(BodyMetric.CHEST) < y.getValue(BodyMetric.WAIST))
             assertTrue(y.getValue(BodyMetric.WAIST) < y.getValue(BodyMetric.HIPS))
             assertTrue(y.getValue(BodyMetric.HIPS) < y.getValue(BodyMetric.THIGH))
+            assertEquals(3, figure.bands.count { it.rightSide })
         }
+        assertEquals(BodyFigure.FEMALE_DARK, BodyFigure.of(female = true, dark = true))
+        assertEquals(BodyFigure.MALE_LIGHT, BodyFigure.of(female = false, dark = false))
     }
 
     @Test fun valueOnADateIsTheLatestRecordedUpToThatDay() {
@@ -30,15 +33,33 @@ class BodyModelTest {
         assertNull(valueAsOf(rows, 1, BodyMetric.HIPS))
         assertEquals(100f, valueAsOf(rows, 2, BodyMetric.HIPS))
         assertNull(valueAsOf(rows, 5, BodyMetric.WAIST))
-        assertEquals(88f, referenceValue(rows, BodyMetric.WAIST))
+        assertEquals(88f, valueOnDay(rows, 29, BodyMetric.WAIST))
+        assertEquals(85f, valueOnDay(rows, 30, BodyMetric.WAIST))
+        assertNull(valueOnDay(rows, 0, BodyMetric.WAIST))
     }
 
-    @Test fun tapeFollowsTheGirthAndIgnoresTypos() {
-        val band = BodyFigure.MALE.bands.first { it.metric == BodyMetric.WAIST }
-        assertEquals(band.half * 2, tapeLength(band, 88f, 88f), 0.001f)
-        assertEquals(band.half * 2 * 82f / 88f, tapeLength(band, 82f, 88f), 0.001f)
-        assertEquals(band.half * 2 * 1.5f, tapeLength(band, 880f, 88f), 0.001f)
-        assertEquals(band.half * 2, tapeLength(band, null, 88f), 0.001f)
+    @Test fun weeklySeriesCarriesTheLastKnownValueAndEndsToday() {
+        val rows = listOf(row(10, waist = 88f), row(40, waist = 85f), row(60, waist = 82f))
+        val series = weeklySeries(rows, BodyMetric.WAIST, today = 60, weeks = 8)
+        // Week ends: 11, 18, 25, 32, 39, 46, 53, 60.
+        assertEquals(listOf(88f, 88f, 88f, 88f, 88f, 85f, 85f, 82f), series)
+        val change = periodChange(BodyMetric.WAIST, series)!!
+        assertEquals(-6f, change.delta, 0.001f)
+        assertEquals(-6.8f, change.percent, 0.001f)
+        assertEquals(true, change.good)
+        assertNull(periodChange(BodyMetric.WAIST, listOf(null, null, 82f)))
+        assertEquals(PeriodChange(0f, 0f, null), periodChange(BodyMetric.HIPS, listOf(null, 100f, 100f)))
+        assertEquals(false, periodChange(BodyMetric.HIPS, listOf(97f, 98f))!!.good)
+    }
+
+    @Test fun zonesHaveTheReferenceColours() {
+        assertEquals(BodyHue.BLUE, BodyMetric.SHOULDERS.hue)
+        assertEquals(BodyHue.BLUE, BodyMetric.CHEST.hue)
+        assertEquals(BodyHue.PURPLE, BodyMetric.ARM.hue)
+        assertEquals(BodyHue.PURPLE, BodyMetric.HIPS.hue)
+        assertEquals(BodyHue.CYAN, BodyMetric.WAIST.hue)
+        assertEquals(BodyHue.CYAN, BodyMetric.THIGH.hue)
+        assertEquals("Бицепс", BodyMetric.ARM.title)
     }
 
     @Test fun changeKnowsWhichDirectionIsProgress() {

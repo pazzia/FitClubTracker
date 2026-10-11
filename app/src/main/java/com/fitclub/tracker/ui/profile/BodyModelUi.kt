@@ -7,6 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -76,290 +79,350 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
-/** Colours of the measuring tape; lime on dark, deep olive on light so the tape stays readable on white. */
-private class TapeColors(val tape: Color, val prev: Color, val lead: Color, val empty: Color, val good: Color, val bad: Color, val glow: Color)
+/**
+ * Body measurements block, v2 (the user's reference screens): blue family palette inside this
+ * block only, so the figure, tapes and charts read as one piece on both themes.
+ */
+private class BlockColors(
+    val blue: Color, val purple: Color, val cyan: Color, val good: Color, val bad: Color,
+    val surface: Color, val line: Color, val labelName: Color, val segBg: Color, val segOn: Color,
+    val grid: Color, val tipLine: Color, val areaAlpha: Float, val addBorder: Color, val addText: Color
+) {
+    val tape: Color get() = blue
+    val glow: Color get() = blue.copy(alpha = .18f)
+    fun of(h: BodyHue) = when (h) { BodyHue.BLUE -> blue; BodyHue.PURPLE -> purple; BodyHue.CYAN -> cyan }
+}
 
 @Composable
-private fun tapeColors(): TapeColors = if (Fc.isLight)
-    TapeColors(Color(0xFF4A6200), Color(0xFFB5400C), Color(0xFFB9BFB5), Color(0xFFA3AAA2), Color(0xFF3D5A00), Color(0xFFB5400C), Color(0x2E7FA300))
-else TapeColors(Color(0xFFC6FF3D), Color(0xFFFF7A45), Color(0xFF3A4148), Color(0xFF5F686F), Color(0xFFC6FF3D), Color(0xFFFF7A45), Color(0x2EC6FF3D))
+private fun blockColors(): BlockColors = if (Fc.isLight) BlockColors(
+    blue = Color(0xFF1668E3), purple = Color(0xFF8A2BE2), cyan = Color(0xFF0E9BB0), good = Color(0xFF15803D), bad = Color(0xFFDC2626),
+    surface = Color.White, line = Color(0xFFE6EAF0), labelName = Color(0xFF2B3644), segBg = Color(0xFFEAEFF6), segOn = Color(0xFF1E7BFF),
+    grid = Color(0xFFEDF0F5), tipLine = Color(0xFFDDE3EC), areaAlpha = .12f, addBorder = Color(0xFFD6E2F5), addText = Color(0xFF1668E3)
+) else BlockColors(
+    blue = Color(0xFF3B8BFF), purple = Color(0xFFB068FF), cyan = Color(0xFF22D3EE), good = Color(0xFF34D399), bad = Color(0xFFF87171),
+    surface = Color(0xFF0E151F), line = Color(0xFF1A2533), labelName = Color(0xFFC9D2DD), segBg = Color(0xFF0E151F), segOn = Color(0xFF1E7BFF),
+    grid = Color(0xFF1A2533), tipLine = Color(0xFF2A3A4E), areaAlpha = .22f, addBorder = Color(0xFF1E4E95), addText = Color(0xFF3B8BFF)
+)
+
+@Composable
+private fun tapeColors(): BlockColors = blockColors()
+
+/** Background the figure was drawn on, so the picture blends into its card. */
+private fun figureBackground(figure: BodyFigure): Color = when (figure.asset) {
+    "female_dark" -> Color(0xFF0F1721)
+    "male_dark" -> Color(0xFF0B121B)
+    else -> Color(0xFFFDFDFE)
+}
 
 private val MONTHS = listOf("янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек")
 fun shortDate(epochDay: Long): String = LocalDate.ofEpochDay(epochDay).let { "${it.dayOfMonth} ${MONTHS[it.monthValue - 1]}" }
 
-/** The user's own front-view drawing, decolourised, on a transparent background. */
+/** One of the four figures from the user's reference screens, cleaned of the drawn annotations. */
 @Composable
-private fun rememberFigure(female: Boolean, light: Boolean): ImageBitmap? {
+private fun rememberFigure(figure: BodyFigure): ImageBitmap? {
     val context = LocalContext.current.applicationContext
-    val key = "${if (female) "female" else "male"}_${if (light) "light" else "dark"}"
-    val picture by produceState<ImageBitmap?>(null, key) {
+    val picture by produceState<ImageBitmap?>(null, figure.asset) {
         value = withContext(Dispatchers.IO) {
-            runCatching { context.assets.open("bodymodel/$key.webp").use { BitmapFactory.decodeStream(it)?.asImageBitmap() } }.getOrNull()
+            runCatching { context.assets.open("bodymodel/${figure.asset}.webp").use { BitmapFactory.decodeStream(it)?.asImageBitmap() } }.getOrNull()
         }
     }
     return picture
 }
 
-private fun metricValueText(metric: BodyMetric, value: Float?, units: WeightUnits): String = when {
-    value == null -> "—"
-    metric == BodyMetric.WEIGHT -> units.format(value)
-    metric == BodyMetric.FAT -> "${formatMeasure(value)} %"
-    else -> "${formatMeasure(value)} см"
-}
-
 private fun metricDisplay(metric: BodyMetric, value: Float, units: WeightUnits) = if (metric == BodyMetric.WEIGHT) units.fromKg(value) else value
 private fun metricUnit(metric: BodyMetric, units: WeightUnits) = if (metric == BodyMetric.WEIGHT) units.label else metric.unit
 
+/** Girths in the order of the chart tabs. */
+private val GIRTHS = listOf(BodyMetric.SHOULDERS, BodyMetric.CHEST, BodyMetric.ARM, BodyMetric.WAIST, BodyMetric.HIPS, BodyMetric.THIGH)
+/** Change cards lead with what people watch most. */
+private val CARD_ORDER = listOf(BodyMetric.WAIST, BodyMetric.HIPS, BodyMetric.CHEST, BodyMetric.ARM, BodyMetric.THIGH, BodyMetric.SHOULDERS)
+private const val WEEKS = 8
+
 /**
- * Body model of the profile: the user's figure with a measuring tape on every girth. The tape
- * grows and shrinks with the girth; the dashed line under it is the date chosen as «было».
+ * «Замеры тела»: the user's figure with a dashed tape and a callout on every girth, change cards
+ * for the last eight weeks and a weekly chart. Tapping a callout or a card shows that girth on
+ * the chart; tapping a week shows the body as it was at the end of that week.
  */
 @Composable
-fun BodyModelSection(sex: Sex, rows: List<BodyMeasurementEntity>, onMeasure: (BodyMetric?) -> Unit, modifier: Modifier = Modifier) {
-    val units = LocalWeightUnits.current
+fun BodyModelSection(
+    sex: Sex, rows: List<BodyMeasurementEntity>, onMeasure: (BodyMetric?) -> Unit,
+    modifier: Modifier = Modifier, onSex: (Sex) -> Unit = {}, today: Long = LocalDate.now().toEpochDay()
+) {
     val female = sex == Sex.FEMALE
-    val colors = tapeColors()
-    val figure = BodyFigure.of(female)
-    val picture = rememberFigure(female, Fc.isLight)
-    val empty = rows.isEmpty()
-    var nowIndex by rememberSaveable(rows.size) { mutableIntStateOf(rows.lastIndex) }
-    var prevIndex by rememberSaveable(rows.size) { mutableIntStateOf(if (rows.size > 1) 0 else -1) }
-    var editingPrev by rememberSaveable { mutableStateOf(false) }
-    val now = nowIndex.takeIf { it in rows.indices }
-    val prev = prevIndex.takeIf { it in rows.indices && it != nowIndex }
+    val colors = blockColors()
+    val figure = BodyFigure.of(female, dark = !Fc.isLight)
+    var metricKey by rememberSaveable { mutableStateOf(BodyMetric.WAIST.key) }
+    val metric = BodyMetric.byKey(metricKey) ?: BodyMetric.WAIST
+    var week by rememberSaveable { mutableIntStateOf(WEEKS - 1) }
+    val series = remember(rows, today) { GIRTHS.associateWith { weeklySeries(rows, it, today, WEEKS) } }
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-            Text("Модель тела", style = MaterialTheme.typography.headlineSmall, color = Fc.Text, modifier = Modifier.weight(1f).semantics { heading() })
-            Text(when {
-                now == null -> "нет замеров"
-                prev != null -> "${shortDate(rows[prev].epochDay)} → ${shortDate(rows[now].epochDay)}"
-                else -> shortDate(rows[now].epochDay)
-            }, color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-        }
-
-        FigureStage(figure, picture, rows, now, prev, colors, units, onMeasure)
-
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-            LegendItem(if (now == null) colors.empty else colors.tape, dashed = now == null, thick = true,
-                text = if (now == null) "здесь появятся ваши обхваты" else "стало, ${shortDate(rows[now].epochDay)}")
-            if (prev != null) LegendItem(colors.prev, dashed = true, thick = false, text = "было, ${shortDate(rows[prev].epochDay)}")
-        }
-
-        if (rows.size > 1 && now != null) {
-            DatePicker(rows, now, prevIndex, editingPrev, colors,
-                onEdit = { editingPrev = it },
-                onPick = { i -> if (editingPrev) prevIndex = i else nowIndex = i })
-        }
-        if (now != null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                TrendTile(BodyMetric.WEIGHT, rows, now, prev, colors, units, Modifier.weight(1f))
-                TrendTile(BodyMetric.FAT, rows, now, prev, colors, units, Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Замеры тела", color = Fc.Text, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 30.sp,
+                    modifier = Modifier.semantics { heading() })
+                Text("Изменения объёмов и прогресс по ключевым зонам", color = Fc.Muted, fontSize = 13.sp, lineHeight = 18.sp)
             }
-        } else {
-            Text("Замеров пока нет. Первый станет точкой отсчёта: дальше лента покажет, что ушло и что прибавилось.",
-                color = Fc.Muted, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
-        }
-        PrimaryButton(if (empty) "Записать первый замер" else "Записать замер", { onMeasure(null) }, modifier = Modifier.testTag("record-measurement"))
-    }
-}
-
-@Composable
-private fun LegendItem(color: Color, dashed: Boolean, thick: Boolean, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Canvas(Modifier.size(22.dp, 4.dp)) {
-            drawLine(color, Offset(0f, size.height / 2), Offset(size.width, size.height / 2), (if (thick) 3.dp else 2.dp).toPx(),
-                pathEffect = if (dashed) PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 3.dp.toPx())) else null)
-        }
-        Text(text, color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-    }
-}
-
-@Composable
-private fun FigureStage(
-    figure: BodyFigure, picture: ImageBitmap?, rows: List<BodyMeasurementEntity>, now: Int?, prev: Int?,
-    colors: TapeColors, units: WeightUnits, onMeasure: (BodyMetric?) -> Unit
-) {
-    val fontScale = LocalDensity.current.fontScale
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val stageW = maxWidth
-        val railW = 80.dp
-        val figH = min(540.dp, (stageW - railW * 2) / figure.aspect)
-        val figW = figH * figure.aspect
-        val figLeft = (stageW - figW) / 2
-        val scale = figH.value / figure.height
-        val labelH = 60.dp * fontScale.coerceAtLeast(1f)
-        val stageH = figH + 8.dp
-
-        data class Placed(val band: FigureBand, val value: Float?, val before: Float?, val ref: Float?, val top: Dp)
-        val placed = remember(rows, now, prev, figure, figH, labelH) {
-            fun side(right: Boolean): List<Placed> {
-                val bands = figure.bands.filter { it.rightSide == right }
-                val tops = railTops(bands.map { it.y * scale - 26f }, labelH.value, stageH.value)
-                return bands.mapIndexed { i, b ->
-                    Placed(b, now?.let { valueAsOf(rows, it, b.metric) }, prev?.let { valueAsOf(rows, it, b.metric) },
-                        referenceValue(rows, b.metric), tops[i].dp)
+            Surface(
+                onClick = { onMeasure(null) }, shape = RoundedCornerShape(20.dp), color = if (Fc.isLight) Color.White else colors.blue.copy(alpha = .10f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, colors.addBorder),
+                modifier = Modifier.heightIn(min = 44.dp).testTag("record-measurement")
+            ) {
+                Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("+", color = colors.addText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(if (rows.isEmpty()) "Первый замер" else "Добавить", color = colors.addText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
-            side(false) + side(true)
         }
 
-        Box(Modifier.fillMaxWidth().height(stageH)) {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(colors.segBg).border(1.dp, colors.line, RoundedCornerShape(24.dp)).padding(3.dp).selectableGroup()
+        ) {
+            listOf(Sex.MALE to "Мужчина", Sex.FEMALE to "Женщина").forEach { (value, title) ->
+                val on = sex == value
+                Box(
+                    Modifier.weight(1f).heightIn(min = 40.dp).clip(RoundedCornerShape(20.dp)).background(if (on) colors.segOn else Color.Transparent)
+                        .selectable(selected = on, role = Role.RadioButton) { onSex(value) }.testTag("model-${value.name.lowercase()}"),
+                    contentAlignment = Alignment.Center
+                ) { Text(title, color = if (on) Color.White else colors.labelName, fontSize = 15.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium) }
+            }
+        }
+
+        FigureCard(figure, colors, series, week, metric, onPick = { metricKey = it.key })
+
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CARD_ORDER.forEach { m -> ChangeCard(m, series.getValue(m), m == metric, colors) { metricKey = m.key } }
+        }
+
+        ProgressCard(metric, series.getValue(metric), week, today, colors, onMetric = { metricKey = it.key }, onWeek = { week = it })
+    }
+}
+
+@Composable
+private fun FigureCard(figure: BodyFigure, colors: BlockColors, series: Map<BodyMetric, List<Float?>>, week: Int, selected: BodyMetric, onPick: (BodyMetric) -> Unit) {
+    val picture = rememberFigure(figure)
+    val bg = figureBackground(figure)
+    val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+    BoxWithConstraints(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(bg).border(1.dp, colors.line, RoundedCornerShape(22.dp))
+    ) {
+        val cardW = maxWidth
+        val imgH = min(372.dp, cardW * 1.04f)
+        val imgW = imgH * figure.aspect
+        val imgLeft = (cardW - imgW) / 2
+        val imgTop = 8.dp
+        val cardH = imgH + 16.dp
+        val scale = imgH.value / figure.height
+        val labelW = 82.dp
+        val gap = 46f * fontScale
+
+        val tops = remember(figure, imgH, fontScale) {
+            val result = HashMap<BodyMetric, Float>()
+            for (right in listOf(false, true)) {
+                val side = figure.bands.filter { it.rightSide == right }
+                railTops(side.map { imgTop.value + it.y * scale - 30f }, gap, cardH.value - 6f).forEachIndexed { i, t -> result[side[i].metric] = t + 6f }
+            }
+            result
+        }
+
+        Box(Modifier.fillMaxWidth().height(cardH)) {
             if (picture != null) Image(picture, contentDescription = null, contentScale = ContentScale.FillBounds,
-                modifier = Modifier.offset(x = figLeft).size(figW, figH))
+                modifier = Modifier.offset(x = imgLeft, y = imgTop).size(imgW, imgH))
             Canvas(Modifier.matchParentSize()) {
-                val unit = scale * density
-                val left = figLeft.toPx()
-                val rail = railW.toPx()
-                for (p in placed) {
-                    val b = p.band
-                    val y = b.y * unit
-                    val cx = left + b.cx * unit
-                    val len = tapeLength(b, p.value, p.ref) * unit
-                    val x0 = cx - len / 2; val x1 = cx + len / 2
-                    val has = p.value != null
-                    val c = if (has) colors.tape else colors.empty
-                    if (p.before != null && has) {
-                        val pl = tapeLength(b, p.before, p.ref) * unit
-                        drawLine(colors.prev, Offset(cx - pl / 2, y + 4.dp.toPx()), Offset(cx + pl / 2, y + 4.dp.toPx()), 2.dp.toPx(),
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 3.dp.toPx())))
-                    }
-                    if (has) {
-                        var x = x0
-                        while (x <= x1) { drawLine(c.copy(alpha = .8f), Offset(x, y - 6.dp.toPx()), Offset(x, y - 2.dp.toPx()), 1.dp.toPx()); x += 6.dp.toPx() }
-                    }
-                    drawLine(c, Offset(x0, y), Offset(x1, y), 3.dp.toPx(), cap = StrokeCap.Round,
-                        pathEffect = if (has) null else PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())))
-                    drawLine(c, Offset(x0, y - 6.dp.toPx()), Offset(x0, y + 6.dp.toPx()), 2.dp.toPx())
-                    drawLine(c, Offset(x1, y - 6.dp.toPx()), Offset(x1, y + 6.dp.toPx()), 2.dp.toPx())
-                    val railX = if (b.rightSide) size.width - rail else rail
-                    val end = if (b.rightSide) x1 + 4.dp.toPx() else x0 - 4.dp.toPx()
-                    val labelY = p.top.toPx() + 26.dp.toPx()
-                    drawLine(colors.lead, Offset(end, y), Offset(railX, labelY), 1.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(1.dp.toPx(), 3.dp.toPx())))
+                val u = scale * density
+                for (b in figure.bands) {
+                    val color = colors.of(b.metric.hue)
+                    val on = b.metric == selected
+                    val y = imgTop.toPx() + b.y * u
+                    val cx = imgLeft.toPx() + b.cx * u
+                    val half = b.half * u
+                    val px = if (b.rightSide) cx + half else cx - half
+                    val top = tops.getValue(b.metric).dp.toPx()
+                    val ax = if (b.rightSide) size.width - labelW.toPx() - 8.dp.toPx() else labelW.toPx() + 6.dp.toPx()
+                    val ay = top + 30.dp.toPx()
+                    val mx = (px + ax) / 2
+                    val leader = Path().apply { moveTo(px, y); cubicTo(mx, y, mx, ay, ax, ay) }
+                    if (on) drawLine(color.copy(alpha = .28f), Offset(cx - half, y), Offset(cx + half, y), 9.dp.toPx(), cap = StrokeCap.Round)
+                    drawPath(leader, color, style = Stroke(1.6.dp.toPx(), cap = StrokeCap.Round))
+                    drawLine(color, Offset(cx - half, y), Offset(cx + half, y), (if (on) 3f else 2f).dp.toPx(), cap = StrokeCap.Round,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())))
+                    drawCircle(bg, 5.5.dp.toPx(), Offset(px, y))
+                    drawCircle(color, 5.5.dp.toPx(), Offset(px, y), style = Stroke(2.6.dp.toPx()))
                 }
             }
-            for (p in placed) {
-                val metric = p.band.metric
-                val change = metricChange(metric, p.value, p.before)
-                val delta = when {
-                    p.value == null -> "нет замера"
-                    change == null -> ""
-                    change.isZero -> "без изменений"
-                    else -> "${formatSignedMeasure(change.delta)} см"
-                }
-                val deltaColor = when { change == null || change.isZero -> Fc.Muted; change.good == true -> colors.good; else -> colors.bad }
-                val valueText = metricValueText(metric, p.value, units)
+            for (b in figure.bands) {
+                val color = colors.of(b.metric.hue)
+                val value = series[b.metric]?.getOrNull(week)
+                val valueText = value?.let { "${formatMeasure(it)} см" } ?: "—"
                 Column(
                     Modifier
-                        .testTag("girth-${metric.key}")
-                        .align(if (p.band.rightSide) Alignment.TopEnd else Alignment.TopStart)
-                        .offset(y = p.top)
-                        .width(railW - 6.dp)
-                        .heightIn(min = 48.dp)
-                        .clickable(role = Role.Button, onClickLabel = "Записать замер") { onMeasure(metric) }
-                        .clearAndSetSemantics { contentDescription = "${metric.title}: $valueText${if (delta.isNotEmpty()) ", $delta" else ""}. Записать замер" },
-                    horizontalAlignment = if (p.band.rightSide) Alignment.End else Alignment.Start
+                        .testTag("girth-${b.metric.key}")
+                        .align(if (b.rightSide) Alignment.TopEnd else Alignment.TopStart)
+                        .offset(x = if (b.rightSide) (-8).dp else 8.dp, y = tops.getValue(b.metric).dp)
+                        .width(labelW).heightIn(min = 44.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(role = Role.Button, onClickLabel = "Показать на графике") { onPick(b.metric) }
+                        .clearAndSetSemantics { contentDescription = "${b.metric.title}: $valueText" + (if (b.metric == selected) ", выбрано" else "") }
                 ) {
-                    Text(metric.title, color = Fc.Muted, fontSize = 13.sp, lineHeight = 15.sp)
-                    Text(valueText, color = Fc.Text, style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 25.sp))
-                    if (delta.isNotEmpty()) Text(delta, color = deltaColor, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(b.metric.title, color = colors.labelName, fontSize = 12.sp, lineHeight = 14.sp)
+                    Text(valueText, color = color, fontSize = 19.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
     }
 }
 
+/** Line icons of the zones; dashed parts mark where the tape goes. */
+private fun zoneIcon(metric: BodyMetric): List<Pair<String, Boolean>> = when (metric) {
+    BodyMetric.SHOULDERS -> listOf("M2.5 13c2-4.5 5.5-6.5 9.5-6.5s7.5 2 9.5 6.5" to false, "M12 6.5V10" to false, "M6 13.5h12" to true)
+    BodyMetric.CHEST -> listOf("M3 9c3-1 4.5-4 9-4s6 3 9 4" to false, "M6.5 9v11M17.5 9v11" to false, "M6.5 12.5c2 2 4 2 5.5 0 1.5 2 3.5 2 5.5 0" to false)
+    BodyMetric.ARM -> listOf("M4 20c0-6 3-12 8-12 3 0 4.5 2.5 3.5 5" to false, "M15.5 13c-1 2.5-4.5 2-6 5.5" to false, "M9 12.5h7" to true)
+    BodyMetric.WAIST -> listOf("M7 3c0 5 2 6.5 2 9s-2 4-2 9" to false, "M17 3c0 5-2 6.5-2 9s2 4 2 9" to false, "M8.5 12h7" to true)
+    BodyMetric.HIPS -> listOf("M6 3c-.5 5-.5 9 2.5 12.5L10 21" to false, "M18 3c.5 5 .5 9-2.5 12.5L14 21" to false, "M10.5 15.5c.5-2 2.5-2 3 0" to false, "M6.5 9h11" to true)
+    else -> listOf("M7 3v7c0 4 1.5 7.5 3 11" to false, "M17 3v7c0 4-1.5 7.5-3 11" to false, "M7.5 9h9" to true)
+}
+
 @Composable
-private fun DatePicker(rows: List<BodyMeasurementEntity>, now: Int, prevIndex: Int, editingPrev: Boolean, colors: TapeColors,
-    onEdit: (Boolean) -> Unit, onPick: (Int) -> Unit) {
-    val prev = prevIndex.takeIf { it in rows.indices && it != now }
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Fc.Surface).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            HandleButton("Стало", shortDate(rows[now].epochDay), !editingPrev, colors.tape, Modifier.weight(1f)) { onEdit(false) }
-            HandleButton("Было", prev?.let { shortDate(rows[it].epochDay) } ?: "не выбрано", editingPrev, colors.prev, Modifier.weight(1f)) { onEdit(true) }
+private fun ZoneIcon(metric: BodyMetric, color: Color, modifier: Modifier) {
+    val paths = remember(metric) { zoneIcon(metric).map { (d, dashed) -> PathParser().parsePathString(d).toPath() to dashed } }
+    Canvas(modifier) {
+        val k = size.minDimension / 24f
+        scale(k, k, pivot = Offset.Zero) {
+            for ((path, dashed) in paths) drawPath(path, color, style = Stroke(1.7f, cap = StrokeCap.Round, join = StrokeJoin.Round,
+                pathEffect = if (dashed) PathEffect.dashPathEffect(floatArrayOf(2f, 2f)) else null))
         }
-        val first = rows.first().epochDay
-        val span = (rows.last().epochDay - first).coerceAtLeast(1)
-        BoxWithConstraints(Modifier.fillMaxWidth().height(62.dp)) {
-            val track = maxWidth - 44.dp
-            fun xOf(i: Int): Dp = 22.dp + track * ((rows[i].epochDay - first).toFloat() / span)
-            val lo = minOf(now, prev ?: now); val hi = maxOf(now, prev ?: now)
-            val line = Fc.Line
-            Canvas(Modifier.fillMaxWidth().height(44.dp)) {
-                val y = size.height / 2
-                drawLine(line, Offset(22.dp.toPx(), y), Offset(size.width - 22.dp.toPx(), y), 2.dp.toPx())
-                drawLine(colors.tape, Offset(xOf(lo).toPx(), y), Offset(xOf(hi).toPx(), y), 2.dp.toPx())
-            }
-            rows.forEachIndexed { i, row ->
-                val isNow = i == now; val isPrev = i == prev
-                val label = shortDate(row.epochDay) + when { isNow -> ", выбрано как «стало»"; isPrev -> ", выбрано как «было»"; else -> "" }
-                Box(
-                    Modifier.testTag("measure-date-$i").offset(x = xOf(i) - 22.dp).size(44.dp)
-                        .selectable(selected = isNow || isPrev, role = Role.RadioButton) { onPick(i) }
-                        .clearAndSetSemantics { contentDescription = label },
-                    contentAlignment = Alignment.Center
-                ) {
-                    when {
-                        isNow -> Box(Modifier.size(18.dp).background(colors.tape, CircleShape))
-                        isPrev -> Box(Modifier.size(16.dp).background(Fc.Surface, CircleShape).border(3.dp, colors.prev, CircleShape))
-                        else -> Box(Modifier.size(10.dp).background(Fc.Muted, CircleShape))
-                    }
-                }
-            }
-            Text(shortDate(rows.first().epochDay), color = Fc.Muted, fontSize = 12.sp, modifier = Modifier.align(Alignment.BottomStart))
-            Text(shortDate(rows.last().epochDay), color = Fc.Muted, fontSize = 12.sp, modifier = Modifier.align(Alignment.BottomEnd))
-        }
-        Text(if (editingPrev) "Нажмите точку на шкале, чтобы выбрать дату «было»." else "Нажмите точку на шкале, чтобы выбрать дату «стало».",
-            color = Fc.Muted, fontSize = 12.sp)
     }
 }
 
 @Composable
-private fun HandleButton(caption: String, date: String, on: Boolean, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(14.dp)
+private fun ChangeCard(metric: BodyMetric, series: List<Float?>, selected: Boolean, colors: BlockColors, onClick: () -> Unit) {
+    val color = colors.of(metric.hue)
+    val change = periodChange(metric, series)
+    val pctColor = when (change?.good) { true -> colors.good; false -> colors.bad; null -> Fc.Muted }
+    val shape = RoundedCornerShape(18.dp)
     Column(
-        modifier.heightIn(min = 56.dp).clip(shape)
-            .border(if (on) 2.dp else 1.dp, if (on) color else Fc.Line, shape)
-            .selectable(selected = on, role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.Center
+        Modifier.testTag("change-${metric.key}").width(116.dp).clip(shape).background(colors.surface)
+            .border(if (selected) 1.5.dp else 1.dp, if (selected) color else colors.line, shape)
+            .clickable(role = Role.Button, onClickLabel = "Показать на графике", onClick = onClick)
+            .clearAndSetSemantics {
+                contentDescription = metric.title + " за 8 недель: " +
+                    (change?.let { "${formatSignedMeasure(it.delta)} см, ${formatSignedMeasure(it.percent)} %" } ?: "пока не с чем сравнить")
+            }
+            .padding(horizontal = 10.dp, vertical = 12.dp)
     ) {
-        Text(caption, color = Fc.Muted, fontSize = 12.sp)
-        Text(date, color = Fc.Text, style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.SemiBold, fontSize = 18.sp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background(color.copy(alpha = if (Fc.isLight) .08f else .14f)), contentAlignment = Alignment.Center) {
+                ZoneIcon(metric, color, Modifier.size(22.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(metric.title, color = Fc.Muted, fontSize = 12.sp, maxLines = 1)
+                Text(change?.let { "${formatSignedMeasure(it.delta)} см" } ?: "—", color = Fc.Text, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+            }
+        }
+        Row(Modifier.padding(top = 8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(change?.let { (if (it.delta > 0) "▲ " else if (it.delta < 0) "▼ " else "") + formatSignedMeasure(it.percent) + " %" } ?: "нет данных",
+                color = pctColor, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            val known = series.mapIndexedNotNull { i, v -> v?.let { i to it } }
+            if (known.size > 1) Canvas(Modifier.weight(1f).height(22.dp)) {
+                val lo = known.minOf { it.second }; val hi = known.maxOf { it.second }
+                fun pt(i: Int, v: Float) = Offset(2f + i * (size.width - 4f) / (series.size - 1),
+                    size.height - 3f - (if (hi == lo) .5f else (v - lo) / (hi - lo)) * (size.height - 6f))
+                val line = Path(); val area = Path()
+                known.forEachIndexed { n, (i, v) -> val o = pt(i, v); if (n == 0) { line.moveTo(o.x, o.y); area.moveTo(o.x, size.height); area.lineTo(o.x, o.y) } else { line.lineTo(o.x, o.y); area.lineTo(o.x, o.y) } }
+                area.lineTo(pt(known.last().first, 0f).x, size.height); area.close()
+                drawPath(area, color.copy(alpha = .14f))
+                drawPath(line, color, style = Stroke(1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+            }
+        }
     }
 }
 
 @Composable
-private fun TrendTile(metric: BodyMetric, rows: List<BodyMeasurementEntity>, now: Int, prev: Int?, colors: TapeColors, units: WeightUnits, modifier: Modifier) {
-    val value = valueAsOf(rows, now, metric)
-    val before = prev?.let { valueAsOf(rows, it, metric) }
-    val points = rows.mapIndexedNotNull { i, r -> metric.read(r)?.let { i to metricDisplay(metric, it, units) } }
-    val change = metricChange(metric, value?.let { metricDisplay(metric, it, units) }, before?.let { metricDisplay(metric, it, units) })
-    val unit = metricUnit(metric, units)
-    Column(modifier.clip(RoundedCornerShape(20.dp)).background(Fc.Surface).padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(metric.title, color = Fc.Muted, fontSize = 13.sp)
-        Text(metricValueText(metric, value, units), color = Fc.Text, style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.SemiBold, fontSize = 24.sp))
-        if (points.size > 1) {
-            val first = rows.first().epochDay
-            val span = (rows.last().epochDay - first).coerceAtLeast(1).toFloat()
-            val lo = points.minOf { it.second }; val hi = points.maxOf { it.second }
-            Canvas(Modifier.fillMaxWidth().height(36.dp)) {
-                fun pt(i: Int, v: Float) = Offset(4.dp.toPx() + (rows[i].epochDay - first) / span * (size.width - 8.dp.toPx()),
-                    size.height - 4.dp.toPx() - (if (hi == lo) .5f else (v - lo) / (hi - lo)) * (size.height - 8.dp.toPx()))
-                val path = Path()
-                points.forEachIndexed { k, (i, v) -> val o = pt(i, v); if (k == 0) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y) }
-                drawPath(path, colors.tape, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
-                points.lastOrNull { it.first <= now }?.let { (i, v) -> drawCircle(colors.tape, 3.5.dp.toPx(), pt(i, v)) }
+private fun ProgressCard(metric: BodyMetric, series: List<Float?>, week: Int, today: Long, colors: BlockColors, onMetric: (BodyMetric) -> Unit, onWeek: (Int) -> Unit) {
+    val color = colors.of(metric.hue)
+    val shape = RoundedCornerShape(22.dp)
+    Column(
+        Modifier.fillMaxWidth().clip(shape).background(colors.surface).border(1.dp, colors.line, shape).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Прогресс за 8 недель", color = Fc.Text, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.semantics { heading() })
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(colors.segBg).horizontalScroll(rememberScrollState()).padding(3.dp).selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            GIRTHS.forEach { m ->
+                val on = m == metric
+                Box(
+                    Modifier.heightIn(min = 36.dp).clip(RoundedCornerShape(17.dp)).background(if (on) colors.segOn else Color.Transparent)
+                        .selectable(selected = on, role = Role.Tab) { onMetric(m) }.testTag("tab-${m.key}").padding(horizontal = 13.dp),
+                    contentAlignment = Alignment.Center
+                ) { Text(m.title, color = if (on) Color.White else colors.labelName, fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium) }
             }
-        } else Spacer(Modifier.height(36.dp))
-        Text(when {
-            value == null -> "нет данных"
-            change == null -> if (prev == null) "выберите дату «было»" else "не с чем сравнить"
-            change.isZero -> "без изменений"
-            else -> "${formatSignedMeasure(change.delta)} $unit"
-        }, color = when { change == null || change.isZero -> Fc.Muted; change.good == true -> colors.good; else -> colors.bad },
-            fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        }
+
+        val known = series.mapIndexedNotNull { i, v -> v?.let { i to it } }
+        if (known.isEmpty()) {
+            Text("За последние 8 недель замеров нет. Запишите замер — здесь появится динамика по неделям.", color = Fc.Muted, fontSize = 13.sp)
+            return@Column
+        }
+        val lo0 = known.minOf { it.second }; val hi0 = known.maxOf { it.second }
+        val lo = kotlin.math.floor(lo0).toInt() - 1
+        val hi = (kotlin.math.ceil(hi0).toInt() + 1).let { if ((it - lo) % 2 != 0) it + 1 else it }
+        val mid = (lo + hi) / 2
+        val selected = week.takeIf { series.getOrNull(it) != null } ?: known.last().first
+        BoxWithConstraints(Modifier.fillMaxWidth().height(176.dp)) {
+            val w = maxWidth
+            val left = 40.dp; val right = 14.dp; val top = 18.dp; val bottom = 148.dp
+            fun x(i: Int): Dp = left + (w - left - right) * (i / (WEEKS - 1f))
+            fun y(v: Float): Dp = bottom - (bottom - top) * ((v - lo) / (hi - lo).toFloat())
+            val muted = Fc.Muted; val grid = colors.grid; val surface = colors.surface
+            Canvas(Modifier.matchParentSize()) {
+                for (g in listOf(hi, mid, lo)) drawLine(grid, Offset(left.toPx() - 6.dp.toPx(), y(g.toFloat()).toPx()), Offset(size.width, y(g.toFloat()).toPx()), 1.dp.toPx())
+                val line = Path(); val area = Path()
+                known.forEachIndexed { n, (i, v) ->
+                    val o = Offset(x(i).toPx(), y(v).toPx())
+                    if (n == 0) { line.moveTo(o.x, o.y); area.moveTo(o.x, bottom.toPx()); area.lineTo(o.x, o.y) } else { line.lineTo(o.x, o.y); area.lineTo(o.x, o.y) }
+                }
+                area.lineTo(x(known.last().first).toPx(), bottom.toPx()); area.close()
+                drawPath(area, color.copy(alpha = colors.areaAlpha))
+                drawPath(line, color, style = Stroke(2.4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                val sx = x(selected).toPx()
+                drawLine(color, Offset(sx, y(series[selected]!!).toPx() + 8.dp.toPx()), Offset(sx, bottom.toPx()), 1.4.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx())))
+                for ((i, v) in known) {
+                    val o = Offset(x(i).toPx(), y(v).toPx())
+                    if (i == selected) { drawCircle(color, 9.dp.toPx(), o); drawCircle(surface, 6.dp.toPx(), o); drawCircle(color, 4.dp.toPx(), o) }
+                    else { drawCircle(surface, 4.5.dp.toPx(), o); drawCircle(color, 4.5.dp.toPx(), o, style = Stroke(2.dp.toPx())) }
+                }
+            }
+            for (g in listOf(hi, mid, lo)) Text("$g", color = muted, fontSize = 11.sp, modifier = Modifier.offset(y = y(g.toFloat()) - 8.dp))
+            for (i in 0 until WEEKS) {
+                val v = series[i]
+                if (v != null) Box(
+                    Modifier.testTag("week-$i").offset(x = x(i) - 20.dp, y = y(v) - 20.dp).size(40.dp)
+                        .selectable(selected = i == selected, role = Role.RadioButton) { onWeek(i) }
+                        .clearAndSetSemantics { contentDescription = "Неделя ${i + 1}, до ${shortDate(today - (WEEKS - 1 - i) * 7L)}: ${formatMeasure(v)} см" }
+                )
+                Text("Нед ${i + 1}", color = if (i == selected) Fc.Text else muted, fontSize = 11.sp, fontWeight = if (i == selected) FontWeight.Bold else FontWeight.Normal,
+                    textAlign = TextAlign.Center, modifier = Modifier.offset(x = x(i) - 22.dp, y = 156.dp).width(44.dp))
+            }
+            val first = known.first()
+            val value = series[selected]!!
+            val change = if (selected > first.first) metricChange(metric, value, first.second) else null
+            val tipW = 92.dp
+            val tipX = (x(selected) - tipW / 2).coerceIn(30.dp, w - tipW)
+            val tipY = (y(value) - 62.dp).coerceAtLeast(0.dp)
+            Column(
+                Modifier.offset(x = tipX, y = tipY).width(tipW).clip(RoundedCornerShape(12.dp)).background(colors.surface)
+                    .border(1.dp, colors.tipLine, RoundedCornerShape(12.dp)).padding(horizontal = 8.dp, vertical = 6.dp)
+                    .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }.testTag("chart-tip"),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("${formatMeasure(value)} см", color = Fc.Text, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+                Text(when { change == null -> "старт"; change.isZero -> "без изменений"; else -> "${formatSignedMeasure(change.delta)} см с нед ${first.first + 1}" },
+                    color = when (change?.good) { true -> colors.good; false -> colors.bad; null -> muted }, fontSize = 11.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            }
+        }
     }
 }
 
@@ -378,7 +441,7 @@ class MeasureViewModel(private val c: AppContainer) : ViewModel() {
         viewModelScope.launch {
             runCatching {
                 c.fitness.addMeasurement(values[BodyMetric.WEIGHT], values[BodyMetric.WAIST], values[BodyMetric.FAT], values[BodyMetric.CHEST],
-                    values[BodyMetric.ARM], values[BodyMetric.HIPS], values[BodyMetric.THIGH])
+                    values[BodyMetric.ARM], values[BodyMetric.HIPS], values[BodyMetric.THIGH], shoulders = values[BodyMetric.SHOULDERS])
             }.onSuccess { error = null; onSaved() }.onFailure { error = "Не удалось сохранить замер: ${it.message}" }
             saving = false
         }
@@ -564,21 +627,30 @@ private fun StepButton(symbol: String, label: String, onClick: () -> Unit) {
 
 /** Small copy of the figure with the girth being measured lit up. */
 @Composable
-private fun MiniFigure(female: Boolean, metric: BodyMetric, colors: TapeColors) {
-    val figure = BodyFigure.of(female)
-    val picture = rememberFigure(female, Fc.isLight)
+private fun MiniFigure(female: Boolean, metric: BodyMetric, colors: BlockColors) {
+    val figure = BodyFigure.of(female, dark = !Fc.isLight)
+    val picture = rememberFigure(figure)
     val figH = 300.dp
     val figW = figH * figure.aspect
-    val band = figure.bands.firstOrNull { it.metric == metric }
-    Box(Modifier.size(figW, figH).semantics { contentDescription = if (band != null) "Где мерить: ${metric.title.lowercase()}" else "Замер всего тела" }) {
-        if (picture != null) Image(picture, null, contentScale = ContentScale.FillBounds, modifier = Modifier.matchParentSize().alpha(if (band != null) .9f else .55f))
-        if (band != null) Canvas(Modifier.matchParentSize()) {
-            val unit = size.height / figure.height
-            val y = band.y * unit; val cx = band.cx * unit; val len = band.half * 2 * unit
-            drawRoundRect(colors.glow, Offset(cx - len / 2 - 6.dp.toPx(), y - 9.dp.toPx()), Size(len + 12.dp.toPx(), 18.dp.toPx()), CornerRadius(9.dp.toPx()))
-            drawLine(colors.tape, Offset(cx - len / 2, y), Offset(cx + len / 2, y), 3.dp.toPx(), cap = StrokeCap.Round)
-            drawLine(colors.tape, Offset(cx - len / 2, y - 6.dp.toPx()), Offset(cx - len / 2, y + 6.dp.toPx()), 2.dp.toPx())
-            drawLine(colors.tape, Offset(cx + len / 2, y - 6.dp.toPx()), Offset(cx + len / 2, y + 6.dp.toPx()), 2.dp.toPx())
+    val band = figure.band(metric)
+    val color = band?.let { colors.of(it.metric.hue) } ?: colors.blue
+    Box(
+        Modifier.size(figW + 12.dp, figH + 12.dp).clip(RoundedCornerShape(18.dp)).background(figureBackground(figure))
+            .semantics { contentDescription = if (band != null) "Где мерить: ${metric.title.lowercase()}" else "Замер всего тела" },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(Modifier.size(figW, figH)) {
+            if (picture != null) Image(picture, null, contentScale = ContentScale.FillBounds, modifier = Modifier.matchParentSize().alpha(if (band != null) 1f else .55f))
+            if (band != null) Canvas(Modifier.matchParentSize()) {
+                val unit = size.height / figure.height
+                val y = band.y * unit; val cx = band.cx * unit; val len = band.half * 2 * unit
+                drawRoundRect(color.copy(alpha = .2f), Offset(cx - len / 2 - 6.dp.toPx(), y - 9.dp.toPx()), Size(len + 12.dp.toPx(), 18.dp.toPx()), CornerRadius(9.dp.toPx()))
+                drawLine(color, Offset(cx - len / 2, y), Offset(cx + len / 2, y), 3.dp.toPx(), cap = StrokeCap.Round,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())))
+                val px = if (band.rightSide) cx + len / 2 else cx - len / 2
+                drawCircle(figureBackground(figure), 5.dp.toPx(), Offset(px, y))
+                drawCircle(color, 5.dp.toPx(), Offset(px, y), style = Stroke(2.4.dp.toPx()))
+            }
         }
     }
 }

@@ -26,6 +26,7 @@ class DatabaseMigrationTest {
     @Test fun migratesVersionSevenAndAddsTechniqueDefaults() = checkMigration(7)
     @Test fun migratesVersionEightAndAddsSupersetGroups() = checkMigration(8)
     @Test fun migratesVersionNineAndAddsHipAndThighGirths() = checkMigration(9)
+    @Test fun migratesVersionTenAndAddsShoulders() = checkMigration(10)
     private fun checkMigration(version: Int) = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         context.deleteDatabase("fitclub.db")
@@ -50,6 +51,7 @@ class DatabaseMigrationTest {
                     if (version >= 7) AppDatabase.MIGRATION_6_7.migrate(db)
                     if (version >= 8) AppDatabase.MIGRATION_7_8.migrate(db)
                     if (version >= 9) AppDatabase.MIGRATION_8_9.migrate(db)
+                    if (version >= 10) AppDatabase.MIGRATION_9_10.migrate(db)
                 }
                 override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
             }).build())
@@ -68,6 +70,7 @@ class DatabaseMigrationTest {
             assertEquals(82f, measurement.waistCm!!)
             assertNull(measurement.hipsCm)
             assertNull(measurement.thighCm)
+            assertNull(measurement.shouldersCm)
             val session = current.workoutDao().observeSessions().first().single()
             assertEquals(20000L, session.epochDay)
             assertNull(session.scheduleId)

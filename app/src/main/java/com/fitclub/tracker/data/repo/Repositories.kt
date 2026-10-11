@@ -210,9 +210,9 @@ class FitnessRepository(private val db: AppDatabase) {
      * that day's row instead of adding another point to the timeline.
      */
     suspend fun addMeasurement(weight: Float?, waist: Float?, fat: Float?, chest: Float?, arm: Float?,
-        hips: Float? = null, thigh: Float? = null, epochDay: Long = java.time.LocalDate.now().toEpochDay()) = db.withTransaction {
-        require(listOf(weight, waist, fat, chest, arm, hips, thigh).any { it != null })
-        require(listOf(weight, waist, chest, arm, hips, thigh).all { it == null || (it.isFinite() && it > 0) })
+        hips: Float? = null, thigh: Float? = null, epochDay: Long = java.time.LocalDate.now().toEpochDay(), shoulders: Float? = null) = db.withTransaction {
+        require(listOf(weight, waist, fat, chest, arm, hips, thigh, shoulders).any { it != null })
+        require(listOf(weight, waist, chest, arm, hips, thigh, shoulders).all { it == null || (it.isFinite() && it > 0) })
         require(fat == null || (fat.isFinite() && fat in 0f..100f))
         val same = db.measurementDao().getForDay(epochDay)
         db.measurementDao().insert(
@@ -220,7 +220,8 @@ class FitnessRepository(private val db: AppDatabase) {
                 id = same?.id ?: 0, epochDay = epochDay,
                 weightKg = weight ?: same?.weightKg, waistCm = waist ?: same?.waistCm,
                 fatPercent = fat ?: same?.fatPercent, chestCm = chest ?: same?.chestCm, armCm = arm ?: same?.armCm,
-                hipsCm = hips ?: same?.hipsCm, thighCm = thigh ?: same?.thighCm
+                hipsCm = hips ?: same?.hipsCm, thighCm = thigh ?: same?.thighCm,
+                shouldersCm = shoulders ?: same?.shouldersCm
             )
         )
     }
