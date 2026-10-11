@@ -56,7 +56,7 @@ class BodyModelUiTest {
 
     private fun profile(light: Boolean, sex: Sex, onMeasure: (String?) -> Unit = {}) {
         app.container.profile.update(app.container.profile.settings.value.copy(sex = sex, unitsKg = true))
-        rule.setContent { FitClubTheme(lightTheme = light) { Surface(color = Fc.Bg) { ProfileScreen({}, onMeasure) } } }
+        rule.setContent { FitClubTheme(lightTheme = light) { Surface(color = Fc.Bg) { com.fitclub.tracker.ui.profile.BodyScreen({}, onMeasure) } } }
     }
 
     private fun scrollTo(tag: String) { rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag(tag)); rule.waitForIdle() }
@@ -107,16 +107,33 @@ class BodyModelUiTest {
         rule.runOnIdle { assertNull(opened) }
     }
 
-    @Test fun modelSwitchChangesTheProfileSexAndFigure() {
+    @Test fun weightAndFatSitBesideTheGirthsAndSexComesFromTheProfile() {
         seed()
-        profile(light = false, sex = Sex.MALE)
-        scrollTo("model-female")
-        rule.onNodeWithTag("model-female").performClick()
-        rule.runOnIdle { assertEquals(Sex.FEMALE, app.container.profile.settings.value.sex) }
-        rule.onNodeWithTag("model-female").assertIsSelected()
+        profile(light = false, sex = Sex.FEMALE)
         scrollTo("girth-waist")
         rule.waitUntil(10000) { rule.onAllNodes(hasContentDescription("Талия: 82 см", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        rule.onAllNodesWithTag("model-female").assertCountEquals(0)
+        scrollTo("change-weight")
+        rule.onNodeWithTag("change-weight").assertContentDescriptionContains("Вес за 8 недель: −2,1 кг", substring = true)
+        rule.onNodeWithTag("change-weight").performClick()
+        scrollTo("tab-weight")
+        rule.onNodeWithTag("tab-weight").assertIsSelected()
+        rule.onNodeWithTag("chart-tip").assertTextContains("81,4 кг", substring = true)
         screenshot("body-model-v2-female-dark")
+    }
+
+    @Test fun profileLinksToTheBodyAndLevelSetsTheSetCard() {
+        app.container.profile.update(app.container.profile.settings.value.copy(level = 2, advancedSets = true))
+        var opened = false
+        rule.setContent { FitClubTheme { Surface(color = Fc.Bg) { ProfileScreen({}, onBody = { opened = true }) } } }
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("profile-body"))
+        rule.onNodeWithTag("profile-body").performClick()
+        rule.runOnIdle { assertTrue(opened) }
+        rule.onNodeWithText("Новичок").performClick()
+        rule.runOnIdle { assertFalse(app.container.profile.settings.value.advancedSets) }
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasTestTag("advanced-sets"))
+        rule.onNodeWithTag("advanced-sets").assertIsOff().performClick()
+        rule.runOnIdle { assertTrue(app.container.profile.settings.value.advancedSets) }
     }
 
     @Test fun measurementFlowPrefillsLastValuesSkipsAndSaves() {

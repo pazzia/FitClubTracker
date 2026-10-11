@@ -27,17 +27,17 @@ class WorkoutFlowTest {
         val app = ApplicationProvider.getApplicationContext<FitApp>()
         val id = runBlocking { app.container.schedule.save(draft()) }
         rule.setContent { FitClubTheme { WorkoutScreen(id, {}, {}) } }
-        waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
+        waitFor("Упражнение 1 из 2")
         rule.onNodeWithText("План").performClick()
-        waitFor("Идёт тренировка".uppercase())
+        waitFor("Идёт тренировка")
         rule.onNodeWithText("Тяга штанги в наклоне").performClick()
-        waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
+        waitFor("Упражнение 2 из 2")
         rule.onNodeWithTag("workout-list").performScrollToNode(hasTestTag("weight-0"))
         rule.onNodeWithTag("weight-0").performTextReplacement("75")
         rule.onNodeWithText("План").performClick()
         waitFor("Начато · продолжить")
         rule.onNodeWithText("Тяга штанги в наклоне").performClick()
-        waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
+        waitFor("Упражнение 2 из 2")
         rule.onNodeWithTag("workout-list").performScrollToNode(hasTestTag("weight-0"))
         rule.onNodeWithTag("weight-0").assertTextEquals("75")
     }
@@ -45,9 +45,9 @@ class WorkoutFlowTest {
         val app = ApplicationProvider.getApplicationContext<FitApp>()
         val id = runBlocking { app.container.schedule.save(draft()) }
         rule.setContent { FitClubTheme { WorkoutScreen(id, {}, {}) } }
-        waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
+        waitFor("Упражнение 1 из 2")
         rule.onNodeWithText("План").performClick()
-        waitFor("Идёт тренировка".uppercase())
+        waitFor("Идёт тренировка")
         rule.onNodeWithTag("drag-exercise-1", useUnmergedTree = true).performTouchInput {
             down(center); advanceEventTime(650); moveBy(androidx.compose.ui.geometry.Offset(0f, -350f)); up()
         }

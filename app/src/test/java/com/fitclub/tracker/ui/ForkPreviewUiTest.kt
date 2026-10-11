@@ -74,7 +74,7 @@ class ForkPreviewUiTest {
         val id = runBlocking { app.container.schedule.save(ScheduledDraft(epochDay = 22000,
             items = listOf(ItemDraft("bench", 1, RepRange.R8_12, 0)))) }
         rule.setContent { FitClubTheme(lightTheme = true, accent = 0xFF236B9D) { WorkoutScreen(id, {}, {}) } }
-        waitFor("УПРАЖНЕНИЕ 1 ИЗ 1")
+        waitFor("Упражнение 1 из 1")
         screenshot("fork-exercise")
         rule.onNodeWithTag("workout-list").performScrollToNode(hasTestTag("weight-0"))
         rule.onNodeWithTag("weight-0").performTextReplacement("60")

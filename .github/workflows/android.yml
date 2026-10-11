@@ -4,7 +4,7 @@ name: Android CI
 # whole minute, so the workflow runs as one job and skips changes that cannot affect the APK.
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, 'fork/**' ]
     paths-ignore: [ '**.md', 'docs/**', '.gitignore', 'LICENSE' ]
   pull_request:
     paths-ignore: [ '**.md', 'docs/**', '.gitignore', 'LICENSE' ]
@@ -369,8 +369,8 @@ jobs:
           expected = 'com.fitclub.tracker.experimental' if experimental else 'com.fitclub.tracker'
           assert metadata['applicationId'] == expected, metadata
           element = metadata['elements'][0]
-          assert element['versionName'] == ('0.9.6-test' if experimental else '0.9.6'), element
-          assert element['versionCode'] == 29, element
+          assert element['versionName'] == ('0.10.0-test' if experimental else '0.10.0'), element
+          assert element['versionCode'] == 30, element
           print(f"Distribution verified: {expected}, {element['versionName']} ({element['versionCode']})")
           PY
 
@@ -422,6 +422,24 @@ jobs:
             --title "FitClub ${version} · build ${GITHUB_RUN_NUMBER}" \
             --notes "Подписанный debug APK из main (${GITHUB_SHA::7}). Что нового — в README, раздел «Что изменено в ${version}»."
           printf 'APK release: https://github.com/%s/releases/tag/%s\n' "$GITHUB_REPOSITORY" "$tag" >> "$GITHUB_STEP_SUMMARY"
+
+      # Fork branches try out bigger changes: their test APK goes out as a pre-release, so it can be
+      # installed beside the main app without touching it.
+      - name: Publish fork APK as a pre-release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/fork/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="${{ steps.apk.outputs.name }}"
+          version="$(sed -E 's/^FitClub-v([^-]+(-test)?)-build.*/\1/' <<< "$name")"
+          tag="v${version}-build${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" "${{ steps.apk.outputs.path }}" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "FitClub ${version} · ${GITHUB_REF_NAME} · build ${GITHUB_RUN_NUMBER}" \
+            --notes "Тестовая сборка ветки ${GITHUB_REF_NAME} (${GITHUB_SHA::7}). Ставится рядом с основной, данные отдельные."
+          printf 'Fork APK: https://github.com/%s/releases/tag/%s\n' "$GITHUB_REPOSITORY" "$tag" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload APK
         id: upload_apk

@@ -428,7 +428,7 @@ private fun Stepper(value: Int, what: String, onDec: () -> Unit, onInc: () -> Un
 private fun FitDetails(fit: FitResult, goal: Goal) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("РАЗБОР ПРОГРАММЫ", style = MaterialTheme.typography.headlineSmall, color = Fc.Text, modifier = Modifier.weight(1f))
+            Text("Разбор программы", style = MaterialTheme.typography.headlineSmall, color = Fc.Text, modifier = Modifier.weight(1f))
             Text("${fit.percent}/100", style = MaterialTheme.typography.headlineSmall, color = Fc.fit(fit.percent / 100f))
         }
         if (fit.criteria.isNotEmpty()) FcCard {

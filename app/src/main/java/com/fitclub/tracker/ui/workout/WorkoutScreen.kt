@@ -187,6 +187,8 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
     /** Increments each time a rest runs out on its own (not when skipped). */
     var restEnded by mutableIntStateOf(0)
         private set
+    /** Profile settings that shape the set card: simple or detailed input. */
+    val settings = c.profile.settings
     /** Read when the rest ends, so a change in the profile applies to the running workout. */
     val restSound: Boolean get() = c.profile.settings.value.restSound
     private var restUntil by mutableLongStateOf(0L)
@@ -517,6 +519,8 @@ private fun ExerciseMode(vm: WorkoutViewModel, plan: ScheduledDraft, source: Wor
     val exercise = source.catalog[item.exerciseId]
     val unitsKg = vm.draftUnitsKg
     val timed = item.reps == RepRange.TIME
+    val profileSettings by vm.settings.collectAsState()
+    val bar = com.fitclub.tracker.domain.barFor(exercise?.equipment)
     val earlier = remember(history, vm.startedAt) { history.filter { it.session.startedAt < vm.startedAt } }
     val last = remember(earlier, item.exerciseId, timed) { lastSessionSets(earlier, item.exerciseId, timed) }
     val lastSets = last?.second.orEmpty()
@@ -664,7 +668,8 @@ private fun ExerciseMode(vm: WorkoutViewModel, plan: ScheduledDraft, source: Wor
                         val partnerName = row.partner.takeIf { it.isNotBlank() }?.let { source.catalog[it]?.name ?: it }
                         if (rowIndex == current) CurrentSet(rowIndex, row, prevText(rowIndex), timed, unitsKg, canRemove,
                             label = labels[index], partnerName = partnerName, onChange = { rows[rowIndex] = it.copy(done = false) }, onDone = { markDone(true) },
-                            onRemove = { rows.removeAt(rowIndex) }, onTechnique = { techniqueFor = rowIndex })
+                            onRemove = { rows.removeAt(rowIndex) }, onTechnique = { techniqueFor = rowIndex },
+                            advanced = profileSettings.advancedSets, barKg = bar)
                         else CompactSet(rowIndex, row, prevText(rowIndex), upcoming = !row.done, canRemove = canRemove, units = units, partnerName = partnerName,
                             onToggle = { markDone(!row.done) }, onRemove = { rows.removeAt(rowIndex) })
                     }
@@ -938,7 +943,8 @@ private fun PartnerPicker(selected: String, planPartners: List<Pair<String, Stri
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CurrentSet(rowIndex: Int, row: SetEntry, previous: String?, timed: Boolean, unitsKg: Boolean, canRemove: Boolean, label: String?,
-    partnerName: String?, onChange: (SetEntry) -> Unit, onDone: () -> Unit, onRemove: () -> Unit, onTechnique: () -> Unit) {
+    partnerName: String?, onChange: (SetEntry) -> Unit, onDone: () -> Unit, onRemove: () -> Unit, onTechnique: () -> Unit,
+    advanced: Boolean = true, barKg: Float? = null) {
     val shape = RoundedCornerShape(24.dp)
     val technique = if (row.warmup) Technique.NORMAL else Technique.of(row.technique)
     val step = weightStep(unitsKg)
@@ -951,7 +957,8 @@ private fun CurrentSet(rowIndex: Int, row: SetEntry, previous: String?, timed: B
                 previous?.let { Text("в прошлый раз $it", color = Fc.Muted, style = MaterialTheme.typography.bodySmall) }
             }
             val on = row.warmup || technique != Technique.NORMAL
-            Row(Modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(20.dp))
+            // Simple mode hides the technique menu; a technique planned in the program still shows.
+            if (advanced || on) Row(Modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(20.dp))
                 .then(if (on) Modifier.background(Fc.LimeSoft) else Modifier.border(1.dp, Fc.Line, RoundedCornerShape(20.dp)))
                 .semantics { contentDescription = "Как выполнить подход: ${if (row.warmup) "разминка" else technique.title}" }
                 .clickable(role = Role.Button, onClick = onTechnique).testTag("technique-$rowIndex").padding(horizontal = 12.dp),
@@ -969,6 +976,11 @@ private fun CurrentSet(rowIndex: Int, row: SetEntry, previous: String?, timed: B
                 row.weight, step, decimals = true, tag = "weight-$rowIndex", description = "Вес подхода ${rowIndex + 1}", modifier = Modifier.weight(1f)) { onChange(withWeight(row, it, step)) }
             Stepper(if (timed) "Секунды" else "Повторы", row.reps, if (timed) 5f else 1f, decimals = false,
                 tag = "reps-$rowIndex", description = "Количество подхода ${rowIndex + 1}", modifier = Modifier.weight(1f)) { onChange(row.copy(reps = it)) }
+        }
+        if (!timed && unitsKg && barKg != null && technique != Technique.DROP) {
+            row.weight.replace(',', '.').toFloatOrNull()?.let { com.fitclub.tracker.domain.plateHint(it, barKg) }?.let { hint ->
+                Text(hint, color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.testTag("plates-$rowIndex"))
+            }
         }
         if (technique == Technique.DROP) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

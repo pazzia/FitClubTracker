@@ -65,11 +65,10 @@ fun ScreenTitle(text: String, modifier: Modifier = Modifier) {
     Text(text, style = MaterialTheme.typography.displaySmall, color = Fc.Text, modifier = modifier)
 }
 
-/** Small capitalised label above a title or a section. */
+/** Small label above a title or a section, in sentence case: capitals read slower and shout. */
 @Composable
 fun Eyebrow(text: String, modifier: Modifier = Modifier, color: Color = Fc.Muted) {
-    Text(text.uppercase(), modifier = modifier, color = color,
-        style = TextStyle(fontFamily = Condensed, fontSize = 13.sp, letterSpacing = 1.4.sp, lineHeight = 16.sp))
+    Text(text, modifier = modifier, color = color, style = MaterialTheme.typography.labelLarge)
 }
 
 /** Weights, repetitions and timers: condensed face with tabular figures. */

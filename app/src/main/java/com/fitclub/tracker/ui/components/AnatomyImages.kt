@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
@@ -36,17 +37,49 @@ fun anatomyIndex(group: MuscleGroup): Int = when (group) {
     MuscleGroup.HAMSTRINGS -> 10; MuscleGroup.CALVES -> 11
 }
 
+/**
+ * A muscle group pictured with the user's own atlas illustration of its main muscle, so groups,
+ * the atlas and exercise cards share one drawing style. Falls back to the older group drawing
+ * only if the atlas picture cannot be read.
+ */
 @Composable
 fun GroupImage(sex: Sex, group: MuscleGroup, modifier: Modifier = Modifier, scale: ContentScale = ContentScale.Fit,
     alignment: Alignment = Alignment.Center) {
+    val context = LocalContext.current.applicationContext
+    val asset = groupAtlasPicture(group)
+    val atlas by androidx.compose.runtime.produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, asset) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { context.assets.open(asset).use { android.graphics.BitmapFactory.decodeStream(it)?.asImageBitmap() } }.getOrNull()
+        }
+    }
     val resource = (if (sex == Sex.FEMALE) femaleGroups else maleGroups)[anatomyIndex(group)]
     val resources = LocalContext.current.resources
-    val bitmap = remember(resources, resource) { AnatomyCutouts.get(resources, resource).asImageBitmap() }
     Box(modifier.clipToBounds().background(Fc.AnatomyBackground)) {
-        Image(bitmap, contentDescription = "${group.title}, ${sex.title.lowercase()} атлас",
-            contentScale = scale, alignment = alignment, modifier = Modifier.fillMaxSize())
+        val picture = atlas
+        if (picture != null) Image(picture, contentDescription = "${group.title}, ${sex.title.lowercase()} атлас",
+            contentScale = ContentScale.Crop, alignment = Alignment.Center, modifier = Modifier.fillMaxSize())
+        else {
+            val bitmap = remember(resources, resource) { AnatomyCutouts.get(resources, resource).asImageBitmap() }
+            Image(bitmap, contentDescription = "${group.title}, ${sex.title.lowercase()} атлас",
+                contentScale = scale, alignment = alignment, modifier = Modifier.fillMaxSize())
+        }
     }
 }
+
+/** Atlas card of the muscle that names the group. */
+fun groupAtlasPicture(group: MuscleGroup): String = "atlas/" + when (group) {
+    MuscleGroup.CHEST -> "fit-2301"
+    MuscleGroup.SHOULDERS -> "fit-2452"
+    MuscleGroup.BICEPS -> "fit-2464"
+    MuscleGroup.TRICEPS -> "fit-2471"
+    MuscleGroup.FOREARMS -> "fit-2496"
+    MuscleGroup.CORE -> "fit-2357"
+    MuscleGroup.BACK -> "fit-2231"
+    MuscleGroup.GLUTES -> "fit-2598"
+    MuscleGroup.QUADS -> "fit-2613"
+    MuscleGroup.HAMSTRINGS -> "fit-2638"
+    MuscleGroup.CALVES -> "fit-2656"
+} + "_thumb.webp"
 
 @Composable
 fun BodyPair(sex: Sex, modifier: Modifier = Modifier) {

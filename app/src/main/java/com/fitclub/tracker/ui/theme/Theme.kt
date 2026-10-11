@@ -98,6 +98,17 @@ object Fc {
     }
     @Composable fun level(level: Int): Color = when (level) { 1 -> Lime; 2 -> Orange; else -> Pink }
 
+    /**
+     * Data colours: they tell measured series apart (body girths, charts) and never mark actions,
+     * which stay lime. Paired per theme for contrast on white and on near-black.
+     */
+    val DataBlue: Color @Composable get() = if (p.light) Color(0xFF1668E3) else Color(0xFF3B8BFF)
+    val DataPurple: Color @Composable get() = if (p.light) Color(0xFF8A2BE2) else Color(0xFFB068FF)
+    val DataCyan: Color @Composable get() = if (p.light) Color(0xFF0E8A9E) else Color(0xFF22D3EE)
+    /** Progress and setback in a measured value. */
+    val Good: Color @Composable get() = if (p.light) Color(0xFF15803D) else Color(0xFF34D399)
+    val Bad: Color @Composable get() = if (p.light) Color(0xFFDC2626) else Color(0xFFF87171)
+
     /** Content colour for a filled surface; the accent fill gets its paired colour. */
     @Composable fun on(fill: Color): Color = if (fill == Lime) OnAccent else foregroundFor(fill)
 }

@@ -68,17 +68,9 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
                     ScreenTitle("Справочник")
-                    Text("${all.size} упражнений · ${AnatomyGroupOrder.size} групп мышц", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                    Text("${all.size} упражнений в ${AnatomyGroupOrder.size} группах мышц", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                 }
                 CircleIconButton("Профиль", onProfile, filled = true) { Icon(Icons.Filled.Person, null, tint = Fc.Text) }
-            }
-        }
-        item {
-            FcCard(Modifier.fillMaxWidth(), onClick = onAnatomy) {
-                Text("Атлас мышц", color = Fc.Text, style = MaterialTheme.typography.titleLarge)
-                Text("120 мышц · 12 групп · упражнения для каждой", color = Fc.Muted)
-                Spacer(Modifier.height(8.dp))
-                Text("Открыть атлас →", color = Fc.Lime, style = MaterialTheme.typography.labelLarge)
             }
         }
         item {
@@ -94,6 +86,18 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
                 items(EquipmentFilters) { name ->
                     FcChip(if (name == "Тренажёр") "Тренажёры" else name, equipment == name, { equipment = if (equipment == name) null else name },
                         trailing = "${all.count { it.equipment == name }}")
+                }
+            }
+        }
+        // The body comes first: tapping a muscle is the quickest way in for most people.
+        if (!filtering) {
+            item { com.fitclub.tracker.ui.anatomy.BodyAtlasCard(profile.sex, onAtlasMuscle) }
+            item {
+                FcCard(Modifier.fillMaxWidth(), onClick = onAnatomy) {
+                    Text("Атлас мышц", color = Fc.Text, style = MaterialTheme.typography.titleLarge)
+                    Text("120 мышц в 12 группах, упражнения для каждой", color = Fc.Muted)
+                    Spacer(Modifier.height(8.dp))
+                    Text("Открыть атлас", color = Fc.Lime, style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -128,7 +132,6 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
             items(AnatomyGroupOrder.chunked(2)) { pair ->
                 MuscleCategoryRow(pair, profile.sex, counts, onGroup)
             }
-            item { com.fitclub.tracker.ui.anatomy.BodyAtlasCard(profile.sex, onAtlasMuscle) }
         }
     }
 }

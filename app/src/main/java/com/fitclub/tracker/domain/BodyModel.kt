@@ -49,8 +49,8 @@ enum class BodyMetric(
 enum class BodyHue { BLUE, PURPLE, CYAN }
 
 val BodyMetric.hue: BodyHue get() = when (this) {
-    BodyMetric.SHOULDERS, BodyMetric.CHEST -> BodyHue.BLUE
-    BodyMetric.ARM, BodyMetric.HIPS -> BodyHue.PURPLE
+    BodyMetric.SHOULDERS, BodyMetric.CHEST, BodyMetric.WEIGHT -> BodyHue.BLUE
+    BodyMetric.ARM, BodyMetric.HIPS, BodyMetric.FAT -> BodyHue.PURPLE
     else -> BodyHue.CYAN
 }
 

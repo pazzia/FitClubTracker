@@ -241,7 +241,7 @@ fun AtlasMuscleScreen(muscleId: String, onBack: () -> Unit, onMuscle: (String) -
         item { BackRow(group?.title ?: "Атлас мышц", onBack) }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(muscle.name.uppercase(), color = Fc.Text, modifier = Modifier.semantics { heading() },
+                Text(muscle.name, color = Fc.Text, modifier = Modifier.semantics { heading() },
                     style = MaterialTheme.typography.headlineMedium.copy(fontFamily = Condensed, fontWeight = FontWeight.SemiBold, lineHeight = 34.sp))
                 Text(muscle.latin, color = Fc.Muted, fontStyle = FontStyle.Italic)
                 FlowRow(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -293,7 +293,7 @@ fun AtlasMuscleScreen(muscleId: String, onBack: () -> Unit, onMuscle: (String) -
         // index EXERCISES_INDEX: keep the items above in sync with this constant
         item(key = "exercises") {
             Column(Modifier.testTag("atlas-exercises"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("УПРАЖНЕНИЯ", color = Fc.Text, modifier = Modifier.semantics { heading() },
+                Text("Упражнения", color = Fc.Text, modifier = Modifier.semantics { heading() },
                     style = MaterialTheme.typography.titleLarge.copy(fontFamily = Condensed, fontWeight = FontWeight.Medium))
                 muscle.trainingNote?.let { note ->
                     Text(note, color = Fc.Text, style = MaterialTheme.typography.bodyMedium,
@@ -333,7 +333,7 @@ private const val EXERCISES_INDEX = 4
 private fun SchematicCard(rows: List<AtlasAttachment>) {
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Paper).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("СХЕМА НАЧАЛА И ПРИКРЕПЛЕНИЯ", color = Color(0xFF5B4A3A), style = MaterialTheme.typography.labelMedium)
+        Text("Схема начала и прикрепления", color = Color(0xFF5B4A3A), style = MaterialTheme.typography.labelMedium)
         rows.forEach { r ->
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(r.part, color = Color(0xFFA4472A), style = MaterialTheme.typography.titleSmall)

@@ -59,7 +59,7 @@ class Preview66UiTest {
             if (technique.isBlank()) WorkoutScreen(id, onClose = {}, onTechnique = { technique = it })
             else ExerciseDetailScreen(technique, onBack = { technique = "" }, onOpenExercise = { technique = it }, onAddToProgram = {}, trainingContext = true)
         } }
-        waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
+        waitFor("Упражнение 1 из 2")
         rule.onNodeWithTag("exercise-photo-pager").assertDoesNotExist()
         rule.onNodeWithContentDescription("Жим штанги лёжа — миниатюра техники").assertIsDisplayed()
         rule.onNodeWithTag("workout-list").performScrollToNode(hasText("Техника выполнения →"))
@@ -76,7 +76,7 @@ class Preview66UiTest {
         rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasText("Вернуться к тренировке"))
         rule.onNodeWithText("Вернуться к тренировке").performClick()
         rule.onNodeWithTag("next-exercise").performClick()
-        waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
+        waitFor("Упражнение 2 из 2")
         rule.onNodeWithTag("workout-list").performScrollToNode(hasText("Техника выполнения →"))
         rule.onNodeWithText("Техника выполнения →").performClick()
         waitFor("Техника")

@@ -32,6 +32,9 @@ import com.fitclub.tracker.ui.dashboard.calendarDate
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.programs.ExercisePicker
 import com.fitclub.tracker.ui.theme.Fc
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -149,24 +152,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
                     if (timed) "${best.reps} сек." else "${units.format(best.weightKg)} × ${best.reps}",
                     if (timed) "+${best.reps - previous.reps} сек." else if (best.weightKg > previous.weightKg) "+${units.format(best.weightKg - previous.weightKg)}" else "+${best.reps - previous.reps} повт.")
             }
-            if (records.isNotEmpty()) item {
-                FcCard(border = Fc.Lime) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        LineIcon(LineIcons.TROPHY, Fc.Lime)
-                        Text(if (records.size == 1) "Новый рекорд" else "Новых рекордов: ${records.size}", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
-                    }
-                    records.forEach { (name, value, delta) ->
-                        HorizontalDivider(color = Fc.Line2, modifier = Modifier.padding(vertical = 8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(name, color = Fc.Text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                            Column(horizontalAlignment = Alignment.End) {
-                                NumberText(value, 18.sp)
-                                Text(delta, color = Fc.Lime, style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-                    }
-                }
-            }
+            if (records.isNotEmpty()) item { RecordHero(records) }
         }
         item {
             FcCard {
@@ -327,5 +313,47 @@ private fun ExerciseResultSheet(log: WorkoutLog, id: String, position: Int, exer
             PrimaryButton(if (saving) "Сохраняю…" else "Сохранить", { if (valid && !saving) onSave(rows.toList()) }, Modifier.testTag("exercise-result-save"))
             ActionButton("Отменить", { editing = false }, outlined = true)
         } else ActionButton("Редактировать упражнение", ::begin, Modifier.testTag("exercise-result-edit"), outlined = true)
+    }
+}
+
+/**
+ * The one celebratory moment of the app: a new record gets the lime plate, the big number and a
+ * short grow-in. Further records of the same workout are listed under it.
+ */
+@Composable
+private fun RecordHero(records: List<Triple<String, String, String>>) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val motion = remember {
+        android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+    }
+    var shown by remember { mutableStateOf(!motion) }
+    LaunchedEffect(Unit) { shown = true }
+    val scale by androidx.compose.animation.core.animateFloatAsState(if (shown) 1f else 0.86f,
+        androidx.compose.animation.core.spring(dampingRatio = 0.55f, stiffness = 260f), label = "record")
+    val (name, value, delta) = records.first()
+    Column(
+        Modifier.fillMaxWidth().graphicsLayer { scaleX = scale; scaleY = scale }
+            .clip(RoundedCornerShape(24.dp)).background(com.fitclub.tracker.ui.theme.Lime).padding(20.dp)
+            .semantics(mergeDescendants = true) {}.testTag("record-hero"),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        val ink = Color(0xFF0A0C0D)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LineIcon(LineIcons.TROPHY, ink)
+            Text(if (records.size == 1) "Новый рекорд" else "Новых рекордов: ${records.size}", color = ink, style = MaterialTheme.typography.titleMedium)
+        }
+        Text(name, color = ink, style = MaterialTheme.typography.bodyLarge)
+        NumberText(value, 44.sp, color = ink)
+        Text(delta, color = ink, style = MaterialTheme.typography.labelLarge)
+        records.drop(1).forEach { (n, v, d) ->
+            HorizontalDivider(color = ink.copy(alpha = .18f), modifier = Modifier.padding(vertical = 6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(n, color = ink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Column(horizontalAlignment = Alignment.End) {
+                    NumberText(v, 18.sp, color = ink)
+                    Text(d, color = ink, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
     }
 }

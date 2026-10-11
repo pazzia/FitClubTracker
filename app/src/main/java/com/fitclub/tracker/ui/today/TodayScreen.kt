@@ -60,6 +60,7 @@ import com.fitclub.tracker.domain.volumeThisWeek
 import com.fitclub.tracker.domain.weekStart
 import com.fitclub.tracker.domain.weekStreak
 import com.fitclub.tracker.domain.workoutsThisWeek
+import com.fitclub.tracker.ui.programs.pluralRu
 import com.fitclub.tracker.ui.components.ActionButton
 import com.fitclub.tracker.ui.components.Eyebrow
 import com.fitclub.tracker.ui.components.FcCard
@@ -161,8 +162,9 @@ fun TodayScreen(
             FcCard(Modifier.fillMaxWidth().testTag("today-done")) {
                 Pill("Сегодня выполнено", Fc.LimeSoft, Fc.Lime)
                 Text(doneToday.session.title.ifBlank { "Тренировка" }, style = MaterialTheme.typography.displaySmall, color = Fc.Text, modifier = Modifier.padding(top = 8.dp))
-                Text("${doneToday.completedSets} подходов · ${doneToday.durationMin} мин · ${units.format(doneToday.volumeKg)}", color = Fc.Muted,
-                    style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp, bottom = 14.dp))
+                FactsRow(listOf("${doneToday.completedSets}" to pluralRu(doneToday.completedSets, "подход", "подхода", "подходов"),
+                    "${doneToday.durationMin}" to "мин", units.number(units.fromKg(doneToday.volumeKg)) to "${units.label} объём"),
+                    Modifier.padding(top = 6.dp, bottom = 14.dp))
                 ActionButton("Посмотреть итог", { onResult(doneToday.session.id) }, outlined = true)
             }
         }
@@ -286,8 +288,9 @@ private fun HeroCard(
         }
         Text(title, style = MaterialTheme.typography.displayMedium, color = Fc.Text, modifier = Modifier.padding(top = 4.dp))
         val minutes = items.sumOf { it.sets * (45 + it.restSec) } / 60
-        Text("${items.size} упражнений · ${items.sumOf { it.sets }} подходов · ≈ $minutes мин", color = Fc.Muted,
-            style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp, bottom = 10.dp))
+        FactsRow(listOf("${items.size}" to pluralRu(items.size, "упражнение", "упражнения", "упражнений"),
+            "${items.sumOf { it.sets }}" to pluralRu(items.sumOf { it.sets }, "подход", "подхода", "подходов"), "≈ $minutes" to "мин"),
+            Modifier.padding(top = 8.dp, bottom = 10.dp))
         items.take(3).forEach { item ->
             HorizontalDivider(color = Fc.Line2)
             Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -361,7 +364,7 @@ private fun StatusCard(status: DayStatus, program: ProgramDraft, workouts: List<
             LineIcon(if (status == DayStatus.WEEK_DONE) LineIcons.CHECK else "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z", Fc.Text)
         }
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(title.uppercase(), color = Fc.Text, style = MaterialTheme.typography.headlineMedium)
+            Text(title, color = Fc.Text, style = MaterialTheme.typography.headlineMedium)
             Text(text, color = Fc.Muted, style = MaterialTheme.typography.bodyMedium)
         }
     }
@@ -384,6 +387,19 @@ private fun SuggestionCard(eyebrow: String, title: String, items: List<ItemDraft
         Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ActionButton(if (starting) "Готовлю…" else "Начать сейчас", { if (!starting) onStart() }, Modifier.weight(1f).testTag("today-start"), outlined = true)
             ActionButton("Запланировать", onPlan, Modifier.weight(1f), outlined = true)
+        }
+    }
+}
+
+/** Key numbers side by side: the number reads first, its label under it — instead of «a · b · c». */
+@Composable
+private fun FactsRow(facts: List<Pair<String, String>>, modifier: Modifier = Modifier) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+        facts.forEach { (value, label) ->
+            Column {
+                NumberText(value, 22.sp)
+                Text(label, color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }

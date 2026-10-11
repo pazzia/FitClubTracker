@@ -29,14 +29,14 @@ class WorkoutUiTest {
             items = listOf(ItemDraft("bench", 1, RepRange.R8_12, 0), ItemDraft("bbrow", 1, RepRange.R8_12, 0)))) }
         rule.setContent { FitClubTheme { WorkoutScreen(id, onClose = {}, onTechnique = {}) } }
         // A workout opens directly on its first exercise.
-        waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
+        waitFor("Упражнение 1 из 2")
         return app
     }
     private fun openWith(vararg items: ItemDraft): FitApp {
         val app = ApplicationProvider.getApplicationContext<FitApp>()
         val id = runBlocking { app.container.schedule.save(ScheduledDraft(epochDay = 22000, items = items.toList())) }
         rule.setContent { FitClubTheme { WorkoutScreen(id, onClose = {}, onTechnique = {}) } }
-        waitFor("УПРАЖНЕНИЕ 1 ИЗ ${items.size}")
+        waitFor("Упражнение 1 из ${items.size}")
         return app
     }
     @Test fun nextSetIsPrefilledWithThePreviousWeight() {
@@ -103,7 +103,7 @@ class WorkoutUiTest {
         waitFor("Упражнение завершено")
         rule.onNodeWithText("Тоннаж: 600 кг").assertExists()
         rule.onNodeWithTag("next-exercise").assertIsEnabled().performClick()
-        waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
+        waitFor("Упражнение 2 из 2")
         rule.onNodeWithTag("next-exercise").assertIsEnabled().performClick()
         waitFor("Завершить и сохранить")
     }
