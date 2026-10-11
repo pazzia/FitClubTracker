@@ -70,18 +70,19 @@ data class BodyFigure(val asset: String, val width: Float, val height: Float, va
             BodyFigure(asset, w, h, rows.map { (m, g) -> FigureBand(m, g.first, g.second, g.third, m in right) })
 
         private val MALE_RIGHT = setOf(BodyMetric.CHEST, BodyMetric.HIPS, BodyMetric.THIGH)
-        val MALE_LIGHT = figure("male_light", 358f, 810f, MALE_RIGHT,
-            BodyMetric.SHOULDERS to Triple(141f, 186f, 97f), BodyMetric.CHEST to Triple(231f, 181f, 80f), BodyMetric.ARM to Triple(234f, 75f, 18f),
-            BodyMetric.WAIST to Triple(326f, 182f, 67f), BodyMetric.HIPS to Triple(431f, 182f, 90f), BodyMetric.THIGH to Triple(506f, 230f, 41f))
-        val MALE_DARK = figure("male_dark", 355f, 772f, MALE_RIGHT,
-            BodyMetric.SHOULDERS to Triple(142f, 180f, 100f), BodyMetric.CHEST to Triple(220f, 181f, 80f), BodyMetric.ARM to Triple(225f, 70f, 20f),
-            BodyMetric.WAIST to Triple(318f, 183f, 67f), BodyMetric.HIPS to Triple(425f, 180f, 90f), BodyMetric.THIGH to Triple(498f, 236f, 44f))
-        val FEMALE_DARK = figure("female_dark", 304f, 778f, setOf(BodyMetric.CHEST, BodyMetric.WAIST, BodyMetric.THIGH),
-            BodyMetric.SHOULDERS to Triple(149f, 154f, 70f), BodyMetric.CHEST to Triple(219f, 157f, 55f), BodyMetric.ARM to Triple(236f, 70f, 16f),
-            BodyMetric.WAIST to Triple(315f, 151f, 50f), BodyMetric.HIPS to Triple(409f, 157f, 78f), BodyMetric.THIGH to Triple(473f, 198f, 33f))
-        val FEMALE_LIGHT = figure("female_light", 332f, 828f, setOf(BodyMetric.SHOULDERS, BodyMetric.ARM, BodyMetric.THIGH),
-            BodyMetric.SHOULDERS to Triple(168f, 166f, 68f), BodyMetric.CHEST to Triple(248f, 172f, 63f), BodyMetric.ARM to Triple(266f, 255f, 18f),
-            BodyMetric.WAIST to Triple(354f, 167f, 55f), BodyMetric.HIPS to Triple(446f, 167f, 85f), BodyMetric.THIGH to Triple(516f, 214f, 39f))
+        // Cut whole, from the top of the hair to the soles, so the full figure always fits its card.
+        val MALE_LIGHT = figure("male_light", 354f, 844f, MALE_RIGHT,
+            BodyMetric.SHOULDERS to Triple(158f, 184f, 97f), BodyMetric.CHEST to Triple(248f, 179f, 80f), BodyMetric.ARM to Triple(251f, 73f, 18f),
+            BodyMetric.WAIST to Triple(343f, 180f, 67f), BodyMetric.HIPS to Triple(448f, 180f, 90f), BodyMetric.THIGH to Triple(523f, 228f, 41f))
+        val MALE_DARK = figure("male_dark", 351f, 805f, MALE_RIGHT,
+            BodyMetric.SHOULDERS to Triple(159f, 178f, 100f), BodyMetric.CHEST to Triple(237f, 179f, 80f), BodyMetric.ARM to Triple(242f, 68f, 20f),
+            BodyMetric.WAIST to Triple(335f, 181f, 67f), BodyMetric.HIPS to Triple(442f, 178f, 90f), BodyMetric.THIGH to Triple(515f, 234f, 44f))
+        val FEMALE_DARK = figure("female_dark", 300f, 810f, setOf(BodyMetric.CHEST, BodyMetric.WAIST, BodyMetric.THIGH),
+            BodyMetric.SHOULDERS to Triple(167f, 152f, 70f), BodyMetric.CHEST to Triple(237f, 155f, 55f), BodyMetric.ARM to Triple(254f, 68f, 16f),
+            BodyMetric.WAIST to Triple(333f, 149f, 50f), BodyMetric.HIPS to Triple(427f, 155f, 78f), BodyMetric.THIGH to Triple(491f, 196f, 33f))
+        val FEMALE_LIGHT = figure("female_light", 328f, 861f, setOf(BodyMetric.SHOULDERS, BodyMetric.ARM, BodyMetric.THIGH),
+            BodyMetric.SHOULDERS to Triple(186f, 164f, 68f), BodyMetric.CHEST to Triple(266f, 170f, 63f), BodyMetric.ARM to Triple(284f, 253f, 18f),
+            BodyMetric.WAIST to Triple(372f, 165f, 55f), BodyMetric.HIPS to Triple(464f, 165f, 85f), BodyMetric.THIGH to Triple(534f, 212f, 39f))
 
         fun of(female: Boolean, dark: Boolean) = when {
             female && dark -> FEMALE_DARK
@@ -161,3 +162,10 @@ fun railTops(wanted: List<Float>, labelHeight: Float, limit: Float): List<Float>
 /** Snap a stepper value to its grid so 0.1 + 0.2 never shows as 0,30000001. */
 fun snapMeasure(metric: BodyMetric, v: Float): Float =
     ((v / metric.step).roundToInt() * metric.step * 10).roundToInt().div(10f).coerceIn(metric.minValue, metric.maxValue)
+
+/**
+ * Height of the figure in its card: the whole figure always fits, up to [maxHeight]; a narrow
+ * card scales it down so the callout columns of [labelWidth] on both sides keep their width.
+ */
+fun figureHeight(figure: BodyFigure, cardWidth: Float, labelWidth: Float = 86f, maxHeight: Float = 400f): Float =
+    minOf(maxHeight, ((cardWidth - 2 * labelWidth) / figure.aspect).coerceAtLeast(0f))
