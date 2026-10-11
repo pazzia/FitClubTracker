@@ -90,6 +90,19 @@ class ReviewRegressionTest {
         repo.addMeasurement(80f, null, 0f, null, null)
         assertEquals(0f, repo.observeMeasurements().first().single().fatPercent!!, 0f)
     }
+    @Test fun sameDayMeasurementFillsTheDayInsteadOfAddingAPoint() = runBlocking {
+        repo.addMeasurement(80f, 82f, null, null, null, epochDay = 20000)
+        repo.addMeasurement(null, 81.5f, null, null, null, hips = 100f, thigh = 60.5f, epochDay = 20000)
+        repo.addMeasurement(79.5f, null, null, null, null, epochDay = 20014)
+        val rows = repo.observeMeasurements().first()
+        assertEquals(2, rows.size)
+        assertEquals(80f, rows[0].weightKg!!, 0f)
+        assertEquals(81.5f, rows[0].waistCm!!, 0f)
+        assertEquals(100f, rows[0].hipsCm!!, 0f)
+        assertEquals(60.5f, rows[0].thighCm!!, 0f)
+        assertNull(rows[1].hipsCm)
+        try { repo.addMeasurement(null, null, null, null, null, hips = -1f); fail("Invalid hips") } catch (_: IllegalArgumentException) { }
+    }
     @Test fun weeklyGraphSeparatesYearsAndKeepsChronologicalEmptyWeeks() = runBlocking {
         suspend fun record(date: String, weight: Float) = repo.finishWorkout(null, null, 1,
             listOf(CompletedSet("bench", 0, weight, 10)), epochDay = java.time.LocalDate.parse(date).toEpochDay())

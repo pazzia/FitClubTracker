@@ -205,14 +205,22 @@ class FitnessRepository(private val db: AppDatabase) {
         })
     }
 
-    suspend fun addMeasurement(weight: Float?, waist: Float?, fat: Float?, chest: Float?, arm: Float?) {
-        require(listOf(weight, waist, fat, chest, arm).any { it != null })
-        require(listOf(weight, waist, chest, arm).all { it == null || (it.isFinite() && it > 0) })
+    /**
+     * Saves a measurement for [epochDay]. A second entry on the same day fills in or corrects
+     * that day's row instead of adding another point to the timeline.
+     */
+    suspend fun addMeasurement(weight: Float?, waist: Float?, fat: Float?, chest: Float?, arm: Float?,
+        hips: Float? = null, thigh: Float? = null, epochDay: Long = java.time.LocalDate.now().toEpochDay()) = db.withTransaction {
+        require(listOf(weight, waist, fat, chest, arm, hips, thigh).any { it != null })
+        require(listOf(weight, waist, chest, arm, hips, thigh).all { it == null || (it.isFinite() && it > 0) })
         require(fat == null || (fat.isFinite() && fat in 0f..100f))
+        val same = db.measurementDao().getForDay(epochDay)
         db.measurementDao().insert(
             BodyMeasurementEntity(
-                epochDay = java.time.LocalDate.now().toEpochDay(), weightKg = weight, waistCm = waist,
-                fatPercent = fat, chestCm = chest, armCm = arm
+                id = same?.id ?: 0, epochDay = epochDay,
+                weightKg = weight ?: same?.weightKg, waistCm = waist ?: same?.waistCm,
+                fatPercent = fat ?: same?.fatPercent, chestCm = chest ?: same?.chestCm, armCm = arm ?: same?.armCm,
+                hipsCm = hips ?: same?.hipsCm, thighCm = thigh ?: same?.thighCm
             )
         )
     }
