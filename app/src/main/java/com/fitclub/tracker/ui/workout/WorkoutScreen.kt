@@ -187,6 +187,8 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
     /** Increments each time a rest runs out on its own (not when skipped). */
     var restEnded by mutableIntStateOf(0)
         private set
+    /** Read when the rest ends, so a change in the profile applies to the running workout. */
+    val restSound: Boolean get() = c.profile.settings.value.restSound
     private var restUntil by mutableLongStateOf(0L)
     private var restRealtime = 0L
     val logs = mutableStateMapOf<Int, SnapshotStateList<SetEntry>>()
@@ -383,7 +385,7 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
     var confirmFinish by remember { mutableStateOf(false) }
     var restOpen by rememberSaveable { mutableStateOf(false) }
     KeepScreenOn()
-    RestEndSignal(vm.restEnded)
+    RestEndSignal(vm.restEnded) { vm.restSound }
     LaunchedEffect(vm.rest == 0) { if (vm.rest == 0) restOpen = false }
     BackHandler {
         if (restOpen) restOpen = false else if (vm.inOverview) confirmFinish = true else vm.overview()
@@ -435,9 +437,14 @@ private fun KeepScreenOn() {
 }
 
 @Composable
-private fun RestEndSignal(count: Int) {
+private fun RestEndSignal(count: Int, sound: () -> Boolean) {
     val context = LocalContext.current
-    LaunchedEffect(count) { if (count > 0) vibrate(context) }
+    LaunchedEffect(count) {
+        if (count > 0) {
+            vibrate(context)
+            if (sound()) RestSound.play()
+        }
+    }
 }
 
 private fun vibrate(context: Context) {
