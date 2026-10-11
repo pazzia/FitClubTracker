@@ -63,7 +63,11 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
     val hidden = validSelected.count { id -> matches.none { it.id == id } }
     val groups = remember(matches) { matches.groupBy { it.group } }
     val listState = rememberLazyListState()
-    LaunchedEffect(appliedQuery, tree, reviewing, selectedGroup) { listState.scrollToItem(0) }
+    // Scroll back only when the list is actually scrolled: an unconditional scroll forces an extra
+    // layout pass on every query or view change, which raced with input on slow devices and tests.
+    LaunchedEffect(appliedQuery, tree, reviewing, selectedGroup) {
+        if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) listState.scrollToItem(0)
+    }
     fun close() {
         when {
             reviewing -> reviewing = false

@@ -37,6 +37,8 @@ class ExercisePickerUiTest {
             }
         } } }
     }
+    /** Click, then let the list settle before the next step reads the tree. */
+    private fun SemanticsNodeInteraction.tap() { performClick(); rule.waitForIdle() }
     private fun query(text: String) {
         rule.onNodeWithTag("exercise-search").performTextReplacement(text)
         rule.waitUntil(15000) { rule.onAllNodesWithText("Поиск…").fetchSemanticsNodes().isEmpty() }
@@ -71,18 +73,18 @@ class ExercisePickerUiTest {
     @Test fun treeCollapsesAndFilteringRetainsOnlyMatchingGroup() {
         picker()
         query("штанг лежа")
-        rule.onNodeWithTag("picker-view").performClick()
-        rule.onNodeWithContentDescription("Свернуть Грудь").performClick()
+        rule.onNodeWithTag("picker-view").tap()
+        rule.onNodeWithContentDescription("Свернуть Грудь").tap()
         rule.onNodeWithTag("picker-exercise-bench").assertDoesNotExist()
-        rule.onNodeWithContentDescription("Развернуть Грудь").performClick()
+        rule.onNodeWithContentDescription("Развернуть Грудь").tap()
         rule.onNodeWithTag("picker-exercise-bench").assertExists()
         rule.onNodeWithTag("picker-group-BACK").assertDoesNotExist()
-        rule.onNodeWithContentDescription("Выбрать группу Грудь").performClick()
+        rule.onNodeWithContentDescription("Выбрать группу Грудь").tap()
         rule.onNodeWithText("Выбрано: 1").assertExists()
         query("zzzzzz")
         rule.onNodeWithTag("picker-select-all").assertIsNotEnabled()
         rule.onNodeWithText("Выбрано: 1").assertExists()
-        rule.onNodeWithTag("picker-add").performClick()
+        rule.onNodeWithTag("picker-add").tap()
         assertEquals(listOf("bench"), added)
     }
     @Test fun reducedHeightKeepsSearchResultsAndConfirmationVisible() {
