@@ -50,7 +50,7 @@ class AnatomyUiTest {
         assertEquals("bench", exercise)
         rule.onNodeWithTag("atlas-muscle-list").performScrollToNode(hasTestTag("atlas-exercises"))
         rule.onNodeWithText("Низ").performClick()
-        rule.onNodeWithTag("atlas-muscle-list").performScrollToNode(hasText("Отжимания на брусьях с акцентом на грудь"))
+        rule.onNodeWithTag("atlas-muscle-list").performScrollToNode(hasText("Отжимания на брусьях"))
         assertTrue(rule.onAllNodesWithText("Жим штанги лёжа").fetchSemanticsNodes().isEmpty())
     }
 
