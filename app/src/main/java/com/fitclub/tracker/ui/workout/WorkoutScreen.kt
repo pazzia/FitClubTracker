@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -101,7 +102,13 @@ data class SetEntry(val weight: String = "", val reps: String = "", val done: Bo
     /** [com.fitclub.tracker.domain.Technique.id]. */
     val technique: String = "",
     /** Extra stages of a drop set or rest-pause, as typed: weight to reps. */
-    val stages: List<Pair<String, String>> = emptyList())
+    val stages: List<Pair<String, String>> = emptyList(),
+    /** The user changed this row by hand, so finishing an earlier set must not overwrite it. */
+    val edited: Boolean = false,
+    /** Superset in this set: the other exercise done right after it, without rest. */
+    val partner: String = "", val partnerWeight: String = "", val partnerReps: String = "",
+    /** Drop set: each stage is this many percent lighter than the previous one; 0 — stages set by hand. */
+    val dropPercent: Int = DEFAULT_DROP_PERCENT)
 
 /** How undone sets of an exercise are pre-filled. */
 enum class Prefill { EMPTY, REPEAT, PROGRESS }
@@ -219,7 +226,8 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
         p.items.forEachIndexed { index, item ->
             val rows = JSONArray()
             logs[index].orEmpty().forEach { rows.put(JSONObject().put("w", it.weight).put("r", it.reps).put("done", it.done).put("warmup", it.warmup).put("rir", it.rir).put("assisted", it.assisted)
-                .put("tech", it.technique).put("stages", JSONArray().apply { it.stages.forEach { (w, r) -> put(JSONArray().put(w).put(r)) } })) }
+                .put("tech", it.technique).put("stages", JSONArray().apply { it.stages.forEach { (w, r) -> put(JSONArray().put(w).put(r)) } })
+                .put("edited", it.edited).put("partner", it.partner).put("pw", it.partnerWeight).put("pr", it.partnerReps).put("drop", it.dropPercent)) }
             items.put(JSONObject().put("id", item.exerciseId).put("sets", item.sets).put("reps", item.reps.name)
                 .put("rest", item.restSec).put("comment", item.comment).put("rows", rows)
                 .put("technique", item.technique).put("scope", item.techniqueScope).put("superset", item.superset)
@@ -238,7 +246,9 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
         val restoredRows = (0 until items.length()).map { i -> val rows = items.getJSONObject(i).getJSONArray("rows")
             (0 until rows.length()).map { r -> val row = rows.getJSONObject(r)
                 val stages = row.optJSONArray("stages")?.let { a -> (0 until a.length()).map { k -> a.getJSONArray(k).let { it.getString(0) to it.getString(1) } } }.orEmpty()
-                SetEntry(row.getString("w"), row.getString("r"), row.getBoolean("done"), row.optBoolean("warmup"), row.optString("rir"), row.optBoolean("assisted"), row.optString("tech"), stages) } }
+                SetEntry(row.getString("w"), row.getString("r"), row.getBoolean("done"), row.optBoolean("warmup"), row.optString("rir"), row.optBoolean("assisted"), row.optString("tech"), stages,
+                    edited = row.optBoolean("edited"), partner = row.optString("partner"), partnerWeight = row.optString("pw"), partnerReps = row.optString("pr"),
+                    dropPercent = row.optInt("drop", DEFAULT_DROP_PERCENT)) } }
         editedPlan = ScheduledDraft(scheduleId, j.getLong("epochDay"), j.getString("title"), j.getInt("minute"),
             j.getLong("program").takeIf { it >= 0 }, j.getInt("day").takeIf { it >= 0 }, restoredItems)
         tokens.clear(); tokens.addAll(restoredItems.map { nextToken++ }); logs.clear(); completed.clear(); started.clear(); durations.clear()
@@ -309,19 +319,27 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
     fun editExercise() { completed.remove(exerciseIndex); summaryIndex = null; startExercise() }
     fun completedSets(plan: ScheduledDraft, unitsKg: Boolean): List<CompletedSet> {
         val counters = mutableMapOf<String, Int>()
+        fun nextIndex(id: String) = (counters[id] ?: 0).also { counters[id] = it + 1 }
+        val partnerSlots = partnerPositions(plan)
         return plan.items.flatMapIndexed { position, item ->
-            logs[position].orEmpty().filter { it.done }.map { row ->
-                val index = counters[item.exerciseId] ?: 0
-                counters[item.exerciseId] = index + 1
+            logs[position].orEmpty().filter { it.done }.flatMap { row ->
                 val stages = row.stages.mapNotNull { (w, r) -> val reps = r.toIntOrNull(); if (reps != null && reps > 0) com.fitclub.tracker.domain.Stage(weightKg(w, draftUnitsKg), reps) else null }
-                CompletedSet(item.exerciseId, index, weightKg(row.weight, draftUnitsKg), row.reps.toInt(), item.reps == RepRange.TIME, position, row.warmup, row.rir.toIntOrNull(), row.assisted,
+                val main = CompletedSet(item.exerciseId, nextIndex(item.exerciseId), weightKg(row.weight, draftUnitsKg), row.reps.toInt(), item.reps == RepRange.TIME, position, row.warmup, row.rir.toIntOrNull(), row.assisted,
                     row.technique, com.fitclub.tracker.domain.formatStages(stages))
+                // The superset partner is a real set of the other exercise: it counts in its history and records.
+                val partner = if (hasSupersetPartner(row)) CompletedSet(row.partner, nextIndex(row.partner), weightKg(row.partnerWeight, draftUnitsKg),
+                    row.partnerReps.toInt(), false, partnerSlots.getValue(position to row.partner), technique = Technique.SUPERSET.id) else null
+                listOfNotNull(main, partner)
             }
         }
     }
+    /** Superset partners are logged after the planned exercises, one position per (exercise, partner) pair. */
+    private fun partnerPositions(plan: ScheduledDraft): Map<Pair<Int, String>, Int> =
+        plan.items.indices.flatMap { position -> logs[position].orEmpty().filter { it.done && hasSupersetPartner(it) }.map { position to it.partner } }
+            .distinct().mapIndexed { k, key -> key to plan.items.size + k }.toMap()
     internal fun completedExercises(plan: ScheduledDraft): List<CompletedExercise> = plan.items.mapIndexed { index, item ->
         CompletedExercise(item.exerciseId, index, duration(index), logs[index].orEmpty().count { it.done && !it.warmup } >= item.sets)
-    }
+    } + partnerPositions(plan).map { (key, position) -> CompletedExercise(key.second, position, 0L, true) }
     fun saveForLater(onSaved: () -> Unit) {
         if (finishing || saved) return
         pauseExercise(); inOverview = true; finishing = true
@@ -543,23 +561,37 @@ private fun ExerciseMode(vm: WorkoutViewModel, plan: ScheduledDraft, source: Wor
         }
     }
     techniqueFor?.let { target ->
+        // Rows as they were when the sheet opened: every choice is applied to this baseline, so changing
+        // «этот / последний / все» back and forth never leaves stray changes behind.
+        val baseline = remember(target) { rows.toList() }
+        val planPartners = remember(plan.items, index) {
+            plan.items.mapIndexedNotNull { i, it -> if (i == index || it.exerciseId == item.exerciseId) null else it.exerciseId to (source.catalog[it.exerciseId]?.name ?: it.exerciseId) }.distinct()
+        }
+        val catalog = remember(source.catalog) { source.catalog.values.sortedBy { it.name } }
         ModalBottomSheet(onDismissRequest = { techniqueFor = null }, containerColor = Fc.Surface,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-            TechniqueSheet(exercise?.name ?: item.exerciseId, rows.getOrNull(target) ?: SetEntry(), target, rows.size) { warmup, technique, scope, rir, assisted ->
-                val targets = when (scope) {
-                    TechniqueScope.THIS -> listOf(target)
-                    TechniqueScope.LAST -> listOf(rows.lastIndex)
-                    TechniqueScope.ALL -> rows.indices.toList()
-                }
-                targets.forEach { i ->
-                    val row = rows.getOrNull(i) ?: return@forEach
-                    if (row.done && i != target) return@forEach
-                    rows[i] = row.copy(warmup = warmup, technique = if (warmup) "" else technique.id,
-                        stages = if (!warmup && technique.hasStages) row.stages else emptyList(),
-                        rir = if (i == target) rir else row.rir, assisted = if (i == target) assisted else row.assisted)
-                }
-                techniqueFor = null
-            }
+            TechniqueSheet(exercise?.name ?: item.exerciseId, baseline.getOrNull(target) ?: SetEntry(), target, baseline.size, planPartners, catalog,
+                onChange = { choice ->
+                    val targets = when (choice.scope) {
+                        TechniqueScope.THIS -> listOf(target)
+                        TechniqueScope.LAST -> listOf(baseline.lastIndex)
+                        TechniqueScope.ALL -> baseline.indices.toList()
+                    }
+                    baseline.forEachIndexed { i, original ->
+                        val applies = i in targets && !(original.done && i != target)
+                        var next = if (!applies) original else withTechnique(original, choice.warmup, choice.technique, weightStep(unitsKg))
+                            .copy(rir = if (i == target) choice.rir else original.rir, assisted = if (i == target) choice.assisted else original.assisted)
+                        if (applies && choice.technique == Technique.SUPERSET && !choice.warmup && choice.partner.isNotBlank() && next.partner != choice.partner) {
+                            val partnerLast = lastSessionSets(earlier, choice.partner, false)?.second
+                            val partnerToday = rows.lastOrNull { it.partner == choice.partner && it.partnerWeight.isNotBlank() }
+                            next = next.copy(partner = choice.partner,
+                                partnerWeight = partnerToday?.partnerWeight ?: partnerLast?.firstOrNull()?.let { number(displayWeight(it.weightKg, unitsKg)) } ?: "",
+                                partnerReps = partnerToday?.partnerReps ?: partnerLast?.firstOrNull()?.reps?.toString() ?: next.reps.ifBlank { "10" })
+                        }
+                        if (rows.getOrNull(i) != next && i < rows.size) rows[i] = next
+                    }
+                },
+                onDone = { techniqueFor = null })
         }
     }
 
@@ -618,13 +650,15 @@ private fun ExerciseMode(vm: WorkoutViewModel, plan: ScheduledDraft, source: Wor
                         val markDone: (Boolean) -> Unit = { checked ->
                             if (!checked || validSet(row)) {
                                 rows[rowIndex] = row.copy(done = checked); vm.error = null
+                                if (checked) carryForward(rows, rowIndex, weightStep(unitsKg)).forEachIndexed { i, r -> if (rows[i] != r) rows[i] = r }
                                 if (checked) afterSetDone()
                             } else vm.error = "Укажите вес не меньше 0 и количество больше 0"
                         }
+                        val partnerName = row.partner.takeIf { it.isNotBlank() }?.let { source.catalog[it]?.name ?: it }
                         if (rowIndex == current) CurrentSet(rowIndex, row, prevText(rowIndex), timed, unitsKg, canRemove,
-                            label = labels[index], onChange = { rows[rowIndex] = it.copy(done = false) }, onDone = { markDone(true) },
+                            label = labels[index], partnerName = partnerName, onChange = { rows[rowIndex] = it.copy(done = false) }, onDone = { markDone(true) },
                             onRemove = { rows.removeAt(rowIndex) }, onTechnique = { techniqueFor = rowIndex })
-                        else CompactSet(rowIndex, row, prevText(rowIndex), upcoming = !row.done, canRemove = canRemove, units = units,
+                        else CompactSet(rowIndex, row, prevText(rowIndex), upcoming = !row.done, canRemove = canRemove, units = units, partnerName = partnerName,
                             onToggle = { markDone(!row.done) }, onRemove = { rows.removeAt(rowIndex) })
                     }
                 }
@@ -805,25 +839,32 @@ private fun HistorySheet(name: String, earlier: List<WorkoutLog>, exerciseId: St
     }
 }
 
+/** What the set sheet currently selects; applied to the rows on every change. */
+internal data class TechniqueChoice(val warmup: Boolean, val technique: Technique, val scope: TechniqueScope, val rir: String, val assisted: Boolean, val partner: String)
+
+/**
+ * How to perform a set. Every tap applies at once — there is nothing to confirm, «Готово» only closes the sheet.
+ * Choosing «Суперсет» asks which exercise follows this set.
+ */
 @Composable
 private fun TechniqueSheet(name: String, row: SetEntry, rowIndex: Int, rowCount: Int,
-    onApply: (warmup: Boolean, technique: Technique, scope: TechniqueScope, rir: String, assisted: Boolean) -> Unit) {
-    var warmup by remember { mutableStateOf(row.warmup) }
-    var technique by remember { mutableStateOf(Technique.of(row.technique)) }
-    var scope by remember { mutableStateOf(TechniqueScope.THIS) }
-    var rir by remember { mutableStateOf(row.rir) }
-    var assisted by remember { mutableStateOf(row.assisted) }
+    planPartners: List<Pair<String, String>>, catalog: List<ExerciseEntity>,
+    onChange: (TechniqueChoice) -> Unit, onDone: () -> Unit) {
+    var choice by remember { mutableStateOf(TechniqueChoice(row.warmup, Technique.of(row.technique), TechniqueScope.THIS, row.rir, row.assisted, row.partner)) }
+    fun update(next: TechniqueChoice) { choice = next; onChange(next) }
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Eyebrow(name)
         Text("Как выполнить подход ${rowIndex + 1}", color = Fc.Text, style = MaterialTheme.typography.headlineMedium)
-        Segmented(TechniqueScope.entries, scope, { scope = it }, { if (it == TechniqueScope.LAST) "Последний ($rowCount)" else it.title })
+        Text("Выбор применяется сразу.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+        Segmented(TechniqueScope.entries, choice.scope, { update(choice.copy(scope = it)) }, { if (it == TechniqueScope.LAST) "Последний ($rowCount)" else it.title })
         val options = listOf<Pair<Technique?, Boolean>>(Technique.NORMAL to false, null to true) + Technique.entries.drop(1).map { it to false }
         options.forEach { (t, isWarmup) ->
-            val on = if (isWarmup) warmup else !warmup && technique == t
+            val on = if (isWarmup) choice.warmup else !choice.warmup && choice.technique == t
             val shape = RoundedCornerShape(16.dp)
             Row(Modifier.fillMaxWidth().heightIn(min = 58.dp).clip(shape)
                 .then(if (on) Modifier.background(Fc.LimeSoft).border(1.5.dp, Fc.Lime, shape) else Modifier.border(1.dp, Fc.Line2, shape))
-                .semantics { selected = on }.clickable(role = Role.RadioButton) { if (isWarmup) { warmup = true } else { warmup = false; technique = t!! } }
+                .semantics { selected = on }
+                .clickable(role = Role.RadioButton) { update(if (isWarmup) choice.copy(warmup = true) else choice.copy(warmup = false, technique = t!!)) }
                 .padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 8.dp).testTag("technique-${if (isWarmup) "warmup" else t!!.id.ifBlank { "normal" }}"),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(if (on) Fc.Lime else Fc.Surface2), contentAlignment = Alignment.Center) {
@@ -834,6 +875,7 @@ private fun TechniqueSheet(name: String, row: SetEntry, rowIndex: Int, rowCount:
                     Text(if (isWarmup) "Не входит в рекорды и тоннаж" else t!!.hint, color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                 }
             }
+            if (on && t == Technique.SUPERSET) PartnerPicker(choice.partner, planPartners, catalog) { update(choice.copy(partner = it)) }
         }
         Eyebrow("Дополнительно · подход ${rowIndex + 1}")
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -841,32 +883,59 @@ private fun TechniqueSheet(name: String, row: SetEntry, rowIndex: Int, rowCount:
             var menu by remember { mutableStateOf(false) }
             Box {
                 OutlinedButton(onClick = { menu = true }, border = BorderStroke(1.dp, Fc.Line), modifier = Modifier.heightIn(min = 44.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) { Text(rir.ifBlank { "не указано" }) }
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) { Text(choice.rir.ifBlank { "не указано" }) }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text("Не указывать") }, onClick = { rir = ""; menu = false })
-                    (0..5).forEach { n -> DropdownMenuItem(text = { Text("$n") }, onClick = { rir = "$n"; menu = false }) }
+                    DropdownMenuItem(text = { Text("Не указывать") }, onClick = { update(choice.copy(rir = "")); menu = false })
+                    (0..5).forEach { n -> DropdownMenuItem(text = { Text("$n") }, onClick = { update(choice.copy(rir = "$n")); menu = false }) }
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Switch) { assisted = !assisted }, verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.Switch) { update(choice.copy(assisted = !choice.assisted)) }, verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Вес помощи тренажёра", color = Fc.Text, style = MaterialTheme.typography.bodyMedium)
                 Text("Не считается в тоннаже", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
             }
-            Switch(checked = assisted, onCheckedChange = { assisted = it },
+            Switch(checked = choice.assisted, onCheckedChange = { update(choice.copy(assisted = it)) },
                 colors = SwitchDefaults.colors(checkedTrackColor = Fc.Lime, checkedThumbColor = Fc.OnAccent))
         }
-        PrimaryButton("Применить", { onApply(warmup, technique, scope, rir, assisted) }, Modifier.testTag("technique-apply"))
+        PrimaryButton("Готово", onDone, Modifier.testTag("technique-apply"))
+    }
+}
+
+/** The exercise done right after this set: exercises of today's plan first, any other by search. */
+@Composable
+private fun PartnerPicker(selected: String, planPartners: List<Pair<String, String>>, catalog: List<ExerciseEntity>, onPick: (String) -> Unit) {
+    var query by remember { mutableStateOf("") }
+    val q = query.trim().lowercase()
+    val found = if (q.length < 2) emptyList() else catalog.filter { it.name.lowercase().contains(q) && planPartners.none { p -> p.first == it.id } }.take(6).map { it.id to it.name }
+    val selectedName = (planPartners + catalog.map { it.id to it.name }).firstOrNull { it.first == selected }?.second
+    Column(Modifier.fillMaxWidth().padding(start = 52.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(if (selectedName != null) "Затем сразу: $selectedName" else "Какое упражнение сделать сразу после?",
+            color = if (selectedName != null) Fc.Lime else Fc.Text, style = MaterialTheme.typography.titleSmall)
+        (planPartners + found).forEach { (id, name) ->
+            val on = id == selected
+            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp))
+                .then(if (on) Modifier.background(Fc.LimeSoft) else Modifier.border(1.dp, Fc.Line2, RoundedCornerShape(12.dp)))
+                .semantics { this.selected = on }.clickable(role = Role.RadioButton) { onPick(id) }
+                .padding(horizontal = 12.dp).testTag("partner-$id"), verticalAlignment = Alignment.CenterVertically) {
+                Text(name, color = Fc.Text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                if (on) Icon(Icons.Filled.Check, null, tint = Fc.Lime, modifier = Modifier.size(18.dp))
+            }
+        }
+        OutlinedTextField(query, { query = it }, singleLine = true, modifier = Modifier.fillMaxWidth().testTag("partner-search"),
+            placeholder = { Text("Найти другое упражнение") }, colors = fieldColors(), shape = RoundedCornerShape(12.dp))
     }
 }
 
 /** The set being performed: large steppers instead of a keyboard. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CurrentSet(rowIndex: Int, row: SetEntry, previous: String?, timed: Boolean, unitsKg: Boolean, canRemove: Boolean, label: String?,
-    onChange: (SetEntry) -> Unit, onDone: () -> Unit, onRemove: () -> Unit, onTechnique: () -> Unit) {
+    partnerName: String?, onChange: (SetEntry) -> Unit, onDone: () -> Unit, onRemove: () -> Unit, onTechnique: () -> Unit) {
     val shape = RoundedCornerShape(24.dp)
-    val technique = Technique.of(row.technique)
+    val technique = if (row.warmup) Technique.NORMAL else Technique.of(row.technique)
     val step = weightStep(unitsKg)
+    val unit = if (unitsKg) "кг" else "фунт."
     Column(Modifier.fillMaxWidth().clip(shape).background(Fc.Surface).border(1.5.dp, Fc.Lime, shape).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -880,23 +949,39 @@ private fun CurrentSet(rowIndex: Int, row: SetEntry, previous: String?, timed: B
                 .semantics { contentDescription = "Как выполнить подход: ${if (row.warmup) "разминка" else technique.title}" }
                 .clickable(role = Role.Button, onClick = onTechnique).testTag("technique-$rowIndex").padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(if (row.warmup) "Разминка" else technique.title, color = if (on) Fc.Lime else Fc.Text, style = MaterialTheme.typography.labelLarge)
+                Text(if (row.warmup) "Разминка" else technique.title, color = if (on) Fc.Lime else Fc.Text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
                 LineIcon("M6 9l6 6 6-6", if (on) Fc.Lime else Fc.Text, Modifier.size(14.dp), 2.4f)
             }
             if (canRemove) IconButton(onClick = onRemove, modifier = Modifier.size(44.dp)) { Icon(Icons.Filled.Delete, "Удалить подход ${rowIndex + 1}", tint = Fc.Muted) }
         }
+        if (technique == Technique.DROP) TechniqueHint("Дропсет: выполните ступени подряд, без отдыха. Каждая следующая — легче. Отдых начнётся после последней ступени.")
+        if (technique == Technique.REST_PAUSE) TechniqueHint("Рест-пауза: после основного подхода — пауза 10–20 с и мини-подходы с тем же весом. Отдых после последнего.")
+        if (technique == Technique.SUPERSET) TechniqueHint("Суперсет: сразу после этого подхода, без отдыха, выполните второе упражнение. Отдых — после пары.")
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Stepper(if (unitsKg) "Вес, кг" else "Вес, фунт.", row.weight, step, decimals = true,
-                tag = "weight-$rowIndex", description = "Вес подхода ${rowIndex + 1}", modifier = Modifier.weight(1f)) { onChange(row.copy(weight = it)) }
+            Stepper(when (technique) { Technique.DROP -> "Ступень 1 · $unit"; Technique.SUPERSET -> "Вес, $unit"; else -> if (unitsKg) "Вес, кг" else "Вес, фунт." },
+                row.weight, step, decimals = true, tag = "weight-$rowIndex", description = "Вес подхода ${rowIndex + 1}", modifier = Modifier.weight(1f)) { onChange(withWeight(row, it, step)) }
             Stepper(if (timed) "Секунды" else "Повторы", row.reps, if (timed) 5f else 1f, decimals = false,
                 tag = "reps-$rowIndex", description = "Количество подхода ${rowIndex + 1}", modifier = Modifier.weight(1f)) { onChange(row.copy(reps = it)) }
         }
-        if (!row.warmup && technique.hasStages) {
+        if (technique == Technique.DROP) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Снижать на", color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
+                DROP_PERCENTS.forEach { p ->
+                    val on = row.dropPercent == p
+                    Text("−$p%", color = if (on) Fc.OnAccent else Fc.Text, style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.heightIn(min = 36.dp).clip(RoundedCornerShape(18.dp))
+                            .then(if (on) Modifier.background(Fc.Lime) else Modifier.border(1.dp, Fc.Line, RoundedCornerShape(18.dp)))
+                            .semantics { selected = on }.clickable(role = Role.RadioButton) { onChange(withDropPercent(row, p, step)) }
+                            .padding(horizontal = 12.dp, vertical = 8.dp).testTag("drop-$p"))
+                }
+            }
+        }
+        if (technique.hasStages) {
             row.stages.forEachIndexed { s, (w, r) ->
-                Row(Modifier.padding(start = 14.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Stepper(if (technique == Technique.DROP) "Ступень ${s + 2}" else "Мини-подход ${s + 2}", w, step, decimals = true,
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Stepper(if (technique == Technique.DROP) "Ступень ${s + 2} · $unit" else "Мини-подход ${s + 2} · $unit", w, step, decimals = true,
                         tag = "stage-weight-$rowIndex-$s", description = "Вес ступени ${s + 2}", modifier = Modifier.weight(1f), compact = true) { value ->
-                        onChange(row.copy(stages = row.stages.mapIndexed { k, p -> if (k == s) value to p.second else p }))
+                        onChange(row.copy(dropPercent = 0, stages = row.stages.mapIndexed { k, p -> if (k == s) value to p.second else p }))
                     }
                     Stepper("Повторы", r, 1f, decimals = false, tag = "stage-reps-$rowIndex-$s", description = "Повторы ступени ${s + 2}",
                         modifier = Modifier.weight(1f), compact = true) { value ->
@@ -908,14 +993,36 @@ private fun CurrentSet(rowIndex: Int, row: SetEntry, previous: String?, timed: B
                 }
             }
             val base = row.stages.lastOrNull() ?: (row.weight to row.reps)
-            val baseWeight = base.first.replace(',', '.').toFloatOrNull() ?: 0f
-            val nextWeight = if (technique == Technique.DROP) (kotlin.math.round(baseWeight * 0.8f / step) * step).coerceAtLeast(0f) else baseWeight
-            val nextReps = if (technique == Technique.DROP) (base.second.toIntOrNull() ?: 8).coerceAtLeast(1) else ((base.second.toIntOrNull() ?: 6) / 3).coerceAtLeast(1)
-            DashedButton("+ ${if (technique == Technique.DROP) "Ступень" else "Мини-подход"} · ${number(nextWeight)} × $nextReps", {
-                onChange(row.copy(stages = row.stages + (number(nextWeight) to nextReps.toString())))
+            val next = if (technique == Technique.DROP) dropStages(base.first, base.second, row.dropPercent.takeIf { it > 0 } ?: DEFAULT_DROP_PERCENT, 1, step).first()
+                else restPauseStages(base.first, row.reps, 1).first()
+            DashedButton("+ ${if (technique == Technique.DROP) "Ещё ступень" else "Ещё мини-подход"} · ${next.first.ifBlank { "—" }} × ${next.second}", {
+                onChange(row.copy(stages = row.stages + next))
             }, Modifier.testTag("add-stage-$rowIndex"))
-            Text(if (technique == Technique.DROP) "Без отдыха между ступенями. Отдых начнётся после последней." else "Пауза 10–20 с между мини-подходами. Отдых начнётся после последнего.",
-                color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+        }
+        if (technique == Technique.SUPERSET) {
+            Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Fc.Surface2).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Eyebrow("Затем сразу, без отдыха")
+                if (partnerName == null) {
+                    ActionButton("Выбрать второе упражнение", onTechnique, outlined = true)
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(partnerName, color = Fc.Text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        TextButton(onClick = onTechnique) { Text("Сменить", color = Fc.Lime) }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Stepper("Вес, $unit", row.partnerWeight, step, decimals = true, tag = "partner-weight-$rowIndex", description = "Вес второго упражнения",
+                            modifier = Modifier.weight(1f), compact = true) { onChange(row.copy(partnerWeight = it)) }
+                        Stepper("Повторы", row.partnerReps, 1f, decimals = false, tag = "partner-reps-$rowIndex", description = "Повторы второго упражнения",
+                            modifier = Modifier.weight(1f), compact = true) { onChange(row.copy(partnerReps = it)) }
+                    }
+                }
+            }
+        }
+        val doneTitle = when {
+            technique == Technique.DROP && row.stages.isNotEmpty() -> "Дропсет выполнен · ${row.stages.size + 1} ступ."
+            technique == Technique.REST_PAUSE && row.stages.isNotEmpty() -> "Рест-пауза выполнена"
+            technique == Technique.SUPERSET && partnerName != null -> "Суперсет выполнен"
+            else -> "Подход выполнен"
         }
         Button(onClick = onDone, shape = RoundedCornerShape(18.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime, contentColor = Fc.OnAccent),
@@ -925,39 +1032,50 @@ private fun CurrentSet(rowIndex: Int, row: SetEntry, previous: String?, timed: B
             }) {
             Icon(Icons.Filled.Check, null, modifier = Modifier.size(22.dp))
             Spacer(Modifier.width(8.dp))
-            Text(if (!row.warmup && technique.hasStages && row.stages.isNotEmpty()) "${technique.title} выполнен" else "Подход выполнен", style = MaterialTheme.typography.titleMedium)
+            Text(doneTitle, style = MaterialTheme.typography.titleMedium, maxLines = 1)
         }
     }
+}
+
+@Composable
+private fun TechniqueHint(text: String) {
+    Text(text, color = Fc.Text, style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Fc.LimeSoft).padding(horizontal = 12.dp, vertical = 10.dp))
 }
 
 @Composable
 private fun Stepper(label: String, value: String, step: Float, decimals: Boolean, tag: String, description: String,
     modifier: Modifier, compact: Boolean = false, onValue: (String) -> Unit) {
     val height = if (compact) 48.dp else 64.dp
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label, color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
+    // On narrow screens (or with large system fonts) the buttons and digits shrink so the value is never clipped.
+    BoxWithConstraints(modifier) {
+    val narrow = maxWidth < (if (compact) 120.dp else 150.dp)
+    val digits = when { compact && narrow -> 18.sp; compact -> 22.sp; narrow -> 24.sp; else -> 30.sp }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, color = Fc.Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Row(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(if (compact) 14.dp else 18.dp)).background(Fc.Surface2), verticalAlignment = Alignment.CenterVertically) {
-            StepButton("−", "Меньше: ${description.lowercase()}", compact) { onValue(stepValue(value, -step, decimals)) }
+            StepButton("−", "Меньше: ${description.lowercase()}", compact || narrow) { onValue(stepValue(value, -step, decimals)) }
             BasicTextField(value, { text ->
                 onValue(if (decimals) com.fitclub.tracker.domain.normalizeDecimalInput(text, 6) else text.filter(Char::isDigit).take(4))
             }, modifier = Modifier.weight(1f).testTag(tag).semantics { contentDescription = description },
-                singleLine = true, textStyle = NumberStyle.copy(fontSize = if (compact) 22.sp else 30.sp, color = Fc.Text, textAlign = TextAlign.Center),
+                singleLine = true, textStyle = NumberStyle.copy(fontSize = digits, color = Fc.Text, textAlign = TextAlign.Center),
                 keyboardOptions = KeyboardOptions(keyboardType = if (decimals) KeyboardType.Decimal else KeyboardType.Number),
                 cursorBrush = SolidColor(Fc.Lime),
                 decorationBox = { inner ->
                     Box(contentAlignment = Alignment.Center) {
-                        if (value.isEmpty()) Text("—", style = NumberStyle.copy(fontSize = if (compact) 22.sp else 30.sp), color = Fc.Dim, textAlign = TextAlign.Center)
+                        if (value.isEmpty()) Text("—", style = NumberStyle.copy(fontSize = digits), color = Fc.Dim, textAlign = TextAlign.Center)
                         inner()
                     }
                 })
-            StepButton("+", "Больше: ${description.lowercase()}", compact) { onValue(stepValue(value, step, decimals)) }
+            StepButton("+", "Больше: ${description.lowercase()}", compact || narrow) { onValue(stepValue(value, step, decimals)) }
         }
+    }
     }
 }
 
 @Composable
 private fun StepButton(symbol: String, description: String, compact: Boolean, onClick: () -> Unit) {
-    Box(Modifier.width(if (compact) 40.dp else 48.dp).fillMaxHeight().semantics { contentDescription = description }.clickable(role = Role.Button, onClick = onClick),
+    Box(Modifier.width(if (compact) 36.dp else 48.dp).fillMaxHeight().semantics { contentDescription = description }.clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center) {
         Text(symbol, color = Fc.Text, fontSize = if (compact) 22.sp else 26.sp)
     }
@@ -972,7 +1090,7 @@ internal fun stepValue(value: String, step: Float, decimals: Boolean): String {
 /** A finished or upcoming set: one compact line with its check. */
 @Composable
 private fun CompactSet(rowIndex: Int, row: SetEntry, previous: String?, upcoming: Boolean, canRemove: Boolean, units: String,
-    onToggle: () -> Unit, onRemove: () -> Unit) {
+    partnerName: String? = null, onToggle: () -> Unit, onRemove: () -> Unit) {
     val technique = Technique.of(row.technique)
     Row(Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -980,6 +1098,9 @@ private fun CompactSet(rowIndex: Int, row: SetEntry, previous: String?, upcoming
         Column(Modifier.weight(1f)) {
             val main = "${row.weight.ifBlank { "—" }} $units × ${row.reps.ifBlank { "—" }}"
             NumberText(main + row.stages.joinToString("") { (w, r) -> " → $w × $r" }, 19.sp, color = if (upcoming) Fc.Muted else Fc.Text)
+            if (hasSupersetPartner(row) || (technique == Technique.SUPERSET && partnerName != null))
+                Text("+ $partnerName: ${row.partnerWeight.ifBlank { "—" }} $units × ${row.partnerReps.ifBlank { "—" }}", color = if (upcoming) Fc.Muted else Fc.Text,
+                    style = MaterialTheme.typography.bodyMedium)
             val notes = listOfNotNull(technique.takeIf { it != Technique.NORMAL && !row.warmup }?.title, previous?.let { "было $it" }).joinToString(" · ")
             if (notes.isNotEmpty()) Text(notes, color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
         }
@@ -1107,7 +1228,10 @@ internal fun SetRow(index: Int, row: SetEntry, canRemove: Boolean, onDone: (Bool
 
 internal fun validSet(row: SetEntry): Boolean {
     val w = row.weight.replace(',', '.').toFloatOrNull()
-    return w != null && w.isFinite() && w >= 0 && (row.reps.toIntOrNull() ?: 0) > 0 && (row.rir.isBlank() || row.rir.toIntOrNull() in 0..10)
+    val main = w != null && w.isFinite() && w >= 0 && (row.reps.toIntOrNull() ?: 0) > 0 && (row.rir.isBlank() || row.rir.toIntOrNull() in 0..10)
+    if (!main || row.warmup || Technique.of(row.technique) != Technique.SUPERSET || row.partner.isBlank()) return main
+    val pw = row.partnerWeight.replace(',', '.').toFloatOrNull()
+    return pw != null && pw.isFinite() && pw >= 0 && (row.partnerReps.toIntOrNull() ?: 0) > 0
 }
 private fun weightKg(text: String, unitsKg: Boolean) = (text.replace(',', '.').toFloatOrNull() ?: 0f) / if (unitsKg) 1f else 2.2046226f
 private fun displayWeight(kg: Float, unitsKg: Boolean) = kg * if (unitsKg) 1f else 2.2046226f

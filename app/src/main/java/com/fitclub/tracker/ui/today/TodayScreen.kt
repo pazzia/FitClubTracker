@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -230,7 +232,7 @@ private fun WeekStrip(today: LocalDate, s: TodayState, program: ProgramDraft?, o
             Eyebrow("Неделя · ${done.count { it in monday.toEpochDay()..monday.toEpochDay() + 6 }} из ${program?.freqPerWeek ?: 3}", Modifier.weight(1f))
             TextButton(onClick = { onCalendar(today.toEpochDay()) }) { Text("Календарь", color = Fc.Text, style = MaterialTheme.typography.labelLarge) }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             (0 until 7).forEach { offset ->
                 val date = monday.plusDays(offset.toLong())
                 val epoch = date.toEpochDay()
@@ -247,7 +249,7 @@ private fun WeekStrip(today: LocalDate, s: TodayState, program: ProgramDraft?, o
                     Text(weekdayLabels[offset], color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
                     val shape = CircleShape
                     Box(
-                        Modifier.size(40.dp).clip(shape)
+                        Modifier.fillMaxWidth().widthIn(max = 40.dp).aspectRatio(1f).clip(shape)
                             .then(when {
                                 isDone -> Modifier.background(Fc.Lime)
                                 isToday -> Modifier.border(2.dp, Fc.Text, shape)

@@ -21,13 +21,13 @@ class AnatomyUiTest {
         var group = ""
         var muscle = ""
         rule.setContent { FitClubTheme { AtlasHomeScreen({}, { group = it }, { muscle = it }) } }
-        waitFor("121 мышца · 12 групп")
+        waitFor("120 мышц · 12 групп")
         rule.onNodeWithText("Грудь").performClick()
         assertEquals("chest", group)
         rule.onNodeWithContentDescription("Поиск мышцы").performTextInput("serratus")
         waitFor("Передняя зубчатая мышца")
         rule.onNodeWithText("Передняя зубчатая мышца").performClick()
-        assertEquals("m004", muscle)
+        assertEquals("fit-2307", muscle)
     }
 
     @Test fun everyMuscleOfTheGroupIsClickable() {
@@ -38,12 +38,12 @@ class AnatomyUiTest {
             rule.onNodeWithTag("atlas-group-list").performScrollToNode(hasText(it))
             rule.onNodeWithText(it).performClick()
         }
-        assertEquals(listOf("m001", "m002", "m003", "m004"), opened)
+        assertEquals(listOf("fit-2301", "fit-2305", "fit-2306", "fit-2307"), opened)
     }
 
     @Test fun muscleCardListsExercisesFilteredByPart() {
         var exercise = ""
-        rule.setContent { FitClubTheme { AtlasMuscleScreen("m001", {}, {}, { exercise = it }) } }
+        rule.setContent { FitClubTheme { AtlasMuscleScreen("fit-2301", {}, {}, { exercise = it }) } }
         waitFor("11 упражнений ↓")
         rule.onNodeWithTag("atlas-muscle-list").performScrollToNode(hasText("Жим штанги лёжа"))
         rule.onNodeWithText("Жим штанги лёжа").performClick()
@@ -55,7 +55,7 @@ class AnatomyUiTest {
     }
 
     @Test fun stabilizerExplainsHowItIsTrained() {
-        rule.setContent { FitClubTheme { AtlasMuscleScreen("m002", {}, {}, {}) } }
+        rule.setContent { FitClubTheme { AtlasMuscleScreen("fit-2305", {}, {}, {}) } }
         waitFor("3 упражнения ↓")
         rule.onNodeWithTag("atlas-muscle-list").performScrollToNode(hasText("Изолированно", substring = true))
         rule.onAllNodesWithText("помогает").onFirst().assertExists()

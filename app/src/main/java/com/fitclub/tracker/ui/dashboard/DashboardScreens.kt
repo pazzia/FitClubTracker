@@ -347,7 +347,7 @@ private fun VersionDetails() {
     val lines = buildInfoLines(secure)
     Column(Modifier.padding(top = 10.dp).testTag("version-details"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         lines.forEach { (k, v) ->
-            Row { Text(k, color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.width(150.dp)); Text(v, color = Fc.Text, style = MaterialTheme.typography.bodySmall) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Text(k, color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(0.45f)); Text(v, color = Fc.Text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(0.55f)) }
         }
         TextButton(onClick = {
             clipboard.setText(androidx.compose.ui.text.AnnotatedString("FitClub\n" + lines.joinToString("\n") { "${it.first}: ${it.second}" }))

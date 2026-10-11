@@ -7,8 +7,9 @@ import java.util.Locale
 /** How a set is performed. Warm-up stays a separate flag because it is excluded from records. */
 enum class Technique(val id: String, val title: String, val short: String, val hint: String, val hasStages: Boolean = false) {
     NORMAL("", "Обычный", "—", "Рабочий подход без особой техники"),
-    DROP("drop", "Дропсет", "ДС", "Сразу снизить вес на 20–30% и продолжить без отдыха", hasStages = true),
+    DROP("drop", "Дропсет", "ДС", "До отказа, затем сразу снизить вес и продолжить без отдыха. Например: 60 кг → 48 кг → 38 кг", hasStages = true),
     REST_PAUSE("restpause", "Рест-пауза", "РП", "Паузы 10–20 с внутри подхода, повторы суммируются", hasStages = true),
+    SUPERSET("superset", "Суперсет", "СС", "Сразу после этого подхода — подход другого упражнения, отдых после пары"),
     FAILURE("failure", "До отказа", "ДО", "Последний повтор — технический отказ"),
     NEGATIVE("negative", "Негативы", "НГ", "Медленное опускание 3–5 с"),
     PARTIAL("partial", "Частичные повторы", "ЧП", "Дожим в неполной амплитуде после отказа");

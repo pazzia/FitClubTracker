@@ -8,6 +8,12 @@ import java.util.Locale
 /** One exercise from the app catalog linked to a muscle. */
 data class AtlasExercise(val exerciseId: String, val main: Boolean, val hint: String?)
 
+/** A named piece of a muscle card: a part of the muscle or a member of a complex. */
+data class AtlasName(val name: String, val latin: String)
+
+/** One row of an origin/insertion schematic. */
+data class AtlasAttachment(val part: String, val origin: String, val insertion: String)
+
 data class AtlasMuscle(
     val id: String,
     val groupId: String,
@@ -18,11 +24,18 @@ data class AtlasMuscle(
     val fitness: String?,
     val details: String?,
     val trainingNote: String?,
-    val exercises: List<AtlasExercise>
+    val exercises: List<AtlasExercise>,
+    val role: String? = null,
+    val aliases: List<String> = emptyList(),
+    val parts: List<AtlasName> = emptyList(),
+    val members: List<AtlasName> = emptyList(),
+    /** Present when the reviewed card replaced its illustration with an origin/insertion schematic. */
+    val schematic: List<AtlasAttachment> = emptyList()
 ) {
+    val hasIllustration get() = schematic.isEmpty()
     val image get() = "atlas/$id.webp"
     val thumbnail get() = "atlas/${id}_thumb.webp"
-    internal val searchText = normalize("$name $latin")
+    internal val searchText = normalize("$name $latin ${aliases.joinToString(" ")}")
 }
 
 data class AtlasGroup(val id: String, val title: String, val muscles: List<AtlasMuscle>)
@@ -63,13 +76,21 @@ data class MuscleAtlas(val version: String, val groups: List<AtlasGroup>) {
                 AtlasGroup(g.getString("id"), g.getString("title"), List(muscles.length()) { mi ->
                     val m = muscles.getJSONObject(mi)
                     val ex = m.optJSONArray("exercises") ?: JSONArray()
+                    fun names(key: String) = m.optJSONArray(key)?.let { a ->
+                        List(a.length()) { a.getJSONObject(it).let { o -> AtlasName(o.getString("name"), o.optString("latin")) } }
+                    }.orEmpty()
+                    val aliases = m.optJSONArray("aliases")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty()
+                    val schematic = m.optJSONArray("schematic")?.let { a ->
+                        List(a.length()) { a.getJSONObject(it).let { o -> AtlasAttachment(o.getString("part"), o.getString("origin"), o.getString("insertion")) } }
+                    }.orEmpty()
                     AtlasMuscle(
                         m.getString("id"), g.getString("id"), m.getString("name"), m.getString("latin"),
                         m.text("where"), m.text("does"), m.text("fitness"), m.text("details"), m.text("trainingNote"),
                         List(ex.length()) { ei ->
                             val e = ex.getJSONObject(ei)
                             AtlasExercise(e.getString("id"), e.optString("role") == "main", e.text("hint"))
-                        }
+                        },
+                        role = m.text("role"), aliases = aliases, parts = names("parts"), members = names("members"), schematic = schematic
                     )
                 })
             })

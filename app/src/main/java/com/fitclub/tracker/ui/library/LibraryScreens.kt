@@ -51,7 +51,8 @@ private val EquipmentFilters = listOf("Тренажёр", "Штанга", "Га�
 private fun categoryOf(e: ExerciseEntity) = FreeExerciseCatalog.media[e.id]?.category
 
 @Composable
-fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Unit, onProfile: () -> Unit = {}, onAnatomy: () -> Unit = {}) {
+fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Unit, onProfile: () -> Unit = {}, onAnatomy: () -> Unit = {},
+    onAtlasMuscle: (String) -> Unit = {}) {
     val vm = appViewModel { LibraryViewModel(it) }
     val all by vm.exercises.collectAsStateWithLifecycle()
     val profile by vm.settings.collectAsStateWithLifecycle()
@@ -75,7 +76,7 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
         item {
             FcCard(Modifier.fillMaxWidth(), onClick = onAnatomy) {
                 Text("Атлас мышц", color = Fc.Text, style = MaterialTheme.typography.titleLarge)
-                Text("121 мышца · 12 групп · упражнения для каждой", color = Fc.Muted)
+                Text("120 мышц · 12 групп · упражнения для каждой", color = Fc.Muted)
                 Spacer(Modifier.height(8.dp))
                 Text("Открыть атлас →", color = Fc.Lime, style = MaterialTheme.typography.labelLarge)
             }
@@ -127,7 +128,7 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
             items(AnatomyGroupOrder.chunked(2)) { pair ->
                 MuscleCategoryRow(pair, profile.sex, counts, onGroup)
             }
-            item { AnatomyCard(profile.sex) }
+            item { com.fitclub.tracker.ui.anatomy.BodyAtlasCard(profile.sex, onAtlasMuscle) }
         }
     }
 }
@@ -175,7 +176,7 @@ fun LibraryGroupScreen(group: MuscleGroup, onBack: () -> Unit, onExercise: (Stri
                     Spacer(Modifier.weight(1f))
                     Pill(if (group == MuscleGroup.QUADS) "4 головки" else "${group.regions.size} зон", Fc.LimeSoft, Fc.Lime)
                 }
-                GroupImage(profile.sex, group, Modifier.width(150.dp).height(160.dp), scale = ContentScale.Fit, alignment = Alignment.BottomCenter)
+                GroupImage(profile.sex, group, Modifier.weight(0.8f).height(160.dp), scale = ContentScale.Fit, alignment = Alignment.BottomCenter)
             }
         }
         if (group == MuscleGroup.QUADS) item { QuadricepsLegend() }
@@ -211,18 +212,6 @@ fun LibraryGroupScreen(group: MuscleGroup, onBack: () -> Unit, onExercise: (Stri
         }
         items(shown, key = { it.id }) { e -> ExerciseRow(e, onClick = { onExercise(e.id) }, onAdd = { onAdd(e.id) }) }
         if (shown.isEmpty()) item { Text("Нет упражнений с такими фильтрами", color = Fc.Muted) }
-    }
-}
-
-@Composable
-private fun AnatomyCard(sex: Sex) {
-    FcCard {
-        Text("Карта мышечных групп", style = MaterialTheme.typography.titleSmall, color = Fc.Text)
-        Spacer(Modifier.height(12.dp))
-        BodyPair(sex, Modifier.clip(RoundedCornerShape(14.dp)))
-        Spacer(Modifier.height(12.dp))
-        Text("Цвета обозначают группы мышц, а не интенсивность нагрузки. Модель соответствует полу в личном кабинете.",
-            style = MaterialTheme.typography.bodySmall, color = Fc.Muted)
     }
 }
 
