@@ -76,16 +76,24 @@ jobs:
       - name: Segment athlete and whole active equipment
         if: steps.recipe.outputs.ready != 'true' && !(steps.reused_masks.outcome == 'success' && steps.reused_report.outcome == 'success')
         run: python3 scripts/prepare_semantic_masks.py --shard ${{ matrix.shard }} --shards 8
-      - uses: actions/upload-artifact@v4
+      # Shards travel to the build job through the Actions cache, not artifacts:
+      # the cache has its own 10 GB limit and does not count against the account's artifact storage quota.
+      - name: Stage shard for the build job
         if: steps.recipe.outputs.ready != 'true'
-        with:
-          name: exercise-contours-${{ matrix.shard }}
-          path: app/src/main/assets/exercise_masks/
-      - uses: actions/upload-artifact@v4
+        shell: bash
+        run: |
+          set -euo pipefail
+          masks=".gradle/prepared-contour-shards/masks/exercise-contours-${{ matrix.shard }}"
+          reports=".gradle/prepared-contour-shards/reports/contour-report-${{ matrix.shard }}"
+          mkdir -p "$masks" "$reports"
+          cp -a app/src/main/assets/exercise_masks/. "$masks/"
+          cp contour-reports/semantic-${{ matrix.shard }}.json "$reports/"
+      - name: Hand shard to the build job
         if: steps.recipe.outputs.ready != 'true'
+        uses: actions/cache/save@v4
         with:
-          name: contour-report-${{ matrix.shard }}
-          path: contour-reports/semantic-${{ matrix.shard }}.json
+          path: .gradle/prepared-contour-shards
+          key: contour-shard-${{ github.run_id }}-${{ matrix.shard }}
 
   build:
     if: github.head_ref != 'fork/anatomy-catalog-0.9.0'
@@ -104,23 +112,69 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Download separate prepared mask shards
+      - name: Restore contour shard 0
         if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
-        uses: actions/download-artifact@v4
+        uses: actions/cache/restore@v4
         with:
-          github-token: ${{ github.token }}
-          run-id: ${{ github.run_id }}
-          pattern: exercise-contours-*
-          path: .gradle/prepared-contour-shards/masks
+          path: .gradle/prepared-contour-shards
+          key: contour-shard-${{ github.run_id }}-0
+          fail-on-cache-miss: true
 
-      - name: Download shard provenance
+      - name: Restore contour shard 1
         if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
-        uses: actions/download-artifact@v4
+        uses: actions/cache/restore@v4
         with:
-          github-token: ${{ github.token }}
-          run-id: ${{ github.run_id }}
-          pattern: contour-report-*
-          path: .gradle/prepared-contour-shards/reports
+          path: .gradle/prepared-contour-shards
+          key: contour-shard-${{ github.run_id }}-1
+          fail-on-cache-miss: true
+
+      - name: Restore contour shard 2
+        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: .gradle/prepared-contour-shards
+          key: contour-shard-${{ github.run_id }}-2
+          fail-on-cache-miss: true
+
+      - name: Restore contour shard 3
+        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: .gradle/prepared-contour-shards
+          key: contour-shard-${{ github.run_id }}-3
+          fail-on-cache-miss: true
+
+      - name: Restore contour shard 4
+        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: .gradle/prepared-contour-shards
+          key: contour-shard-${{ github.run_id }}-4
+          fail-on-cache-miss: true
+
+      - name: Restore contour shard 5
+        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: .gradle/prepared-contour-shards
+          key: contour-shard-${{ github.run_id }}-5
+          fail-on-cache-miss: true
+
+      - name: Restore contour shard 6
+        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: .gradle/prepared-contour-shards
+          key: contour-shard-${{ github.run_id }}-6
+          fail-on-cache-miss: true
+
+      - name: Restore contour shard 7
+        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: .gradle/prepared-contour-shards
+          key: contour-shard-${{ github.run_id }}-7
+          fail-on-cache-miss: true
 
       - name: Assemble verified contours without overlapping writes
         if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
@@ -303,15 +357,23 @@ jobs:
           PY
 
       - name: Upload APK
+        id: upload_apk
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.apk.outputs.name }}
           path: ${{ steps.apk.outputs.path }}
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
+        # A full artifact quota must not hide a green build; the next step shows when the APK was not kept.
+        continue-on-error: true
+
+      - name: Warn when the APK could not be stored
+        if: steps.upload_apk.outcome == 'failure'
+        run: echo "::warning title=APK not stored::Build and tests passed, but the APK upload failed (artifact storage quota?). Free space in Settings → Actions and re-run."
 
       - name: Upload test reports
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
@@ -319,24 +381,29 @@ jobs:
             app/build/reports/tests/
             app/build/test-results/
           if-no-files-found: ignore
+          retention-days: 3
 
 
       - name: Upload rendered photo previews
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: contour-visual-checks
           path: app/build/contour-qa/
           if-no-files-found: ignore
+          retention-days: 1
 
 
       - name: Upload preview UI screens
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: ui-preview-screens
           path: app/build/ui-preview/
           if-no-files-found: ignore
+          retention-days: 3
 
 
 
