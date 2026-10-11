@@ -52,6 +52,17 @@ class BodyModelTest {
         assertEquals(false, periodChange(BodyMetric.HIPS, listOf(97f, 98f))!!.good)
     }
 
+    @Test fun wholeFigureFitsTheCardOnEveryPhoneWidth() {
+        for (figure in BodyFigure.ALL) for (card in listOf(288f, 328f, 358f, 380f)) {
+            val h = figureHeight(figure, card)
+            assertTrue(h <= 400f)
+            // The figure plus both callout columns never exceed the card.
+            assertTrue("${figure.asset} @ $card", h * figure.aspect + 2 * 86f <= card + 0.01f)
+        }
+        assertEquals(400f, figureHeight(BodyFigure.MALE_LIGHT, 358f), 0.01f)
+        assertTrue(figureHeight(BodyFigure.MALE_DARK, 328f) < 400f)
+    }
+
     @Test fun zonesHaveTheReferenceColours() {
         assertEquals(BodyHue.BLUE, BodyMetric.SHOULDERS.hue)
         assertEquals(BodyHue.BLUE, BodyMetric.CHEST.hue)

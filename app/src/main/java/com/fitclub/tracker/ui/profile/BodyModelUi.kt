@@ -109,7 +109,7 @@ private fun tapeColors(): BlockColors = blockColors()
 
 /** Background the figure was drawn on, so the picture blends into its card. */
 private fun figureBackground(figure: BodyFigure): Color = when (figure.asset) {
-    "female_dark" -> Color(0xFF0F1721)
+    "female_dark" -> Color(0xFF0F1821)
     "male_dark" -> Color(0xFF0B121B)
     else -> Color(0xFFFDFDFE)
 }
@@ -207,13 +207,13 @@ private fun FigureCard(figure: BodyFigure, colors: BlockColors, series: Map<Body
         Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(bg).border(1.dp, colors.line, RoundedCornerShape(22.dp))
     ) {
         val cardW = maxWidth
-        val imgH = min(372.dp, cardW * 1.04f)
+        val labelW = 80.dp
+        val imgH = figureHeight(figure, cardW.value, labelWidth = labelW.value + 6f).dp
         val imgW = imgH * figure.aspect
         val imgLeft = (cardW - imgW) / 2
-        val imgTop = 8.dp
-        val cardH = imgH + 16.dp
+        val imgTop = 10.dp
+        val cardH = imgH + 20.dp
         val scale = imgH.value / figure.height
-        val labelW = 82.dp
         val gap = 46f * fontScale
 
         val tops = remember(figure, imgH, fontScale) {
