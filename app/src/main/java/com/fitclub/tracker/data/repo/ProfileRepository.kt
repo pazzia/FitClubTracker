@@ -12,6 +12,8 @@ data class ProfileSettings(
     val level: Int = 2,
     val unitsKg: Boolean = true,
     val reminders: Boolean = true,
+    /** Short beep when the rest between sets runs out. */
+    val restSound: Boolean = true,
     val theme: String = "Темная",
     val accent: Long = 0xFFC6FF3D
 )
@@ -26,6 +28,7 @@ class ProfileRepository(context: Context) {
         sex = runCatching { Sex.valueOf(prefs.getString("sex", Sex.MALE.name)!!) }.getOrDefault(Sex.MALE),
         level = prefs.getInt("level", 2), unitsKg = prefs.getBoolean("kg", true),
         reminders = prefs.getBoolean("reminders", true),
+        restSound = prefs.getBoolean("rest_sound", true),
         theme = normalizedTheme(prefs.getString("theme", null)),
         accent = themeAccent(normalizedTheme(prefs.getString("theme", null)))
     )
@@ -36,7 +39,7 @@ class ProfileRepository(context: Context) {
         _settings.value = value
         prefs.edit().putString("name", value.name).putString("sex", value.sex.name)
             .putInt("level", value.level).putBoolean("kg", value.unitsKg)
-            .putBoolean("reminders", value.reminders).putString("theme", value.theme)
+            .putBoolean("reminders", value.reminders).putBoolean("rest_sound", value.restSound).putString("theme", value.theme)
             .putLong("accent", value.accent).apply()
     }
 }

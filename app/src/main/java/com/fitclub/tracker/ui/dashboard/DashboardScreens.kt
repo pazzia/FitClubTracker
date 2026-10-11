@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -259,6 +260,22 @@ fun ProfileScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit = {}) {
                 Text("Единицы веса", color = Fc.Text, modifier = Modifier.padding(vertical = 8.dp))
                 Segmented(listOf(true, false), st.unitsKg, { vm.update(st.copy(unitsKg = it)) }, { if (it) "Килограммы (кг)" else "Фунты (lb)" }, selectedBg = Fc.Lime)
                 Text("История, тоннаж и замеры отображаются в выбранных единицах. Активная тренировка и открытый редактор сохраняют единицы ввода до завершения.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Fc.Line)
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        .toggleable(value = st.restSound, role = Role.Switch) { vm.update(st.copy(restSound = it)); if (it) com.fitclub.tracker.ui.workout.RestSound.play() }
+                        .testTag("rest-sound"),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text("Звук в конце отдыха", color = Fc.Text)
+                        Text("Короткий сигнал, когда время отдыха между подходами закончилось. Громкость — как у музыки, слышно и в наушниках. Вибрация остаётся всегда.",
+                            color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Switch(checked = st.restSound, onCheckedChange = null,
+                        colors = SwitchDefaults.colors(checkedTrackColor = Fc.Lime, checkedThumbColor = Fc.OnAccent))
+                }
+                if (st.restSound) TextButton(onClick = { com.fitclub.tracker.ui.workout.RestSound.play() }, contentPadding = PaddingValues(0.dp)) { Text("Проверить звук", color = Fc.Lime) }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Fc.Line)
                 Text("Версия приложения: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", color = Fc.Text)
                 Text(if (BuildConfig.APPLICATION_ID.endsWith(".experimental")) "Тестовая сборка" else "Основная версия", color = Fc.Muted)
