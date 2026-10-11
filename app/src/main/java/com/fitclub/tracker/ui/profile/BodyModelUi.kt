@@ -252,13 +252,13 @@ private fun FigureStage(
                 val valueText = metricValueText(metric, p.value, units)
                 Column(
                     Modifier
+                        .testTag("girth-${metric.key}")
                         .align(if (p.band.rightSide) Alignment.TopEnd else Alignment.TopStart)
                         .offset(y = p.top)
                         .width(railW - 6.dp)
                         .heightIn(min = 48.dp)
                         .clickable(role = Role.Button, onClickLabel = "Записать замер") { onMeasure(metric) }
-                        .clearAndSetSemantics { contentDescription = "${metric.title}: $valueText${if (delta.isNotEmpty()) ", $delta" else ""}. Записать замер" }
-                        .testTag("girth-${metric.key}"),
+                        .clearAndSetSemantics { contentDescription = "${metric.title}: $valueText${if (delta.isNotEmpty()) ", $delta" else ""}. Записать замер" },
                     horizontalAlignment = if (p.band.rightSide) Alignment.End else Alignment.Start
                 ) {
                     Text(metric.title, color = Fc.Muted, fontSize = 13.sp, lineHeight = 15.sp)
@@ -295,10 +295,9 @@ private fun DatePicker(rows: List<BodyMeasurementEntity>, now: Int, prevIndex: I
                 val isNow = i == now; val isPrev = i == prev
                 val label = shortDate(row.epochDay) + when { isNow -> ", выбрано как «стало»"; isPrev -> ", выбрано как «было»"; else -> "" }
                 Box(
-                    Modifier.offset(x = xOf(i) - 22.dp).size(44.dp)
+                    Modifier.testTag("measure-date-$i").offset(x = xOf(i) - 22.dp).size(44.dp)
                         .selectable(selected = isNow || isPrev, role = Role.RadioButton) { onPick(i) }
-                        .clearAndSetSemantics { contentDescription = label }
-                        .testTag("measure-date-$i"),
+                        .clearAndSetSemantics { contentDescription = label },
                     contentAlignment = Alignment.Center
                 ) {
                     when {
