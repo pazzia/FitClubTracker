@@ -1,10 +1,19 @@
 name: Android CI
 
+# Billing note: the free plan has 2000 runner minutes a month and every job is rounded up to a
+# whole minute, so the workflow runs as one job and skips changes that cannot affect the APK.
 on:
   push:
     branches: [ main, master ]
+    paths-ignore: [ '**.md', 'docs/**', '.gitignore', 'LICENSE' ]
   pull_request:
+    paths-ignore: [ '**.md', 'docs/**', '.gitignore', 'LICENSE' ]
   workflow_dispatch:
+    inputs:
+      regenerate_contours:
+        description: 'Пересчитать контуры фото заново (8 параллельных задач, долго)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -15,8 +24,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Only on manual request: normally the build job restores the verified contours itself.
   contours:
-    if: github.head_ref != 'fork/anatomy-catalog-0.9.0'
+    if: github.event_name == 'workflow_dispatch' && inputs.regenerate_contours
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -96,13 +106,13 @@ jobs:
           key: contour-shard-${{ github.run_id }}-${{ matrix.shard }}
 
   build:
-    if: github.head_ref != 'fork/anatomy-catalog-0.9.0'
     env:
       ORG_GRADLE_PROJECT_fitclubExperimental: ${{ github.event_name == 'pull_request' || (github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master') }}
       FITCLUB_BUILD_NUMBER: ${{ github.run_number }}
       FITCLUB_GIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       FITCLUB_BRANCH: ${{ github.head_ref || github.ref_name }}
     needs: contours
+    if: ${{ !cancelled() && needs.contours.result != 'failure' && github.head_ref != 'fork/anatomy-catalog-0.9.0' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # contents: write lets main builds publish the APK as a GitHub Release.
@@ -116,8 +126,43 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      # Usual path: download all eight verified shards from the reference run in this one job.
+      - name: Check compatibility with previously verified contours
+        id: reuse
+        if: needs.contours.result == 'skipped' && hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        shell: bash
+        run: |
+          if [ "$(git hash-object scripts/prepare_semantic_masks.py)" = "646aaaf41a066893ec22e1e4b81694e9a67e84f7" ] &&
+             [ "$(git hash-object scripts/assemble_release_masks.py)" = "1eaf3455f3093839b9c7c899b8308a2e74b988aa" ] &&
+             [ "$(git hash-object scripts/validate_exercise_masks.py)" = "45ae813103eed8823d7c94c6d6921ac8c23d2aee" ] &&
+             [ "$(git hash-object app/src/main/assets/free_exercise_db/photos.sha256)" = "0956503f9f5d767f44781940e8896f9dd25d68e9" ] &&
+             [ "$(git rev-parse HEAD:app/src/main/assets/exercise_masks)" = "afb8bfe4445d5caf7d17f7ab4bb08f0758b6ff1b" ]; then
+            echo 'compatible=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "::error title=Contours need regenerating::Mask inputs changed. Run the workflow manually with «Пересчитать контуры фото заново»."
+            exit 1
+          fi
+
+      - name: Restore verified contour shards
+        if: steps.reuse.outputs.compatible == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37449786439
+          pattern: exercise-contours-*
+          path: .gradle/prepared-contour-shards/masks/
+
+      - name: Restore verified shard provenance
+        if: steps.reuse.outputs.compatible == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: 37449786439
+          pattern: contour-report-*
+          path: .gradle/prepared-contour-shards/reports/
+
       - name: Restore contour shard 0
-        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        if: needs.contours.result == 'success' && hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
         uses: actions/cache/restore@v4
         with:
           path: .gradle/prepared-contour-shards
@@ -125,7 +170,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Restore contour shard 1
-        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        if: needs.contours.result == 'success' && hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
         uses: actions/cache/restore@v4
         with:
           path: .gradle/prepared-contour-shards
@@ -133,7 +178,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Restore contour shard 2
-        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        if: needs.contours.result == 'success' && hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
         uses: actions/cache/restore@v4
         with:
           path: .gradle/prepared-contour-shards
@@ -141,7 +186,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Restore contour shard 3
-        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        if: needs.contours.result == 'success' && hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
         uses: actions/cache/restore@v4
         with:
           path: .gradle/prepared-contour-shards
@@ -149,7 +194,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Restore contour shard 4
-        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        if: needs.contours.result == 'success' && hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
         uses: actions/cache/restore@v4
         with:
           path: .gradle/prepared-contour-shards
@@ -157,7 +202,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Restore contour shard 5
-        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        if: needs.contours.result == 'success' && hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
         uses: actions/cache/restore@v4
         with:
           path: .gradle/prepared-contour-shards
@@ -165,7 +210,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Restore contour shard 6
-        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        if: needs.contours.result == 'success' && hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
         uses: actions/cache/restore@v4
         with:
           path: .gradle/prepared-contour-shards
@@ -173,7 +218,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Restore contour shard 7
-        if: hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
+        if: needs.contours.result == 'success' && hashFiles('app/src/main/assets/exercise_masks/whole-objects-v2') == ''
         uses: actions/cache/restore@v4
         with:
           path: .gradle/prepared-contour-shards
@@ -395,7 +440,7 @@ jobs:
         run: echo "::warning title=APK not stored::Build and tests passed, but the APK upload failed (artifact storage quota?). Free space in Settings → Actions and re-run."
 
       - name: Upload test reports
-        if: always()
+        if: failure()
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
@@ -408,7 +453,7 @@ jobs:
 
 
       - name: Upload rendered photo previews
-        if: always()
+        if: failure()
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
@@ -426,7 +471,7 @@ jobs:
           name: ui-preview-screens
           path: app/build/ui-preview/
           if-no-files-found: ignore
-          retention-days: 3
+          retention-days: 2
 
 
 
