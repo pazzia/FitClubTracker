@@ -441,7 +441,7 @@ class MeasureViewModel(private val c: AppContainer) : ViewModel() {
         viewModelScope.launch {
             runCatching {
                 c.fitness.addMeasurement(values[BodyMetric.WEIGHT], values[BodyMetric.WAIST], values[BodyMetric.FAT], values[BodyMetric.CHEST],
-                    values[BodyMetric.ARM], values[BodyMetric.HIPS], values[BodyMetric.THIGH])
+                    values[BodyMetric.ARM], values[BodyMetric.HIPS], values[BodyMetric.THIGH], shoulders = values[BodyMetric.SHOULDERS])
             }.onSuccess { error = null; onSaved() }.onFailure { error = "Не удалось сохранить замер: ${it.message}" }
             saving = false
         }
