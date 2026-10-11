@@ -18,10 +18,11 @@ enum class BodyMetric(
     val read: (BodyMeasurementEntity) -> Float?
 ) {
     WEIGHT("weight", "Вес", "кг", 0.1f, true, "Утром, после туалета, до еды и воды. Те же весы и одежда.", false, { it.weightKg }),
+    SHOULDERS("shoulders", "Плечи", "см", 0.5f, false, "Лента по самым широким точкам плеч, через дельты, руки свободно опущены.", true, { it.shouldersCm }),
     CHEST("chest", "Грудь", "см", 0.5f, false, "Лента по самой выступающей линии груди и под лопатками, на выдохе, руки опущены.", true, { it.chestCm }),
     WAIST("waist", "Талия", "см", 0.5f, true, "Самое узкое место над пупком, на спокойном выдохе, живот не втягивать.", true, { it.waistCm }),
     HIPS("hips", "Бёдра", "см", 0.5f, true, "Самая выступающая точка ягодиц, стопы вместе.", true, { it.hipsCm }),
-    ARM("arm", "Рука", "см", 0.5f, false, "Середина плеча расслабленной руки — или в напряжении, но всегда одинаково.", true, { it.armCm }),
+    ARM("arm", "Бицепс", "см", 0.5f, false, "Середина плеча расслабленной руки — или в напряжении, но всегда одинаково.", true, { it.armCm }),
     THIGH("thigh", "Бедро", "см", 0.5f, false, "Чуть ниже ягодичной складки, вес на обе ноги.", true, { it.thighCm }),
     FAT("fat", "Жир", "%", 0.1f, true, "Значение с весов-анализатора или калипера. Можно пропустить.", false, { it.fatPercent });
 
@@ -33,6 +34,7 @@ enum class BodyMetric(
         /** Starting values when there is no history yet; the user corrects them with the stepper. */
         fun typical(metric: BodyMetric, female: Boolean): Float = when (metric) {
             WEIGHT -> if (female) 62f else 80f
+            SHOULDERS -> if (female) 92f else 115f
             CHEST -> if (female) 90f else 100f
             WAIST -> if (female) 70f else 85f
             HIPS -> if (female) 96f else 100f
@@ -43,30 +45,72 @@ enum class BodyMetric(
     }
 }
 
-/** Where a girth crosses the drawn figure, in source pixels of the front-view drawing. */
+/** Colour family of a girth in the body measurements block. */
+enum class BodyHue { BLUE, PURPLE, CYAN }
+
+val BodyMetric.hue: BodyHue get() = when (this) {
+    BodyMetric.SHOULDERS, BodyMetric.CHEST -> BodyHue.BLUE
+    BodyMetric.ARM, BodyMetric.HIPS -> BodyHue.PURPLE
+    else -> BodyHue.CYAN
+}
+
+/** Where a girth crosses the drawn figure, in source pixels of the drawing. */
 data class FigureBand(val metric: BodyMetric, val y: Float, val cx: Float, val half: Float, val rightSide: Boolean)
 
-data class BodyFigure(val width: Float, val height: Float, val bands: List<FigureBand>) {
+/**
+ * The four figures from the user's reference screens (male/female × light/dark), cleaned of the
+ * annotations drawn over them. Bands sit where the reference drew its tapes.
+ */
+data class BodyFigure(val asset: String, val width: Float, val height: Float, val bands: List<FigureBand>) {
     val aspect: Float get() = width / height
+    fun band(metric: BodyMetric) = bands.firstOrNull { it.metric == metric }
 
     companion object {
-        // Levels and widths measured on the user's own front-view drawings (male 298×837, female 270×837).
-        val MALE = BodyFigure(298f, 837f, listOf(
-            FigureBand(BodyMetric.CHEST, 225f, 149f, 79f, true),
-            FigureBand(BodyMetric.WAIST, 310f, 148f, 64f, false),
-            FigureBand(BodyMetric.ARM, 300f, 266f, 24f, true),
-            FigureBand(BodyMetric.HIPS, 405f, 148.5f, 82f, false),
-            FigureBand(BodyMetric.THIGH, 490f, 201f, 39f, true)
-        ))
-        val FEMALE = BodyFigure(270f, 837f, listOf(
-            FigureBand(BodyMetric.CHEST, 232f, 136f, 64f, true),
-            FigureBand(BodyMetric.WAIST, 305f, 136.5f, 50f, false),
-            FigureBand(BodyMetric.ARM, 322f, 234f, 20f, true),
-            FigureBand(BodyMetric.HIPS, 420f, 136f, 80f, false),
-            FigureBand(BodyMetric.THIGH, 492f, 180f, 35f, true)
-        ))
-        fun of(female: Boolean) = if (female) FEMALE else MALE
+        private fun figure(asset: String, w: Float, h: Float, right: Set<BodyMetric>, vararg rows: Pair<BodyMetric, Triple<Float, Float, Float>>) =
+            BodyFigure(asset, w, h, rows.map { (m, g) -> FigureBand(m, g.first, g.second, g.third, m in right) })
+
+        private val MALE_RIGHT = setOf(BodyMetric.CHEST, BodyMetric.HIPS, BodyMetric.THIGH)
+        val MALE_LIGHT = figure("male_light", 358f, 810f, MALE_RIGHT,
+            BodyMetric.SHOULDERS to Triple(141f, 186f, 97f), BodyMetric.CHEST to Triple(231f, 181f, 80f), BodyMetric.ARM to Triple(234f, 75f, 18f),
+            BodyMetric.WAIST to Triple(326f, 182f, 67f), BodyMetric.HIPS to Triple(431f, 182f, 90f), BodyMetric.THIGH to Triple(506f, 230f, 41f))
+        val MALE_DARK = figure("male_dark", 355f, 772f, MALE_RIGHT,
+            BodyMetric.SHOULDERS to Triple(142f, 180f, 100f), BodyMetric.CHEST to Triple(220f, 181f, 80f), BodyMetric.ARM to Triple(225f, 70f, 20f),
+            BodyMetric.WAIST to Triple(318f, 183f, 67f), BodyMetric.HIPS to Triple(425f, 180f, 90f), BodyMetric.THIGH to Triple(498f, 236f, 44f))
+        val FEMALE_DARK = figure("female_dark", 304f, 778f, setOf(BodyMetric.CHEST, BodyMetric.WAIST, BodyMetric.THIGH),
+            BodyMetric.SHOULDERS to Triple(149f, 154f, 70f), BodyMetric.CHEST to Triple(219f, 157f, 55f), BodyMetric.ARM to Triple(236f, 70f, 16f),
+            BodyMetric.WAIST to Triple(315f, 151f, 50f), BodyMetric.HIPS to Triple(409f, 157f, 78f), BodyMetric.THIGH to Triple(473f, 198f, 33f))
+        val FEMALE_LIGHT = figure("female_light", 332f, 828f, setOf(BodyMetric.SHOULDERS, BodyMetric.ARM, BodyMetric.THIGH),
+            BodyMetric.SHOULDERS to Triple(168f, 166f, 68f), BodyMetric.CHEST to Triple(248f, 172f, 63f), BodyMetric.ARM to Triple(266f, 255f, 18f),
+            BodyMetric.WAIST to Triple(354f, 167f, 55f), BodyMetric.HIPS to Triple(446f, 167f, 85f), BodyMetric.THIGH to Triple(516f, 214f, 39f))
+
+        fun of(female: Boolean, dark: Boolean) = when {
+            female && dark -> FEMALE_DARK
+            female -> FEMALE_LIGHT
+            dark -> MALE_DARK
+            else -> MALE_LIGHT
+        }
+        val ALL = listOf(MALE_LIGHT, MALE_DARK, FEMALE_LIGHT, FEMALE_DARK)
     }
+}
+
+/** Latest value of [metric] recorded on or before [epochDay]; rows are in date order. */
+fun valueOnDay(rows: List<BodyMeasurementEntity>, epochDay: Long, metric: BodyMetric): Float? =
+    rows.lastOrNull { it.epochDay <= epochDay && metric.read(it) != null }?.let(metric.read)
+
+/** One point per week, the last one ending [today]: the body as it was at the end of that week. */
+fun weeklySeries(rows: List<BodyMeasurementEntity>, metric: BodyMetric, today: Long, weeks: Int = 8): List<Float?> =
+    (0 until weeks).map { i -> valueOnDay(rows, today - (weeks - 1 - i) * 7L, metric) }
+
+data class PeriodChange(val delta: Float, val percent: Float, val good: Boolean?)
+
+/** From the first known week to the last one of the period; null until two different weeks are known. */
+fun periodChange(metric: BodyMetric, series: List<Float?>): PeriodChange? {
+    val first = series.indexOfFirst { it != null }; val last = series.indexOfLast { it != null }
+    if (first < 0 || last <= first) return null
+    val a = series[first]!!; val b = series[last]!!
+    val d = ((b - a) * 10).roundToInt() / 10f
+    val pct = ((b - a) / a * 1000).roundToInt() / 10f
+    return PeriodChange(d, pct, if (d == 0f) null else if (metric.goodWhenDown) d < 0 else d > 0)
 }
 
 /** The body as it was on the date of [index]: every metric takes its latest value recorded up to that day. */
@@ -74,20 +118,6 @@ fun valueAsOf(rows: List<BodyMeasurementEntity>, index: Int, metric: BodyMetric)
     if (index !in rows.indices) return null
     for (i in index downTo 0) metric.read(rows[i])?.let { return it }
     return null
-}
-
-/** The value the tape is scaled against: the first time this girth was measured. */
-fun referenceValue(rows: List<BodyMeasurementEntity>, metric: BodyMetric): Float? = rows.firstNotNullOfOrNull { metric.read(it) }
-
-/**
- * Tape length in source pixels. The first measurement fits the drawn body exactly; later ones
- * grow or shrink in proportion to the girth itself, kept within a sane range so a typo cannot
- * throw the tape off the screen.
- */
-fun tapeLength(band: FigureBand, value: Float?, reference: Float?): Float {
-    val drawn = band.half * 2
-    if (value == null || reference == null || reference <= 0f) return drawn
-    return drawn * (value / reference).coerceIn(0.6f, 1.5f)
 }
 
 data class MetricChange(val delta: Float, val good: Boolean?) {

@@ -190,7 +190,7 @@ interface ScheduleDao {
 }
 
 /** Current Room schema; shown in the app's version details. */
-const val DB_SCHEMA_VERSION = 10
+const val DB_SCHEMA_VERSION = 11
 
 @Database(
     entities = [
@@ -282,9 +282,14 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE body_measurements ADD COLUMN thighCm REAL")
             }
         }
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE body_measurements ADD COLUMN shouldersCm REAL")
+            }
+        }
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context, AppDatabase::class.java, "fitclub.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                 .build()
     }
 }

@@ -118,7 +118,8 @@ data class BodyMeasurementEntity(
     val chestCm: Float?,
     val armCm: Float?,
     val hipsCm: Float? = null,
-    val thighCm: Float? = null
+    val thighCm: Float? = null,
+    val shouldersCm: Float? = null
 )
 
 /** Факт тренировки и подходы — используются на этапе 2 (активная тренировка). */

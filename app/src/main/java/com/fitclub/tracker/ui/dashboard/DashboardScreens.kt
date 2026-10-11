@@ -238,7 +238,7 @@ fun ProfileScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit = {}) {
                 Text("Пол меняет модель тела в профиле и в справочнике.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
             }
         }
-        item { com.fitclub.tracker.ui.profile.BodyModelSection(st.sex, measurements, onMeasure = { onMeasure(it?.key) }) }
+        item { com.fitclub.tracker.ui.profile.BodyModelSection(st.sex, measurements, onMeasure = { onMeasure(it?.key) }, onSex = { vm.update(st.copy(sex = it)) }) }
         item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MiniStat("Тренировок", "${workouts.count { it.completedSets > 0 }}", "выполнено", Modifier.weight(1f)); MiniStat("Замеров", "${measurements.size}", "записано", Modifier.weight(1f))
         } }
