@@ -1,0 +1,47 @@
+FitClub — проприетарная лицензия. Все права защищены.
+FitClub — proprietary license. All rights reserved.
+
+Copyright © 2026 pazzia (https://github.com/pazzia). Все права защищены.
+
+1. Исходный код, ресурсы, рисунки, анатомический атлас, тексты, дизайн и любые
+   другие материалы этого репозитория (далее — «Материалы») являются объектами
+   авторского права правообладателя.
+
+2. Запрещается без предварительного письменного согласия правообладателя:
+   копировать, воспроизводить, изменять, переводить, создавать производные
+   произведения, распространять, публиковать, сублицензировать, продавать,
+   использовать в коммерческих или некоммерческих целях, встраивать в другие
+   продукты, использовать для обучения моделей машинного обучения, а также
+   иным образом использовать Материалы полностью или частично.
+
+3. Публичный доступ к репозиторию предоставлен исключительно для просмотра.
+   Он не является лицензией, разрешением или отказом от каких-либо прав.
+   Создание копии (форка) средствами GitHub допускается только в пределах,
+   прямо предусмотренных Условиями использования GitHub, и не даёт права на
+   какое-либо использование Материалов.
+
+4. Письменное согласие действительно, только если оно выдано правообладателем
+   явно, в письменной форме и с указанием разрешённого объёма использования.
+   Запросы направляются через https://github.com/pazzia.
+
+5. Сторонние компоненты, включённые в репозиторий, распространяются на условиях
+   их собственных лицензий и не подпадают под пункт 2:
+   - каталог и фотографии упражнений Free Exercise DB — общественное достояние
+     (The Unlicense), см. docs/FREE_EXERCISE_DB_LICENSE.md;
+   - шрифты Oswald и Onest — SIL Open Font License 1.1, см. docs/FONTS_LICENSE.md.
+   Подборка, обработка, переводы, контуры и оформление этих материалов,
+   выполненные для FitClub, являются Материалами правообладателя.
+
+6. Материалы предоставляются «как есть», без каких-либо гарантий.
+
+----------------------------------------------------------------------------
+
+Copyright © 2026 pazzia. All rights reserved.
+
+The source code, assets, drawings, anatomy atlas, texts, design and all other
+materials in this repository are protected by copyright. Copying, reproduction,
+modification, distribution, publication, sublicensing, sale, use in any product
+or for training machine-learning models, or any other use, in whole or in part,
+is prohibited without the prior written permission of the copyright holder.
+Public visibility of this repository is for viewing only and grants no license.
+Third-party components keep their own licenses as listed in section 5 above.
