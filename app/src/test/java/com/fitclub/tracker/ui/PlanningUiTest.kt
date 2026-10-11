@@ -60,6 +60,8 @@ class PlanningUiTest {
         val app = ApplicationProvider.getApplicationContext<FitApp>()
         rule.runOnIdle { assertEquals(Sex.FEMALE, app.container.profile.settings.value.sex) }
         rule.onNodeWithText("Справочник").performClick()
+        // The body atlas now opens the library; the group cards are further down.
+        rule.onAllNodes(hasScrollToIndexAction()).onFirst().performScrollToNode(hasContentDescription("Грудь, женский атлас"))
         rule.onNodeWithContentDescription("Грудь, женский атлас").performClick()
         waitFor("${ExerciseSeed.all.count { it.group == MuscleGroup.CHEST }} упражнений")
         rule.onNodeWithTag("library-group-list").performScrollToNode(hasText("Жим штанги лёжа"))

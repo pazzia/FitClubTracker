@@ -11,7 +11,7 @@ class UxForkTest {
         assertEquals(emptyList<Float>(), platesPerSide(20f))
         assertNull(platesPerSide(15f))
         assertNull(platesPerSide(21f))
-        assertEquals(listOf(20f, 1.25f), platesPerSide(52.5f))
+        assertEquals(listOf(15f, 1.25f), platesPerSide(52.5f))
         assertEquals("Гриф 20 + на сторону 25 + 10 + 2,5", plateHint(95f))
         assertEquals("Пустой гриф 20 кг", plateHint(20f))
         assertEquals("Гриф 10 + на сторону 5", plateHint(20f, barKg = 10f))
