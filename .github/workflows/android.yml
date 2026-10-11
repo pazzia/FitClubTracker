@@ -105,6 +105,10 @@ jobs:
     needs: contours
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # contents: write lets main builds publish the APK as a GitHub Release.
+    permissions:
+      contents: write
+      actions: read
 
     steps:
       - name: Checkout
@@ -356,8 +360,27 @@ jobs:
           print(f"APK: {target.name}")
           PY
 
+      # Main builds ship the APK as a GitHub Release: releases do not count against the
+      # artifact storage quota, and the download link is stable.
+      - name: Publish APK as a GitHub Release
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="${{ steps.apk.outputs.name }}"
+          version="$(sed -E 's/^FitClub-v([^-]+(-test)?)-build.*/\1/' <<< "$name")"
+          tag="v${version}-build${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" "${{ steps.apk.outputs.path }}" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "FitClub ${version} · build ${GITHUB_RUN_NUMBER}" \
+            --notes "Подписанный debug APK из main (${GITHUB_SHA::7}). Что нового — в README, раздел «Что изменено в ${version}»."
+          printf 'APK release: https://github.com/%s/releases/tag/%s\n' "$GITHUB_REPOSITORY" "$tag" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload APK
         id: upload_apk
+        if: "!(github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))"
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.apk.outputs.name }}
