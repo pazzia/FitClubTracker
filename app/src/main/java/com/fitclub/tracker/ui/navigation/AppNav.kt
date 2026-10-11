@@ -93,6 +93,7 @@ object Routes {
     const val PROGRESS = "progress"
     const val PROFILE = "profile"
     const val MEASURE = "measure?metric={metric}"
+    const val BODY = "body"
     fun measure(metric: String? = null) = "measure?metric=${metric.orEmpty()}"
     const val WORKOUT = "workout/{schedule}"
     const val PICK_PROGRAM = "plan-programs/{epochDay}"
@@ -159,8 +160,10 @@ fun AppRoot() {
             composable(Routes.RESULT, arguments = listOf(navArgument("session") { type = NavType.LongType })) { entry ->
                 WorkoutResultScreen(entry.arguments!!.getLong("session"), onClose = { nav.popBackStack() })
             }
-            composable(Routes.PROGRESS) { ProgressScreen(onProfile = { nav.navigate(Routes.PROFILE) }) }
-            composable(Routes.PROFILE) { ProfileScreen(onBack = { nav.popBackStack() }, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } }) }
+            composable(Routes.PROGRESS) { ProgressScreen(onProfile = { nav.navigate(Routes.PROFILE) }, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } }) }
+            composable(Routes.PROFILE) { ProfileScreen(onBack = { nav.popBackStack() }, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } },
+                onBody = { nav.navigate(Routes.BODY) { launchSingleTop = true } }) }
+            composable(Routes.BODY) { com.fitclub.tracker.ui.profile.BodyScreen(onBack = { nav.popBackStack() }, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } }) }
             composable(Routes.MEASURE, arguments = listOf(navArgument("metric") { type = NavType.StringType; defaultValue = "" })) { entry ->
                 com.fitclub.tracker.ui.profile.MeasureScreen(entry.arguments?.getString("metric")?.ifBlank { null }, onClose = { nav.popBackStack() })
             }

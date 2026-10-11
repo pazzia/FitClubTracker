@@ -78,8 +78,8 @@ android {
         applicationId = "com.fitclub.tracker"
         minSdk = 28
         targetSdk = 34
-        versionCode = 29
-        versionName = "0.9.6"
+        versionCode = 30
+        versionName = "0.10.0"
         // Full build identity for bug reports; CI fills these, local builds say "local".
         fun env(name: String) = System.getenv(name)?.takeIf { it.isNotBlank() }
         buildConfigField("String", "BUILD_NUMBER", "\"${env("FITCLUB_BUILD_NUMBER") ?: "local"}\"")

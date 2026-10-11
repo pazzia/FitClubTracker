@@ -93,15 +93,12 @@ private class BlockColors(
     fun of(h: BodyHue) = when (h) { BodyHue.BLUE -> blue; BodyHue.PURPLE -> purple; BodyHue.CYAN -> cyan }
 }
 
+/** The block's colours come from the theme: data colours for girths, lime for actions. */
 @Composable
-private fun blockColors(): BlockColors = if (Fc.isLight) BlockColors(
-    blue = Color(0xFF1668E3), purple = Color(0xFF8A2BE2), cyan = Color(0xFF0E9BB0), good = Color(0xFF15803D), bad = Color(0xFFDC2626),
-    surface = Color.White, line = Color(0xFFE6EAF0), labelName = Color(0xFF2B3644), segBg = Color(0xFFEAEFF6), segOn = Color(0xFF1E7BFF),
-    grid = Color(0xFFEDF0F5), tipLine = Color(0xFFDDE3EC), areaAlpha = .12f, addBorder = Color(0xFFD6E2F5), addText = Color(0xFF1668E3)
-) else BlockColors(
-    blue = Color(0xFF3B8BFF), purple = Color(0xFFB068FF), cyan = Color(0xFF22D3EE), good = Color(0xFF34D399), bad = Color(0xFFF87171),
-    surface = Color(0xFF0E151F), line = Color(0xFF1A2533), labelName = Color(0xFFC9D2DD), segBg = Color(0xFF0E151F), segOn = Color(0xFF1E7BFF),
-    grid = Color(0xFF1A2533), tipLine = Color(0xFF2A3A4E), areaAlpha = .22f, addBorder = Color(0xFF1E4E95), addText = Color(0xFF3B8BFF)
+private fun blockColors(): BlockColors = BlockColors(
+    blue = Fc.DataBlue, purple = Fc.DataPurple, cyan = Fc.DataCyan, good = Fc.Good, bad = Fc.Bad,
+    surface = Fc.Surface, line = Fc.Line, labelName = Fc.Text, segBg = Fc.Surface2, segOn = Fc.Lime,
+    grid = Fc.Line2, tipLine = Fc.Line, areaAlpha = if (Fc.isLight) .12f else .22f, addBorder = Fc.Line, addText = Fc.OnAccent
 )
 
 @Composable
@@ -134,8 +131,12 @@ private fun metricUnit(metric: BodyMetric, units: WeightUnits) = if (metric == B
 
 /** Girths in the order of the chart tabs. */
 private val GIRTHS = listOf(BodyMetric.SHOULDERS, BodyMetric.CHEST, BodyMetric.ARM, BodyMetric.WAIST, BodyMetric.HIPS, BodyMetric.THIGH)
+/** Chart tabs: weight first, then the girths top to bottom, body fat last. */
+private val TABS = listOf(BodyMetric.WEIGHT) + GIRTHS + BodyMetric.FAT
 /** Change cards lead with what people watch most. */
-private val CARD_ORDER = listOf(BodyMetric.WAIST, BodyMetric.HIPS, BodyMetric.CHEST, BodyMetric.ARM, BodyMetric.THIGH, BodyMetric.SHOULDERS)
+private val CARD_ORDER = listOf(BodyMetric.WEIGHT, BodyMetric.WAIST, BodyMetric.HIPS, BodyMetric.CHEST, BodyMetric.ARM, BodyMetric.THIGH, BodyMetric.SHOULDERS, BodyMetric.FAT)
+
+private fun unitOf(metric: BodyMetric, units: WeightUnits) = when (metric) { BodyMetric.WEIGHT -> units.label; BodyMetric.FAT -> "%"; else -> "см" }
 private const val WEEKS = 8
 
 /**
@@ -154,47 +155,35 @@ fun BodyModelSection(
     var metricKey by rememberSaveable { mutableStateOf(BodyMetric.WAIST.key) }
     val metric = BodyMetric.byKey(metricKey) ?: BodyMetric.WAIST
     var week by rememberSaveable { mutableIntStateOf(WEEKS - 1) }
-    val series = remember(rows, today) { GIRTHS.associateWith { weeklySeries(rows, it, today, WEEKS) } }
+    val units = LocalWeightUnits.current
+    // Weight is shown in the profile's units; the rest are centimetres and percent.
+    val series = remember(rows, today, units) {
+        TABS.associateWith { m -> weeklySeries(rows, m, today, WEEKS).map { v -> v?.let { if (m == BodyMetric.WEIGHT) units.fromKg(it) else it } } }
+    }
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Замеры тела", color = Fc.Text, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 30.sp,
-                    modifier = Modifier.semantics { heading() })
-                Text("Изменения объёмов и прогресс по ключевым зонам", color = Fc.Muted, fontSize = 13.sp, lineHeight = 18.sp)
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Замеры тела", color = Fc.Text, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
+                Text("Вес, жир и обхваты за 8 недель", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
             }
             Surface(
-                onClick = { onMeasure(null) }, shape = RoundedCornerShape(20.dp), color = if (Fc.isLight) Color.White else colors.blue.copy(alpha = .10f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, colors.addBorder),
+                onClick = { onMeasure(null) }, shape = RoundedCornerShape(20.dp), color = Fc.Lime,
                 modifier = Modifier.heightIn(min = 44.dp).testTag("record-measurement")
             ) {
-                Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("+", color = colors.addText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    Text(if (rows.isEmpty()) "Первый замер" else "Добавить", color = colors.addText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Box(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
+                    Text(if (rows.isEmpty()) "Первый замер" else "Добавить замер", color = Fc.OnAccent, style = MaterialTheme.typography.labelLarge)
                 }
-            }
-        }
-
-        Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(colors.segBg).border(1.dp, colors.line, RoundedCornerShape(24.dp)).padding(3.dp).selectableGroup()
-        ) {
-            listOf(Sex.MALE to "Мужчина", Sex.FEMALE to "Женщина").forEach { (value, title) ->
-                val on = sex == value
-                Box(
-                    Modifier.weight(1f).heightIn(min = 40.dp).clip(RoundedCornerShape(20.dp)).background(if (on) colors.segOn else Color.Transparent)
-                        .selectable(selected = on, role = Role.RadioButton) { onSex(value) }.testTag("model-${value.name.lowercase()}"),
-                    contentAlignment = Alignment.Center
-                ) { Text(title, color = if (on) Color.White else colors.labelName, fontSize = 15.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium) }
             }
         }
 
         FigureCard(figure, colors, series, week, metric, onPick = { metricKey = it.key })
 
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CARD_ORDER.forEach { m -> ChangeCard(m, series.getValue(m), m == metric, colors) { metricKey = m.key } }
+            CARD_ORDER.forEach { m -> ChangeCard(m, series.getValue(m), m == metric, colors, unitOf(m, units)) { metricKey = m.key } }
         }
 
-        ProgressCard(metric, series.getValue(metric), week, today, colors, onMetric = { metricKey = it.key }, onWeek = { week = it })
+        ProgressCard(metric, series.getValue(metric), week, today, colors, unitOf(metric, units), onMetric = { metricKey = it.key }, onWeek = { week = it })
     }
 }
 
@@ -279,6 +268,8 @@ private fun zoneIcon(metric: BodyMetric): List<Pair<String, Boolean>> = when (me
     BodyMetric.ARM -> listOf("M4 20c0-6 3-12 8-12 3 0 4.5 2.5 3.5 5" to false, "M15.5 13c-1 2.5-4.5 2-6 5.5" to false, "M9 12.5h7" to true)
     BodyMetric.WAIST -> listOf("M7 3c0 5 2 6.5 2 9s-2 4-2 9" to false, "M17 3c0 5-2 6.5-2 9s2 4 2 9" to false, "M8.5 12h7" to true)
     BodyMetric.HIPS -> listOf("M6 3c-.5 5-.5 9 2.5 12.5L10 21" to false, "M18 3c.5 5 .5 9-2.5 12.5L14 21" to false, "M10.5 15.5c.5-2 2.5-2 3 0" to false, "M6.5 9h11" to true)
+    BodyMetric.WEIGHT -> listOf("M5 20h14l-2-12H7z" to false, "M9.5 11.5a2.5 2.5 0 0 1 5 0" to false, "M12 11.5l1.2-1.6" to false)
+    BodyMetric.FAT -> listOf("M12 3c3 4 6 7.2 6 11a6 6 0 0 1-12 0c0-3.8 3-7 6-11z" to false, "M9 15a3 3 0 0 0 3 3" to true)
     else -> listOf("M7 3v7c0 4 1.5 7.5 3 11" to false, "M17 3v7c0 4-1.5 7.5-3 11" to false, "M7.5 9h9" to true)
 }
 
@@ -295,7 +286,7 @@ private fun ZoneIcon(metric: BodyMetric, color: Color, modifier: Modifier) {
 }
 
 @Composable
-private fun ChangeCard(metric: BodyMetric, series: List<Float?>, selected: Boolean, colors: BlockColors, onClick: () -> Unit) {
+private fun ChangeCard(metric: BodyMetric, series: List<Float?>, selected: Boolean, colors: BlockColors, unit: String, onClick: () -> Unit) {
     val color = colors.of(metric.hue)
     val change = periodChange(metric, series)
     val pctColor = when (change?.good) { true -> colors.good; false -> colors.bad; null -> Fc.Muted }
@@ -306,7 +297,7 @@ private fun ChangeCard(metric: BodyMetric, series: List<Float?>, selected: Boole
             .clickable(role = Role.Button, onClickLabel = "Показать на графике", onClick = onClick)
             .clearAndSetSemantics {
                 contentDescription = metric.title + " за 8 недель: " +
-                    (change?.let { "${formatSignedMeasure(it.delta)} см, ${formatSignedMeasure(it.percent)} %" } ?: "пока не с чем сравнить")
+                    (change?.let { "${formatSignedMeasure(it.delta)} $unit, ${formatSignedMeasure(it.percent)} %" } ?: "пока не с чем сравнить")
             }
             .padding(horizontal = 10.dp, vertical = 12.dp)
     ) {
@@ -316,7 +307,7 @@ private fun ChangeCard(metric: BodyMetric, series: List<Float?>, selected: Boole
             }
             Column(Modifier.weight(1f)) {
                 Text(metric.title, color = Fc.Muted, fontSize = 12.sp, maxLines = 1)
-                Text(change?.let { "${formatSignedMeasure(it.delta)} см" } ?: "—", color = Fc.Text, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                Text(change?.let { "${formatSignedMeasure(it.delta)} $unit" } ?: "—", color = Fc.Text, style = MaterialTheme.typography.titleLarge, maxLines = 1)
             }
         }
         Row(Modifier.padding(top = 8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -338,25 +329,25 @@ private fun ChangeCard(metric: BodyMetric, series: List<Float?>, selected: Boole
 }
 
 @Composable
-private fun ProgressCard(metric: BodyMetric, series: List<Float?>, week: Int, today: Long, colors: BlockColors, onMetric: (BodyMetric) -> Unit, onWeek: (Int) -> Unit) {
+private fun ProgressCard(metric: BodyMetric, series: List<Float?>, week: Int, today: Long, colors: BlockColors, unit: String, onMetric: (BodyMetric) -> Unit, onWeek: (Int) -> Unit) {
     val color = colors.of(metric.hue)
     val shape = RoundedCornerShape(22.dp)
     Column(
         Modifier.fillMaxWidth().clip(shape).background(colors.surface).border(1.dp, colors.line, shape).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Прогресс за 8 недель", color = Fc.Text, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.semantics { heading() })
+        Text("Прогресс за 8 недель", color = Fc.Text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(colors.segBg).horizontalScroll(rememberScrollState()).padding(3.dp).selectableGroup(),
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            GIRTHS.forEach { m ->
+            TABS.forEach { m ->
                 val on = m == metric
                 Box(
                     Modifier.heightIn(min = 36.dp).clip(RoundedCornerShape(17.dp)).background(if (on) colors.segOn else Color.Transparent)
                         .selectable(selected = on, role = Role.Tab) { onMetric(m) }.testTag("tab-${m.key}").padding(horizontal = 13.dp),
                     contentAlignment = Alignment.Center
-                ) { Text(m.title, color = if (on) Color.White else colors.labelName, fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium) }
+                ) { Text(m.title, color = if (on) Fc.OnAccent else colors.labelName, fontSize = 13.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium) }
             }
         }
 
@@ -401,7 +392,7 @@ private fun ProgressCard(metric: BodyMetric, series: List<Float?>, week: Int, to
                 if (v != null) Box(
                     Modifier.testTag("week-$i").offset(x = x(i) - 20.dp, y = y(v) - 20.dp).size(40.dp)
                         .selectable(selected = i == selected, role = Role.RadioButton) { onWeek(i) }
-                        .clearAndSetSemantics { contentDescription = "Неделя ${i + 1}, до ${shortDate(today - (WEEKS - 1 - i) * 7L)}: ${formatMeasure(v)} см" }
+                        .clearAndSetSemantics { contentDescription = "Неделя ${i + 1}, до ${shortDate(today - (WEEKS - 1 - i) * 7L)}: ${formatMeasure(v)} $unit" }
                 )
                 Text("Нед ${i + 1}", color = if (i == selected) Fc.Text else muted, fontSize = 11.sp, fontWeight = if (i == selected) FontWeight.Bold else FontWeight.Normal,
                     textAlign = TextAlign.Center, modifier = Modifier.offset(x = x(i) - 22.dp, y = 156.dp).width(44.dp))
@@ -418,11 +409,28 @@ private fun ProgressCard(metric: BodyMetric, series: List<Float?>, week: Int, to
                     .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }.testTag("chart-tip"),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("${formatMeasure(value)} см", color = Fc.Text, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
-                Text(when { change == null -> "старт"; change.isZero -> "без изменений"; else -> "${formatSignedMeasure(change.delta)} см с нед ${first.first + 1}" },
+                Text("${formatMeasure(value)} $unit", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                Text(when { change == null -> "старт"; change.isZero -> "без изменений"; else -> "${formatSignedMeasure(change.delta)} $unit с нед ${first.first + 1}" },
                     color = when (change?.good) { true -> colors.good; false -> colors.bad; null -> muted }, fontSize = 11.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
             }
         }
+    }
+}
+
+/** «Тело» opened from the profile: the same block as in «Прогресс → Тело». */
+class BodyViewModel(c: AppContainer) : ViewModel() {
+    val settings = c.profile.settings
+    val rows = c.fitness.observeMeasurements().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+}
+
+@Composable
+fun BodyScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit) {
+    val vm = appViewModel { BodyViewModel(it) }
+    val settings by vm.settings.collectAsStateWithLifecycle()
+    val rows by vm.rows.collectAsStateWithLifecycle()
+    androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize().background(Fc.Bg), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        item { com.fitclub.tracker.ui.components.BackRow("Личный кабинет", onBack) }
+        item { BodyModelSection(settings.sex, rows, onMeasure = { onMeasure(it?.key) }) }
     }
 }
 

@@ -26,6 +26,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -63,6 +65,7 @@ data class DashboardState(
 )
 
 class DashboardViewModel(c: AppContainer) : ViewModel() {
+    val settings = c.profile.settings
     val state = combine(
         c.programs.observeActive(), c.exercises.observeAll(), c.fitness.observeWorkouts(), c.fitness.observeMeasurements()
     ) { program, exercises, workouts, measurements ->
@@ -78,16 +81,19 @@ class DashboardViewModel(c: AppContainer) : ViewModel() {
     }
 }
 
+/** Sections of «Прогресс»: strength, the body, and regularity — each answers one question. */
+enum class ProgressSection(val title: String) { STRENGTH("Сила"), BODY("Тело"), REGULARITY("Регулярность") }
+
 @Composable
-fun ProgressScreen(onProfile: () -> Unit) {
+fun ProgressScreen(onProfile: () -> Unit, onMeasure: (String?) -> Unit = {}, initial: ProgressSection = ProgressSection.STRENGTH) {
     val vm = appViewModel { DashboardViewModel(it) }
     val s by vm.state.collectAsStateWithLifecycle()
+    val settings by vm.settings.collectAsStateWithLifecycle()
     val units = LocalWeightUnits.current
+    var section by rememberSaveable { mutableStateOf(initial) }
     var weeksBack by rememberSaveable { mutableStateOf(12) }
     var selectedExercise by rememberSaveable { mutableStateOf("") }
     val today = LocalDate.now()
-    val latest = s.measurements.lastOrNull { it.weightKg != null }
-    val first = s.measurements.firstOrNull { it.weightKg != null }
     val weekData = com.fitclub.tracker.domain.weeklyVolume(s.workouts, today, weeksBack)
     val weekDates = weekData.map { it.monday }
     val weekly = weekData.map { it.volumeKg }
@@ -101,7 +107,10 @@ fun ProgressScreen(onProfile: () -> Unit) {
                 CircleIconButton("Профиль", onProfile, filled = true) { Icon(Icons.Filled.Person, null, tint = Fc.Text) }
             }
         }
-        item { Segmented(listOf(4, 12, 26), weeksBack, { weeksBack = it }, { when (it) { 4 -> "4 недели"; 12 -> "12 недель"; else -> "Полгода" } }) }
+        item { Segmented(ProgressSection.entries, section, { section = it }, { it.title }, selectedBg = Fc.Lime) }
+        when (section) {
+            ProgressSection.STRENGTH -> {
+                item { Segmented(listOf(4, 12, 26), weeksBack, { weeksBack = it }, { when (it) { 4 -> "4 недели"; 12 -> "12 недель"; else -> "Полгода" } }) }
         item {
             FcCard {
                 Row(verticalAlignment = Alignment.Bottom) {
@@ -126,45 +135,6 @@ fun ProgressScreen(onProfile: () -> Unit) {
                     listOf(weekDates.first(), weekDates[weekDates.size / 2], weekDates.last()).forEach {
                         Text(it.format(DateTimeFormatter.ofPattern("d MMM", Locale("ru"))), color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
                     }
-                }
-            }
-        }
-        item {
-            val doneDays = s.workouts.filter { it.completedSets > 0 }.map { it.session.epochDay }.toSet()
-            val start = com.fitclub.tracker.domain.weekStart(today).minusWeeks(11)
-            val streak = com.fitclub.tracker.domain.weekStreak(s.workouts, today)
-            FcCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Регулярность", color = Fc.Text, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-                    Text(if (streak > 0) "$streak нед. подряд" else "12 недель", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-                }
-                Spacer(Modifier.height(12.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    (0 until 12).forEach { week ->
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            (0 until 7).forEach { day ->
-                                val date = start.plusWeeks(week.toLong()).plusDays(day.toLong())
-                                val shape = RoundedCornerShape(3.dp)
-                                Box(Modifier.fillMaxWidth().height(12.dp).then(when {
-                                    date.toEpochDay() in doneDays -> Modifier.background(Fc.Lime, shape)
-                                    date.isAfter(today) -> Modifier
-                                    else -> Modifier.background(Fc.Surface2, shape)
-                                }))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            FcCard(onClick = onProfile) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Eyebrow("Вес тела")
-                        if (latest?.weightKg != null) NumberText(units.format(latest.weightKg), 28.sp) else Text("Нет замеров", style = MaterialTheme.typography.headlineSmall, color = Fc.Text)
-                        if (latest?.weightKg != null && first?.weightKg != null) Text("${signed(units.fromKg(latest.weightKg - first.weightKg))} ${units.label} с первого замера", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-                    }
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Fc.Muted)
                 }
             }
         }
@@ -194,6 +164,7 @@ fun ProgressScreen(onProfile: () -> Unit) {
                     Text(if (timed) "Самое долгое удержание: ${best.reps} сек." else "Самый тяжёлый подход: ${units.format(best.weightKg)} × ${best.reps}", color = Fc.Text, modifier = Modifier.padding(top = 6.dp))
                     Text("${sets.size} подходов за выбранный период", color = Fc.Muted)
                     TextButton(onClick = { selectedExercise = id }) { Text("История упражнения", color = Fc.Lime) }
+                    if (selectedExercise == id && !timed) StrengthChart(com.fitclub.tracker.domain.weeklyOneRepMax(s.workouts, id, today, weeksBack), units)
                     if (selectedExercise == id) periodWorkouts.sortedBy { it.session.startedAt }.forEach { log ->
                         val performed = log.sets.filter { it.done && it.exerciseId == id && it.isTimed == timed && !it.warmup && !it.assisted }
                         if (performed.isNotEmpty()) {
@@ -203,6 +174,80 @@ fun ProgressScreen(onProfile: () -> Unit) {
                     }
                 }
             }
+        }
+            }
+            ProgressSection.BODY -> item {
+                com.fitclub.tracker.ui.profile.BodyModelSection(settings.sex, s.measurements, onMeasure = { onMeasure(it?.key) })
+            }
+            ProgressSection.REGULARITY -> {
+        item {
+            val doneDays = s.workouts.filter { it.completedSets > 0 }.map { it.session.epochDay }.toSet()
+            val start = com.fitclub.tracker.domain.weekStart(today).minusWeeks(11)
+            val streak = com.fitclub.tracker.domain.weekStreak(s.workouts, today)
+            FcCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Регулярность", color = Fc.Text, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
+                    Text(if (streak > 0) "$streak нед. подряд" else "12 недель", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                }
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    (0 until 12).forEach { week ->
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            (0 until 7).forEach { day ->
+                                val date = start.plusWeeks(week.toLong()).plusDays(day.toLong())
+                                val shape = RoundedCornerShape(3.dp)
+                                Box(Modifier.fillMaxWidth().height(12.dp).then(when {
+                                    date.toEpochDay() in doneDays -> Modifier.background(Fc.Lime, shape)
+                                    date.isAfter(today) -> Modifier
+                                    else -> Modifier.background(Fc.Surface2, shape)
+                                }))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+                item {
+                    val done = s.workouts.filter { it.completedSets > 0 }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MiniStat("Тренировок", "${done.size}", "всего", Modifier.weight(1f))
+                        MiniStat("За 4 недели", "${done.count { it.session.epochDay > today.minusWeeks(4).toEpochDay() }}", "тренировок", Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Best estimated 1RM per week for one exercise: the line shows whether strength grows. */
+@Composable
+private fun StrengthChart(points: List<com.fitclub.tracker.domain.StrengthPoint>, units: WeightUnits) {
+    if (points.size < 2) {
+        Text("График силы появится после двух недель с этим упражнением.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 8.dp))
+        return
+    }
+    val values = points.map { units.fromKg(it.oneRepMaxKg) }
+    val lo = values.min(); val hi = values.max()
+    val change = values.last() - values.first()
+    val line = Fc.DataBlue
+    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp).testTag("strength-chart"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(Modifier.weight(1f)) {
+                Text("Оценка 1ПМ по неделям", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                NumberText(units.format(points.last().oneRepMaxKg), 24.sp)
+            }
+            Text("${signed(change)} ${units.label}", color = if (change >= 0) Fc.Good else Fc.Bad, style = MaterialTheme.typography.labelLarge)
+        }
+        Canvas(Modifier.fillMaxWidth().height(96.dp).semantics { contentDescription = "Оценка 1ПМ: с ${fmt(values.first())} до ${fmt(values.last())} ${units.label}" }) {
+            val pad = 6.dp.toPx()
+            fun pt(i: Int) = Offset(pad + i * (size.width - 2 * pad) / (values.size - 1),
+                size.height - pad - (if (hi == lo) .5f else (values[i] - lo) / (hi - lo)) * (size.height - 2 * pad))
+            for (i in 1 until values.size) drawLine(line, pt(i - 1), pt(i), 2.5.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+            values.indices.forEach { drawCircle(line, if (it == values.lastIndex) 5.dp.toPx() else 3.dp.toPx(), pt(it)) }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(points.first().monday.format(DateTimeFormatter.ofPattern("d MMM", Locale("ru"))), color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
+            Text(points.last().monday.format(DateTimeFormatter.ofPattern("d MMM", Locale("ru"))), color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
         }
     }
 }
@@ -215,7 +260,7 @@ class ProfileViewModel(private val c: AppContainer) : ViewModel() {
 }
 
 @Composable
-fun ProfileScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit = {}) {
+fun ProfileScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit = {}, onBody: () -> Unit = {}) {
     val vm = appViewModel { ProfileViewModel(it) }
     val st by vm.settings.collectAsStateWithLifecycle()
     val measurements by vm.measurements.collectAsStateWithLifecycle()
@@ -231,20 +276,33 @@ fun ProfileScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit = {}) {
         }
         item {
             FcCard {
-                Text("О СЕБЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
+                Text("О себе", style = MaterialTheme.typography.titleMedium, color = Fc.Text)
                 OutlinedTextField(st.name, { vm.update(st.copy(name = it)) }, label = { Text("Имя") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Text("Пол", color = Fc.Text, modifier = Modifier.padding(top = 10.dp)); Segmented(Sex.entries, st.sex, { vm.update(st.copy(sex = it)) }, { it.title })
-                Text("Уровень подготовки", color = Fc.Text, modifier = Modifier.padding(top = 12.dp)); Segmented(listOf(1,2,3), st.level, { vm.update(st.copy(level = it)) }, { if (it==1) "Новичок" else if (it==2) "Продв." else "Профи" })
-                Text("Пол меняет модель тела в профиле и в справочнике.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+                Text("Уровень подготовки", color = Fc.Text, modifier = Modifier.padding(top = 12.dp))
+                // The level decides how much the set card shows; the switch in Settings can override it.
+                Segmented(listOf(1,2,3), st.level, { vm.update(st.copy(level = it, advancedSets = it > 1)) }, { if (it==1) "Новичок" else if (it==2) "Продв." else "Профи" })
+                Text("Пол выбирает фигуру в замерах и в справочнике. Новичку тренировка показывает только вес, повторы и «Готово».", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
             }
         }
-        item { com.fitclub.tracker.ui.profile.BodyModelSection(st.sex, measurements, onMeasure = { onMeasure(it?.key) }, onSex = { vm.update(st.copy(sex = it)) }) }
+        item {
+            FcCard(Modifier.fillMaxWidth().testTag("profile-body"), onClick = onBody) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Замеры тела", style = MaterialTheme.typography.titleMedium, color = Fc.Text)
+                        Text(measurements.lastOrNull()?.let { "Последний замер ${com.fitclub.tracker.ui.profile.shortDate(it.epochDay)}, всего ${measurements.size}" }
+                            ?: "Вес, жир и обхваты на вашей фигуре", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Fc.Muted)
+                }
+            }
+        }
         item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MiniStat("Тренировок", "${workouts.count { it.completedSets > 0 }}", "выполнено", Modifier.weight(1f)); MiniStat("Замеров", "${measurements.size}", "записано", Modifier.weight(1f))
         } }
         item {
             FcCard {
-                Text("ОФОРМЛЕНИЕ", style = MaterialTheme.typography.labelMedium, color = Fc.Muted)
+                Text("Оформление", style = MaterialTheme.typography.titleMedium, color = Fc.Text)
                 listOf("Светлая", "Темная").forEach { name ->
                     Row(Modifier.fillMaxWidth().clickable { vm.update(st.copy(theme = name)) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(14.dp).background(if (name == "Светлая") Color(0xFFF3F4EF) else Color(0xFF0A0C0D), CircleShape).border(1.dp, Fc.Line, CircleShape))
@@ -256,11 +314,26 @@ fun ProfileScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit = {}) {
         }
         item {
             FcCard {
-                Text("НАСТРОЙКИ", color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
+                Text("Настройки", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
                 Text("Единицы веса", color = Fc.Text, modifier = Modifier.padding(vertical = 8.dp))
                 Segmented(listOf(true, false), st.unitsKg, { vm.update(st.copy(unitsKg = it)) }, { if (it) "Килограммы (кг)" else "Фунты (lb)" }, selectedBg = Fc.Lime)
                 Text("История, тоннаж и замеры отображаются в выбранных единицах. Активная тренировка и открытый редактор сохраняют единицы ввода до завершения.", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Fc.Line)
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                        .toggleable(value = st.advancedSets, role = Role.Switch) { vm.update(st.copy(advancedSets = it)) }
+                        .testTag("advanced-sets"),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text("Подробный ввод подходов", color = Fc.Text)
+                        Text("Разминка, дропсеты, суперсеты, RIR и помощь в подходе. Выключите, чтобы в тренировке остались только вес, повторы и «Готово». Техники из программы показываются всегда.",
+                            color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Switch(checked = st.advancedSets, onCheckedChange = null,
+                        colors = SwitchDefaults.colors(checkedTrackColor = Fc.Lime, checkedThumbColor = Fc.OnAccent))
+                }
+                Spacer(Modifier.height(8.dp))
                 Row(
                     Modifier.fillMaxWidth().heightIn(min = 48.dp)
                         .toggleable(value = st.restSound, role = Role.Switch) { vm.update(st.copy(restSound = it)); if (it) com.fitclub.tracker.ui.workout.RestSound.play() }

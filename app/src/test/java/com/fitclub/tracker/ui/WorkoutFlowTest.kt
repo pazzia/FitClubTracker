@@ -29,7 +29,7 @@ class WorkoutFlowTest {
         rule.setContent { FitClubTheme { WorkoutScreen(id, {}, {}) } }
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
         rule.onNodeWithText("План").performClick()
-        waitFor("Идёт тренировка".uppercase())
+        waitFor("Идёт тренировка")
         rule.onNodeWithText("Тяга штанги в наклоне").performClick()
         waitFor("УПРАЖНЕНИЕ 2 ИЗ 2")
         rule.onNodeWithTag("workout-list").performScrollToNode(hasTestTag("weight-0"))
@@ -47,7 +47,7 @@ class WorkoutFlowTest {
         rule.setContent { FitClubTheme { WorkoutScreen(id, {}, {}) } }
         waitFor("УПРАЖНЕНИЕ 1 ИЗ 2")
         rule.onNodeWithText("План").performClick()
-        waitFor("Идёт тренировка".uppercase())
+        waitFor("Идёт тренировка")
         rule.onNodeWithTag("drag-exercise-1", useUnmergedTree = true).performTouchInput {
             down(center); advanceEventTime(650); moveBy(androidx.compose.ui.geometry.Offset(0f, -350f)); up()
         }
