@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.Role
@@ -116,10 +117,9 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                         modifier = Modifier.weight(1f), textAlign = TextAlign.Center, color = Fc.Text, style = MaterialTheme.typography.titleMedium)
                     TextButton(onClick = { monthValue = month.plusMonths(1).toString() }) { Text("›", modifier = Modifier.semantics { contentDescription = "Следующий месяц" }, color = Fc.Text, style = MaterialTheme.typography.headlineSmall) }
                 }
-                BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val gridWidth = maxWidth.coerceAtLeast(336.dp)
-                    Column(Modifier.horizontalScroll(rememberScrollState())) {
-                        Column(Modifier.width(gridWidth)) {
+                // Seven equal columns that always fit the card: no minimum width, no sideways scrolling.
+                Column(Modifier.fillMaxWidth().testTag("calendar-grid")) {
+                        Column(Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth()) {
                     listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс").forEach {
                         Text(it, color = Fc.Muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
@@ -138,14 +138,14 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                                 val done = epoch in completed
                                 val hasPlan = epoch in planned
                                 val color = when { selected -> Fc.Lime; done -> Fc.LimeSoft; hasPlan -> Fc.LimeSoft; else -> Color.Transparent }
-                                Column(Modifier.weight(1f).heightIn(min = 48.dp).padding(2.dp)
+                                Column(Modifier.weight(1f).heightIn(min = 44.dp).padding(1.dp)
                                     .background(color, RoundedCornerShape(10.dp))
                                     .then(if (date == today && !selected) Modifier.border(1.dp, Fc.Lime, RoundedCornerShape(10.dp)) else Modifier)
                                     .semantics { this.selected = selected; contentDescription = calendarDate(epoch) + when { done -> ", выполнено"; hasPlan -> ", тренировка запланирована"; else -> ", запланировать тренировку" } }
                                     .clickable(role = Role.Button) { selectedEpoch = epoch },
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("$number", color = if (selected) Fc.OnAccent else if (hasPlan || done) Fc.Lime else Fc.Text,
-                                        style = MaterialTheme.typography.bodyMedium, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Normal)
+                                        style = MaterialTheme.typography.bodyMedium, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Normal, maxLines = 1, softWrap = false)
                                     if (done || hasPlan) Box(Modifier.padding(top = 3.dp).size(4.dp).background(if (selected) Fc.OnAccent else Fc.Lime, CircleShape))
                                 }
                             }
@@ -153,9 +153,8 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                     }
                 }
                         }
-                    }
                 }
-                Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text("● План", color = Fc.Lime, style = MaterialTheme.typography.labelSmall)
                     Text("● Выполнено: $doneThisMonth", color = Fc.Lime, style = MaterialTheme.typography.labelSmall)
                     TextButton(onClick = { monthValue = YearMonth.now().toString(); selectedEpoch = today.toEpochDay() }, contentPadding = PaddingValues(0.dp)) { Text("Сегодня", color = Fc.Muted, style = MaterialTheme.typography.labelSmall) }

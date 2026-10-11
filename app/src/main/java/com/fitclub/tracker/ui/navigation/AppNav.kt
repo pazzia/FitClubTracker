@@ -172,7 +172,8 @@ fun AppRoot() {
                     onGroup = { nav.navigate(Routes.group(it)) },
                     onExercise = { nav.navigate(Routes.exercise(it)) },
                     onProfile = { nav.navigate(Routes.PROFILE) },
-                    onAnatomy = { nav.navigate(Routes.ATLAS) }
+                    onAnatomy = { nav.navigate(Routes.ATLAS) },
+                    onAtlasMuscle = { nav.navigate(Routes.atlasMuscle(it)) }
                 )
             }
             composable(Routes.ATLAS) {

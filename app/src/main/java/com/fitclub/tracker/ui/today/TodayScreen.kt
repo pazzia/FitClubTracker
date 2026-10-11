@@ -230,7 +230,7 @@ private fun WeekStrip(today: LocalDate, s: TodayState, program: ProgramDraft?, o
             Eyebrow("Неделя · ${done.count { it in monday.toEpochDay()..monday.toEpochDay() + 6 }} из ${program?.freqPerWeek ?: 3}", Modifier.weight(1f))
             TextButton(onClick = { onCalendar(today.toEpochDay()) }) { Text("Календарь", color = Fc.Text, style = MaterialTheme.typography.labelLarge) }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             (0 until 7).forEach { offset ->
                 val date = monday.plusDays(offset.toLong())
                 val epoch = date.toEpochDay()
@@ -247,7 +247,7 @@ private fun WeekStrip(today: LocalDate, s: TodayState, program: ProgramDraft?, o
                     Text(weekdayLabels[offset], color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
                     val shape = CircleShape
                     Box(
-                        Modifier.size(40.dp).clip(shape)
+                        Modifier.fillMaxWidth().widthIn(max = 40.dp).aspectRatio(1f).clip(shape)
                             .then(when {
                                 isDone -> Modifier.background(Fc.Lime)
                                 isToday -> Modifier.border(2.dp, Fc.Text, shape)

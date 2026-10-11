@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -148,7 +149,7 @@ private fun GroupTile(group: AtlasGroup, modifier: Modifier, onClick: () -> Unit
         modifier.clip(shape).background(Fc.Surface).border(1.dp, Fc.Line2, shape)
             .clickable(role = Role.Button, onClickLabel = "Открыть группу ${group.title}", onClick = onClick)
     ) {
-        AssetImage(group.muscles.first().thumbnail, null, Modifier.fillMaxWidth().aspectRatio(1.35f))
+        AssetImage((group.muscles.firstOrNull { it.hasIllustration } ?: group.muscles.first()).thumbnail, null, Modifier.fillMaxWidth().aspectRatio(1.35f))
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(group.title, color = Fc.Text, style = MaterialTheme.typography.titleMedium, maxLines = 2)
             Text(musclesWord(group.muscles.size), color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
@@ -164,7 +165,10 @@ private fun MuscleRow(m: AtlasMuscle, subtitle: String?, onClick: () -> Unit) {
             .clickable(role = Role.Button, onClick = onClick).padding(10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        AssetImage(m.thumbnail, null, Modifier.size(76.dp).clip(RoundedCornerShape(12.dp)))
+        if (m.hasIllustration) AssetImage(m.thumbnail, null, Modifier.size(76.dp).clip(RoundedCornerShape(12.dp)))
+        else Box(Modifier.size(76.dp).clip(RoundedCornerShape(12.dp)).background(Paper), contentAlignment = Alignment.Center) {
+            Text("схема", color = Color(0xFF8A5A44), style = MaterialTheme.typography.labelMedium)
+        }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(m.name, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
             Text(m.latin, color = Fc.Muted, style = MaterialTheme.typography.bodySmall, fontStyle = FontStyle.Italic)
@@ -206,6 +210,7 @@ fun AtlasGroupScreen(groupId: String, onBack: () -> Unit, onMuscle: (String) -> 
 
 // ---------------------------------------------------------------- Muscle card
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AtlasMuscleScreen(muscleId: String, onBack: () -> Unit, onMuscle: (String) -> Unit, onExercise: (String) -> Unit) {
     val result by rememberAtlas()
@@ -239,8 +244,9 @@ fun AtlasMuscleScreen(muscleId: String, onBack: () -> Unit, onMuscle: (String) -
                 Text(muscle.name.uppercase(), color = Fc.Text, modifier = Modifier.semantics { heading() },
                     style = MaterialTheme.typography.headlineMedium.copy(fontFamily = Condensed, fontWeight = FontWeight.SemiBold, lineHeight = 34.sp))
                 Text(muscle.latin, color = Fc.Muted, fontStyle = FontStyle.Italic)
-                Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FlowRow(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     FitnessPill()
+                    muscle.role?.let { Pill(it, Fc.Surface2, Fc.Text) }
                     if (linked.isNotEmpty()) {
                         Text(exercisesWord(linked.size) + " ↓", color = Fc.Lime, style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Fc.Surface2)
@@ -251,14 +257,14 @@ fun AtlasMuscleScreen(muscleId: String, onBack: () -> Unit, onMuscle: (String) -
             }
         }
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (muscle.hasIllustration) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 AssetImage(muscle.image, "${muscle.name}: выбранная мышца выделена терракотовым цветом",
                     Modifier.fillMaxWidth().aspectRatio(2f / 3f).clip(RoundedCornerShape(20.dp)).background(Paper), ContentScale.Fit)
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Legend(Terracotta, "Выбранная мышца")
                     Legend(Bone, "Окружающие структуры")
                 }
-            }
+            } else SchematicCard(muscle.schematic)
         }
         item {
             FcCard(Modifier.fillMaxWidth()) {
@@ -270,6 +276,17 @@ fun AtlasMuscleScreen(muscleId: String, onBack: () -> Unit, onMuscle: (String) -
                     Eyebrow(title, color = Fc.Lime)
                     Spacer(Modifier.height(6.dp))
                     Text(text, color = Fc.Text, style = MaterialTheme.typography.bodyLarge)
+                }
+                listOf("Части мышцы" to muscle.parts, "Состав" to muscle.members).forEach { (title, names) ->
+                    if (names.isEmpty()) return@forEach
+                    HorizontalDivider(color = Fc.Line2, modifier = Modifier.padding(vertical = 14.dp))
+                    Eyebrow(title, color = Fc.Lime)
+                    names.forEach { n ->
+                        Column(Modifier.padding(top = 8.dp)) {
+                            Text(n.name, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
+                            if (n.latin.isNotBlank()) Text(n.latin, color = Fc.Muted, style = MaterialTheme.typography.bodySmall, fontStyle = FontStyle.Italic)
+                        }
+                    }
                 }
             }
         }
@@ -310,6 +327,25 @@ fun AtlasMuscleScreen(muscleId: String, onBack: () -> Unit, onMuscle: (String) -
 
 /** Position of the «Упражнения» header: back row, title, illustration, facts. */
 private const val EXERCISES_INDEX = 4
+
+/** Origin and insertion of each part, drawn natively so the text stays sharp on any screen. */
+@Composable
+private fun SchematicCard(rows: List<AtlasAttachment>) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Paper).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("СХЕМА НАЧАЛА И ПРИКРЕПЛЕНИЯ", color = Color(0xFF5B4A3A), style = MaterialTheme.typography.labelMedium)
+        rows.forEach { r ->
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(r.part, color = Color(0xFFA4472A), style = MaterialTheme.typography.titleSmall)
+                Text("Начало", color = Color(0xFF7A6A5A), style = MaterialTheme.typography.labelSmall)
+                Text(r.origin, color = Color(0xFF2B2420), style = MaterialTheme.typography.bodyMedium)
+                Text("↓ Прикрепление", color = Color(0xFF7A6A5A), style = MaterialTheme.typography.labelSmall)
+                Text(r.insertion, color = Color(0xFF2B2420), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        Text("Условная схема связей: не показывает форму, масштаб и положение мышцы.", color = Color(0xFF7A6A5A), style = MaterialTheme.typography.bodySmall)
+    }
+}
 
 @Composable
 private fun Legend(color: Color, text: String) {
