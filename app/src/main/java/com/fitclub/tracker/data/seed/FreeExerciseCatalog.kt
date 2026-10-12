@@ -7,7 +7,7 @@ import com.fitclub.tracker.data.model.*
 data class ExerciseMedia(val sourceId: String, val images: List<String>, val category: String, val videoUrl: String?, val photoNote: String? = null)
 
 object FreeExerciseCatalog {
-    val all: List<ExerciseEntity> by lazy { groupCHEST() + groupBACK() + groupSHOULDERS() + groupBICEPS() + groupTRICEPS() + groupFOREARMS() + groupQUADS() + groupHAMSTRINGS() + groupGLUTES() + groupCALVES() + groupCORE() }
+    val all: List<ExerciseEntity> by lazy { groupCHEST() + groupBACK() + groupSHOULDERS() + groupBICEPS() + groupTRICEPS() + groupFOREARMS() + groupQUADS() + groupHAMSTRINGS() + groupGLUTES() + groupCALVES() + groupCORE() + ExpandedExerciseCatalog.all }
     val media: Map<String, ExerciseMedia> by lazy { mapOf(
         "bench" to ExerciseMedia("Barbell_Bench_Press_-_Medium_Grip", listOf("free_exercise_db/Barbell_Bench_Press_-_Medium_Grip/0.jpg", "free_exercise_db/Barbell_Bench_Press_-_Medium_Grip/1.jpg"), "Силовое", "https://www.youtube.com/watch?v=6zWoAllRufg", null),
         "dbbench" to ExerciseMedia("Dumbbell_Bench_Press", listOf("free_exercise_db/Dumbbell_Bench_Press/0.jpg", "free_exercise_db/Dumbbell_Bench_Press/1.jpg"), "Силовое", "https://www.youtube.com/watch?v=1V3vpcaxRYQ", null),
@@ -235,7 +235,7 @@ object FreeExerciseCatalog {
         "revcurl" to ExerciseMedia("Reverse_Barbell_Curl", listOf("free_exercise_db/Reverse_Barbell_Curl/0.jpg", "free_exercise_db/Reverse_Barbell_Curl/1.jpg"), "Силовое", null, null),
         "bulgarian" to ExerciseMedia("Split_Squat_with_Dumbbells", listOf("free_exercise_db/Split_Squat_with_Dumbbells/0.jpg", "free_exercise_db/Split_Squat_with_Dumbbells/1.jpg"), "Силовое", "https://www.youtube.com/watch?v=sw4MzpC8l58", null),
         "abduction" to ExerciseMedia("Thigh_Abductor", listOf("free_exercise_db/Thigh_Abductor/0.jpg", "free_exercise_db/Thigh_Abductor/1.jpg"), "Силовое", null, null),
-    ) }
+    ) + ExpandedExerciseCatalog.media }
     private fun groupCHEST(): List<ExerciseEntity> = listOf(
         ExerciseEntity(
             id = "bench", name = "Жим штанги лёжа", group = MuscleGroup.CHEST,

@@ -56,13 +56,17 @@ fun ExercisePhoto(path: String?, description: String, modifier: Modifier = Modif
                 path?.let {
                     val options = BitmapFactory.Options().apply { inSampleSize = if (thumbnail) 2 else 1 }
                     if (thumbnail) {
-                        val preparedPath = "exercise_thumbnails/" + it.removePrefix("free_exercise_db/")
+                        val preparedPath = if (it.startsWith("expanded_exercise_db/"))
+                            "expanded_exercise_thumbnails/" + it.removePrefix("expanded_exercise_db/")
+                        else "exercise_thumbnails/" + it.removePrefix("free_exercise_db/")
                         val prepared = try {
                             context.assets.open(preparedPath).use { stream -> BitmapFactory.decodeStream(stream, null, options) }
                         } catch (_: IOException) { null }
                         if (prepared != null) {
                             val maskPath = "exercise_masks/" + it.removePrefix("free_exercise_db/").removeSuffix(".jpg") + ".png"
-                            val mask = context.assets.open(maskPath).use { stream -> BitmapFactory.decodeStream(stream) }
+                            val mask = try {
+                                context.assets.open(maskPath).use { stream -> BitmapFactory.decodeStream(stream) }
+                            } catch (_: IOException) { null }
                             val result = if (mask != null && mask.width / options.inSampleSize == prepared.width && mask.height / options.inSampleSize == prepared.height) frameExerciseThumbnail(prepared, mask) else trimPhotoPadding(prepared)
                             mask?.recycle()
                             if (result !== prepared) prepared.recycle()

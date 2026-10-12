@@ -22,11 +22,17 @@ import org.robolectric.annotation.Config
 @Config(sdk = [28], application = Application::class)
 class ExerciseCatalogTest {
     @Test fun curatedImportCoversAllGroupsWithOfflinePhotos() {
-        assertEquals(220, FreeExerciseCatalog.all.size)
-        assertEquals(220, FreeExerciseCatalog.all.map { it.id }.toSet().size)
+        assertEquals(229, FreeExerciseCatalog.all.size)
+        assertEquals(229, FreeExerciseCatalog.all.map { it.id }.toSet().size)
+        assertEquals(235, ExerciseSeed.all.size)
+        assertEquals(235, FreeExerciseCatalog.media.values.map { it.sourceId }.toSet().size)
+        assertEquals("Thigh_Abductor", FreeExerciseCatalog.media.getValue("abduction").sourceId)
+        assertFalse(FreeExerciseCatalog.media.containsKey("fedb_Thigh_Abductor"))
+        assertEquals(MuscleGroup.ADDUCTORS, FreeExerciseCatalog.all.first { it.id == "fedb_Thigh_Adductor" }.group)
         val context = ApplicationProvider.getApplicationContext<Context>()
         for (group in MuscleGroup.entries) {
-            assertEquals(group.title, 20, FreeExerciseCatalog.all.count { it.group == group })
+            assertTrue(group.title, FreeExerciseCatalog.all.count { it.group == group } >=
+                if (group == MuscleGroup.ADDUCTORS) 1 else 20)
         }
         assertEquals(ExerciseSeed.all.map { it.id }.toSet(), FreeExerciseCatalog.media.keys)
         for (e in ExerciseSeed.all) {
@@ -59,7 +65,8 @@ class ExerciseCatalogTest {
             val rows = repository.observeAll().first()
             assertEquals(ExerciseSeed.all.size, rows.size)
             assertEquals("Сохранённая техника", rows.first { it.id == "bench" }.technique)
-            for (group in MuscleGroup.entries) assertTrue(group.title, rows.count { it.group == group } >= 20)
+            for (group in MuscleGroup.entries) assertTrue(group.title, rows.count { it.group == group } >=
+                if (group == MuscleGroup.ADDUCTORS) 1 else 20)
             assertTrue(rows.any { it.id == "wheel" })
         } finally { db.close() }
     }

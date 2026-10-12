@@ -31,6 +31,7 @@ import com.fitclub.tracker.AppContainer
 import com.fitclub.tracker.data.db.ExerciseEntity
 import com.fitclub.tracker.data.model.*
 import com.fitclub.tracker.data.seed.FreeExerciseCatalog
+import com.fitclub.tracker.data.seed.ExpandedExerciseCatalog
 import com.fitclub.tracker.ui.components.*
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.theme.Fc
@@ -228,6 +229,7 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
     val all by vm.exercises.collectAsStateWithLifecycle()
     val profile by vm.settings.collectAsStateWithLifecycle()
     val e = all.firstOrNull { it.id == exerciseId }
+    val editorial = ExpandedExerciseCatalog.editorial[exerciseId]
     var tab by rememberSaveable { mutableIntStateOf(0) }
     if (e == null) {
         Column(Modifier.padding(20.dp)) { BackRow("Справочник", onBack); Text(if (all.isEmpty()) "Загрузка упражнения…" else "Упражнение не найдено", color = Fc.Muted) }
@@ -249,6 +251,16 @@ fun ExerciseDetailScreen(exerciseId: String, onBack: () -> Unit, onOpenExercise:
                 }
             }
             item { Segmented(listOf(0, 1, 2), tab, { tab = it }, { listOf("Техника", "Мышцы", "Замены")[it] }, selectedBg = Fc.Lime) }
+            if (tab != 2 && editorial != null) item {
+                FcCard {
+                    Text("Акцент нагрузки", color = Fc.Lime, style = MaterialTheme.typography.titleSmall)
+                    Text(editorial.focus, color = Fc.Text)
+                    Spacer(Modifier.height(8.dp))
+                    Text(editorial.muscles, color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(8.dp))
+                    Text(editorial.nuance, color = Fc.Text, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
             when (tab) {
                 0 -> {
                     item {

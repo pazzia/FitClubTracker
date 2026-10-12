@@ -35,14 +35,15 @@ enum class MuscleGroup(val title: String, val regions: List<Muscle>, val view: B
     HAMSTRINGS("Задняя поверхность бедра", listOf(Muscle.HAMS), BodyView.BACK),
     GLUTES("Ягодицы", listOf(Muscle.GLUTES), BodyView.BACK),
     CALVES("Икры", listOf(Muscle.CALVES), BodyView.BACK),
-    CORE("Пресс и кор", listOf(Muscle.ABS), BodyView.FRONT);
+    CORE("Пресс и кор", listOf(Muscle.ABS), BodyView.FRONT),
+    ADDUCTORS("Приводящие бедра", listOf(Muscle.ADDUCTORS), BodyView.FRONT);
 
     /** Тип движения для оценки баланса программы. */
     val pattern: MovePattern
         get() = when (this) {
             CHEST, SHOULDERS, TRICEPS -> MovePattern.PUSH
             BACK, BICEPS, FOREARMS -> MovePattern.PULL
-            QUADS, HAMSTRINGS, GLUTES, CALVES -> MovePattern.LEGS
+            QUADS, HAMSTRINGS, GLUTES, CALVES, ADDUCTORS -> MovePattern.LEGS
             CORE -> MovePattern.CORE
         }
 }

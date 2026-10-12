@@ -309,7 +309,7 @@
     {
       "path": "Thigh_Abductor/1.jpg",
       "source_sha256": "c438500671ec2dc6fa726086ec4a56903635ee65e37b3449174f18aaed1409c9",
-      "thumbnail_sha256": "67c3068e74da2448d4f03ffd9c454b35cbf66cdd1d0a0a018305cb1442331b4f"
+      "thumbnail_sha256": "dbecd0144cc83c3524c502805919fe7332de4be3606e14be376b3b1093d11266"
     },
     {
       "path": "Weighted_Crunches/1.jpg",
@@ -320,6 +320,11 @@
       "path": "Weighted_Pull_Ups/1.jpg",
       "source_sha256": "1c9ca5cf666a656d690f2e9793f5e4a6b87b913fe31bb48a8d8ccf6bbcf7bd83",
       "thumbnail_sha256": "6eb6c014e666fb71b89d0742497e7c9c5097065ecfbe91e1ab0219bdf41d300c"
+    },
+    {
+      "path": "Barbell_Incline_Bench_Press_-_Medium_Grip/1.jpg",
+      "source_sha256": "f803aa1a085cbeea3ab1d11865ab239c243f6f2ccb3e90aad91cce50f349909d",
+      "thumbnail_sha256": "2200d8aaa1e808a3e194e6401da94e147c970b6e0eea638403a376c74a045815"
     }
   ]
 }

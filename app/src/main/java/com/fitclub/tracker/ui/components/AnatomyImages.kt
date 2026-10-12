@@ -34,7 +34,7 @@ fun anatomyIndex(group: MuscleGroup): Int = when (group) {
     MuscleGroup.CHEST -> 0; MuscleGroup.SHOULDERS -> 1; MuscleGroup.BICEPS -> 2
     MuscleGroup.TRICEPS -> 3; MuscleGroup.FOREARMS -> 4; MuscleGroup.CORE -> 5
     MuscleGroup.BACK -> 7; MuscleGroup.GLUTES -> 8; MuscleGroup.QUADS -> 9
-    MuscleGroup.HAMSTRINGS -> 10; MuscleGroup.CALVES -> 11
+    MuscleGroup.HAMSTRINGS -> 10; MuscleGroup.CALVES -> 11; MuscleGroup.ADDUCTORS -> 9
 }
 
 /**
@@ -58,7 +58,9 @@ fun GroupImage(sex: Sex, group: MuscleGroup, modifier: Modifier = Modifier, scal
         val picture = atlas
         if (picture != null) Image(picture, contentDescription = "${group.title}, ${sex.title.lowercase()} атлас",
             contentScale = ContentScale.Crop, alignment = Alignment.Center, modifier = Modifier.fillMaxSize())
-        else {
+        else if (group == MuscleGroup.ADDUCTORS) {
+            androidx.compose.material3.Text(group.title, color = Fc.Text, modifier = Modifier.align(Alignment.Center))
+        } else {
             val bitmap = remember(resources, resource) { AnatomyCutouts.get(resources, resource).asImageBitmap() }
             Image(bitmap, contentDescription = "${group.title}, ${sex.title.lowercase()} атлас",
                 contentScale = scale, alignment = alignment, modifier = Modifier.fillMaxSize())
@@ -79,6 +81,7 @@ fun groupAtlasPicture(group: MuscleGroup): String = "atlas/" + when (group) {
     MuscleGroup.QUADS -> "fit-2613"
     MuscleGroup.HAMSTRINGS -> "fit-2638"
     MuscleGroup.CALVES -> "fit-2656"
+    MuscleGroup.ADDUCTORS -> "fit-2628"
 } + "_thumb.webp"
 
 @Composable
