@@ -12,10 +12,11 @@ class ProgramScorerTest {
     private val catalog = ExerciseSeed.all.associateBy { it.id }
 
     @Test
-    fun seedHasAtLeastTwentyUniqueExercisesPerGroup() {
+    fun seedPreservesMvpCoverageAndIncludesNewAdductorGroup() {
         assertEquals(ExerciseSeed.all.size, catalog.size)
         com.fitclub.tracker.data.model.MuscleGroup.entries.forEach { group ->
-            assertTrue(group.title, ExerciseSeed.all.count { it.group == group } >= 20)
+            val minimum = if (group == com.fitclub.tracker.data.model.MuscleGroup.ADDUCTORS) 1 else 20
+            assertTrue(group.title, ExerciseSeed.all.count { it.group == group } >= minimum)
         }
     }
 

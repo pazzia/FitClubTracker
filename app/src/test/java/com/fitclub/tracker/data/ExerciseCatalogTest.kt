@@ -25,7 +25,13 @@ class ExerciseCatalogTest {
         assertEquals(229, FreeExerciseCatalog.all.size)
         assertEquals(229, FreeExerciseCatalog.all.map { it.id }.toSet().size)
         assertEquals(235, ExerciseSeed.all.size)
-        assertEquals(235, FreeExerciseCatalog.media.values.map { it.sourceId }.toSet().size)
+        // Two pre-existing aliases preserve historical IDs; the expansion adds no source duplicates.
+        assertEquals(233, FreeExerciseCatalog.media.values.map { it.sourceId }.toSet().size)
+        val newSources = com.fitclub.tracker.data.seed.ExpandedExerciseCatalog.media.values.map { it.sourceId }
+        assertEquals(9, newSources.toSet().size)
+        val legacySources = FreeExerciseCatalog.media.filterKeys { it !in com.fitclub.tracker.data.seed.ExpandedExerciseCatalog.media }
+            .values.map { it.sourceId }.toSet()
+        assertTrue(newSources.none { it in legacySources })
         assertEquals("Thigh_Abductor", FreeExerciseCatalog.media.getValue("abduction").sourceId)
         assertFalse(FreeExerciseCatalog.media.containsKey("fedb_Thigh_Abductor"))
         assertEquals(MuscleGroup.ADDUCTORS, FreeExerciseCatalog.all.first { it.id == "fedb_Thigh_Adductor" }.group)
