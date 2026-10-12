@@ -1,0 +1,101 @@
+[
+  {
+    "path": "Hammer_Grip_Incline_DB_Bench_Press/1.jpg",
+    "appId": "fedb_Hammer_Grip_Incline_DB_Bench_Press",
+    "sourcePath": "expanded_exercise_db/Hammer_Grip_Incline_DB_Bench_Press/1.jpg",
+    "thumbnailPath": "expanded_exercise_thumbnails/Hammer_Grip_Incline_DB_Bench_Press/1.jpg",
+    "source_sha256": "0d48cf59477772384d72c22696dcb18d529804636e8c841599d1bbb7c83729af",
+    "thumbnail_sha256": "9d2a014740ccd3324ced6aeacf49129535a8046a2e8d595ae85317cf3e2f57b9",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Kneeling_Single-Arm_High_Pulley_Row/1.jpg",
+    "appId": "fedb_Kneeling_Single-Arm_High_Pulley_Row",
+    "sourcePath": "expanded_exercise_db/Kneeling_Single-Arm_High_Pulley_Row/1.jpg",
+    "thumbnailPath": "expanded_exercise_thumbnails/Kneeling_Single-Arm_High_Pulley_Row/1.jpg",
+    "source_sha256": "6dfbe89382a7853edc19b6dc22c7b65e4f06e90bbecdd6a89d4a730fed14d32d",
+    "thumbnail_sha256": "e3fe3ea983f28840ba613a8ada2c5fb88aac6148ba85b214bd76be07c37aef7f",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Barbell_Rear_Delt_Row/1.jpg",
+    "appId": "fedb_Barbell_Rear_Delt_Row",
+    "sourcePath": "expanded_exercise_db/Barbell_Rear_Delt_Row/1.jpg",
+    "thumbnailPath": "expanded_exercise_thumbnails/Barbell_Rear_Delt_Row/1.jpg",
+    "source_sha256": "07f20f7d67ebfc490b2fe06028e7fa08423a0c45b629b41b9a75d7031d2c8941",
+    "thumbnail_sha256": "c1b87ac964b9d82541187fd159ec02338c2ce87cfd4de9651983a92bfeb8dfd1",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Incline_Hammer_Curls/1.jpg",
+    "appId": "fedb_Incline_Hammer_Curls",
+    "sourcePath": "expanded_exercise_db/Incline_Hammer_Curls/1.jpg",
+    "thumbnailPath": "expanded_exercise_thumbnails/Incline_Hammer_Curls/1.jpg",
+    "source_sha256": "c03a88b7c3336b9895a18ecb61abe19f3d4f8b902e745d375fd6f9cfd3042134",
+    "thumbnail_sha256": "8468594f4ce810db044cda3877ada61f57bb9f28abe2e4cc8c5cfe1ef3e24b7c",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Incline_Barbell_Triceps_Extension/1.jpg",
+    "appId": "fedb_Incline_Barbell_Triceps_Extension",
+    "sourcePath": "expanded_exercise_db/Incline_Barbell_Triceps_Extension/1.jpg",
+    "thumbnailPath": "expanded_exercise_thumbnails/Incline_Barbell_Triceps_Extension/1.jpg",
+    "source_sha256": "478581f43fcf43d5bff0707d984761328d083e631d8790be2e7802456086f76b",
+    "thumbnail_sha256": "565d4bf185b91745151e29304b39368ad4c3b4201ac35426d5fef032753d7bc5",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Lying_Machine_Squat/1.jpg",
+    "appId": "fedb_Lying_Machine_Squat",
+    "sourcePath": "expanded_exercise_db/Lying_Machine_Squat/1.jpg",
+    "thumbnailPath": "expanded_exercise_thumbnails/Lying_Machine_Squat/1.jpg",
+    "source_sha256": "313593a2facbcac0d27270e86f450751d6c947f9c22d33d4b5b0b82d7911ae57",
+    "thumbnail_sha256": "9b6f7665086029c25ce1229cf1972dd258728d49eccbc262331c0c76e7dc0425",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Hanging_Bar_Good_Morning/1.jpg",
+    "appId": "fedb_Hanging_Bar_Good_Morning",
+    "sourcePath": "expanded_exercise_db/Hanging_Bar_Good_Morning/1.jpg",
+    "thumbnailPath": "expanded_exercise_thumbnails/Hanging_Bar_Good_Morning/1.jpg",
+    "source_sha256": "8c394fd626c6eb35df310b9625d22c8a2d4ca325ffa96a230a85908a5b07bac7",
+    "thumbnail_sha256": "9c8f716dccec40d6f6d505b9ed0fcdcd69bae1057e8920380182329c959e8c87",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Thigh_Abductor/1.jpg",
+    "appId": "abduction",
+    "sourcePath": "free_exercise_db/Thigh_Abductor/1.jpg",
+    "thumbnailPath": "exercise_thumbnails/Thigh_Abductor/1.jpg",
+    "source_sha256": "c438500671ec2dc6fa726086ec4a56903635ee65e37b3449174f18aaed1409c9",
+    "thumbnail_sha256": "dbecd0144cc83c3524c502805919fe7332de4be3606e14be376b3b1093d11266",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Thigh_Adductor/1.jpg",
+    "appId": "fedb_Thigh_Adductor",
+    "sourcePath": "expanded_exercise_db/Thigh_Adductor/1.jpg",
+    "thumbnailPath": "expanded_exercise_thumbnails/Thigh_Adductor/1.jpg",
+    "source_sha256": "40be513dd0d6fad0fbd734431e4e83f924b7385b90b53d9ec7eab8809d96df7a",
+    "thumbnail_sha256": "818390d29d41565b27581934dd4d943c7a36dba998089db4e94eba02f6c5c4db",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Cable_Reverse_Crunch/1.jpg",
+    "appId": "fedb_Cable_Reverse_Crunch",
+    "sourcePath": "expanded_exercise_db/Cable_Reverse_Crunch/1.jpg",
+    "thumbnailPath": "expanded_exercise_thumbnails/Cable_Reverse_Crunch/1.jpg",
+    "source_sha256": "ae72e00d23dac27299704b5410003c4c090cd9444d3db445d3a6ce7ee9271da4",
+    "thumbnail_sha256": "4ae8c841572e4f48bb6e96942a39578c6439714eda8735392bb381b88179a136",
+    "imageEdit": "light cool grey clothing; subtle subject/equipment outlines; final phase only"
+  },
+  {
+    "path": "Barbell_Incline_Bench_Press_-_Medium_Grip/1.jpg",
+    "source_sha256": "f803aa1a085cbeea3ab1d11865ab239c243f6f2ccb3e90aad91cce50f349909d",
+    "thumbnail_sha256": "2200d8aaa1e808a3e194e6401da94e147c970b6e0eea638403a376c74a045815",
+    "appId": "fedb_Barbell_Incline_Bench_Press_-_Medium_Grip",
+    "sourcePath": "free_exercise_db/Barbell_Incline_Bench_Press_-_Medium_Grip/1.jpg",
+    "thumbnailPath": "exercise_thumbnails/Barbell_Incline_Bench_Press_-_Medium_Grip/1.jpg",
+    "imageEdit": "ice blue-grey shirt and light grey shorts; thin subject/equipment outlines"
+  }
+]

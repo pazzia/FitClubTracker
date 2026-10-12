@@ -67,7 +67,7 @@ class PhotoPresentationTest {
         val context = ApplicationProvider.getApplicationContext<Application>()
         val manifest = org.json.JSONObject(context.assets.open("exercise_thumbnails/manifest.json").bufferedReader().use { it.readText() })
         val rows = manifest.getJSONArray("photos")
-        assertEquals(64, rows.length())
+        assertEquals(65, rows.length())
         val sourceHashes = context.assets.open("free_exercise_db/photos.sha256").bufferedReader().use { reader ->
             reader.readLines().filter(String::isNotBlank).associate { it.substringAfter(' ') to it.substringBefore(' ') }
         }
@@ -83,6 +83,27 @@ class PhotoPresentationTest {
             val edited = context.assets.open("exercise_thumbnails/$path").use { it.readBytes() }
             assertEquals(row.getString("thumbnail_sha256"), sha(edited))
             val bitmap = BitmapFactory.decodeByteArray(edited,0,edited.size)!!
+            assertTrue(bitmap.width >= 320 && bitmap.height >= 240)
+            bitmap.recycle()
+        }
+    }
+
+    @Test fun expandedThumbnailsHaveOriginalPhotoProvenanceAndDecodeOffline() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val rows = org.json.JSONArray(context.assets.open("expanded_exercise_db/thumbnail-manifest.json")
+            .bufferedReader().use { it.readText() })
+        assertEquals(11, rows.length())
+        val seen = mutableSetOf<String>()
+        fun sha(bytes: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(bytes)
+            .joinToString("") { "%02x".format(it) }
+        for (i in 0 until rows.length()) {
+            val row = rows.getJSONObject(i)
+            assertTrue(seen.add(row.getString("sourcePath")))
+            val original = context.assets.open(row.getString("sourcePath")).use { it.readBytes() }
+            val prepared = context.assets.open(row.getString("thumbnailPath")).use { it.readBytes() }
+            assertEquals(row.getString("source_sha256"), sha(original))
+            assertEquals(row.getString("thumbnail_sha256"), sha(prepared))
+            val bitmap = BitmapFactory.decodeByteArray(prepared, 0, prepared.size)!!
             assertTrue(bitmap.width >= 320 && bitmap.height >= 240)
             bitmap.recycle()
         }

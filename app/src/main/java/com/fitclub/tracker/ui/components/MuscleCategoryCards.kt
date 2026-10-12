@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 
 val AnatomyGroupOrder = listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS,
     MuscleGroup.FOREARMS, MuscleGroup.CORE, MuscleGroup.BACK, MuscleGroup.GLUTES, MuscleGroup.QUADS,
-    MuscleGroup.HAMSTRINGS, MuscleGroup.CALVES)
+    MuscleGroup.HAMSTRINGS, MuscleGroup.CALVES, MuscleGroup.ADDUCTORS)
 
 @Composable
 fun MuscleCategoryRow(groups: List<MuscleGroup>, sex: Sex, counts: Map<MuscleGroup, Int>, onGroup: (MuscleGroup) -> Unit) {

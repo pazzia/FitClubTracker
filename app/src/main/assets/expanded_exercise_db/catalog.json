@@ -1,0 +1,671 @@
+[
+  {
+    "sourceId": "Hammer_Grip_Incline_DB_Bench_Press",
+    "appId": "fedb_Hammer_Grip_Incline_DB_Bench_Press",
+    "source": {
+      "name": "Hammer Grip Incline DB Bench Press",
+      "force": "push",
+      "level": "beginner",
+      "mechanic": "compound",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "secondaryMuscles": [
+        "shoulders",
+        "triceps"
+      ],
+      "instructions": [
+        "Lie back on an incline bench with a dumbbell on each hand on top of your thighs. The palms of your hand will be facing each other.",
+        "By using your thighs to help you get the dumbbells up, clean the dumbbells one arm at a time so that you can hold them at shoulder width.",
+        "Once at shoulder width, keep the palms of your hands with a neutral grip (palms facing each other). Keep your elbows flared out with the upper arms in line with the shoulders (perpendicular to the torso) and the elbows bent creating a 90-degree angle between the upper arm and the forearm. This will be your starting position.",
+        "Now bring down the weights slowly to your side as you breathe in. Keep full control of the dumbbells at all times.",
+        "As you breathe out, push the dumbbells up using your pectoral muscles. Lock your arms in the contracted position, hold for a second and then start coming down slowly. Tip: It should take at least twice as long to go down than to come up.",
+        "Repeat the movement for the prescribed amount of repetitions.",
+        "When you are done, place the dumbbells back in your thighs and then on the floor. This is the safest manner to dispose of the dumbbells."
+      ],
+      "category": "strength",
+      "images": [
+        "Hammer_Grip_Incline_DB_Bench_Press/0.jpg",
+        "Hammer_Grip_Incline_DB_Bench_Press/1.jpg"
+      ],
+      "id": "Hammer_Grip_Incline_DB_Bench_Press"
+    },
+    "isNew": true,
+    "nameRu": "Жим гантелей на наклонной скамье нейтральным хватом",
+    "displayName": "Жим гантелей на наклонной скамье нейтральным хватом",
+    "categoryRu": "Силовое",
+    "equipmentRu": "Гантели",
+    "primaryDisplayRu": [
+      "Большая грудная · ключичная часть"
+    ],
+    "secondaryDisplayRu": [
+      "Передняя дельта",
+      "Трицепс"
+    ],
+    "techniqueRu": null,
+    "reviewStatus": "editorial_reviewed_preview",
+    "focusRu": "Верхняя, ключичная часть большой грудной",
+    "popularity": {
+      "value": null,
+      "status": "no_usage_data",
+      "labelRu": "Нет данных о частоте использования"
+    },
+    "imageReview": "edited_final_phase_visually_reviewed_for_mockup; initial_phase_original; not_pixel_identical",
+    "qualityFlags": [],
+    "displayGroup": "Грудь",
+    "nuanceRu": "Наклон около 30° может сместить акцент к верхней части груди. Большой угол увеличивает роль передней дельты. Нейтральный хват сам по себе не доказывает больший рост верхней груди.",
+    "techniqueStepsRu": [
+      "Поставьте спинку под умеренным углом, устойчиво упритесь стопами и удерживайте лопатки на скамье.",
+      "Держите ладони друг к другу. Опускайте гантели к бокам груди, сохраняя предплечья под весом.",
+      "Выжмите гантели вверх без удара друг о друга. Не поднимайте плечи и не теряйте опору."
+    ],
+    "levelRu": "Начальный",
+    "mechanicRu": "Базовое",
+    "evidence": [
+      {
+        "title": "Rodríguez-Ridao et al., 2020 · угол наклона и ЭМГ",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7579505/",
+        "kind": "EMG",
+        "scope": "Жим штанги, а не прямое сравнение нейтрального хвата гантелей; перенос на эту вариацию — биомеханическая интерпретация."
+      }
+    ],
+    "alternativesRu": [
+      "Жим гантелей на наклонной скамье",
+      "Жим штанги на наклонной скамье"
+    ],
+    "thumbnailRender": {
+      "atlas": "edited-preview-atlas.png",
+      "cellIndex": 0,
+      "override": null
+    }
+  },
+  {
+    "sourceId": "Kneeling_Single-Arm_High_Pulley_Row",
+    "appId": "fedb_Kneeling_Single-Arm_High_Pulley_Row",
+    "source": {
+      "name": "Kneeling Single-Arm High Pulley Row",
+      "force": "pull",
+      "level": "beginner",
+      "mechanic": "compound",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "lats"
+      ],
+      "secondaryMuscles": [
+        "biceps",
+        "middle back"
+      ],
+      "instructions": [
+        "Attach a single handle to a high pulley and make your weight selection.",
+        "Kneel in front of the cable tower, taking the cable with one hand with your arm extended. This will be your starting position.",
+        "Starting with your palm facing forward, pull the weight down to your torso by flexing the elbow and retract the shoulder blade. As you do so, rotate the wrist so that at the completion of the movement, your palm is now facing you.",
+        "After a brief pause, return to the starting position."
+      ],
+      "category": "strength",
+      "images": [
+        "Kneeling_Single-Arm_High_Pulley_Row/0.jpg",
+        "Kneeling_Single-Arm_High_Pulley_Row/1.jpg"
+      ],
+      "id": "Kneeling_Single-Arm_High_Pulley_Row"
+    },
+    "isNew": true,
+    "nameRu": "Тяга верхнего блока одной рукой с колена",
+    "displayName": "Тяга верхнего блока одной рукой с колена",
+    "categoryRu": "Силовое",
+    "equipmentRu": "Блок",
+    "primaryDisplayRu": [
+      "Широчайшая мышца"
+    ],
+    "secondaryDisplayRu": [
+      "Бицепс",
+      "Ромбовидные",
+      "Средняя и нижняя трапеция"
+    ],
+    "techniqueRu": null,
+    "reviewStatus": "editorial_reviewed_preview",
+    "focusRu": "Приведение и разгибание плеча · широчайшая",
+    "popularity": {
+      "value": null,
+      "status": "no_usage_data",
+      "labelRu": "Нет данных о частоте использования"
+    },
+    "imageReview": "edited_final_phase_visually_reviewed_for_mockup; initial_phase_original; not_pixel_identical",
+    "qualityFlags": [],
+    "displayGroup": "Широчайшие",
+    "nuanceRu": "Односторонняя тяга позволяет отдельно контролировать стороны. Направляйте локоть вниз к боку: превращение движения в высокую горизонтальную тягу увеличивает роль задней дельты и мышц лопатки.",
+    "techniqueStepsRu": [
+      "Закрепите одиночную рукоять на верхнем блоке. Встаньте на колено лицом к блоку и вытяните рабочую руку.",
+      "Сохраняя корпус устойчивым, тяните локоть вниз к боку. Дайте лопатке двигаться без пожимания плечом.",
+      "Плавно верните руку вверх. Выполните одинаковое число контролируемых повторений с каждой стороны."
+    ],
+    "levelRu": "Средний",
+    "mechanicRu": "Базовое",
+    "evidence": [],
+    "alternativesRu": [
+      "Тяга верхнего блока",
+      "Подтягивания"
+    ],
+    "thumbnailRender": {
+      "atlas": "edited-preview-atlas.png",
+      "cellIndex": 1,
+      "override": null
+    }
+  },
+  {
+    "sourceId": "Barbell_Rear_Delt_Row",
+    "appId": "fedb_Barbell_Rear_Delt_Row",
+    "source": {
+      "name": "Barbell Rear Delt Row",
+      "force": "pull",
+      "level": "beginner",
+      "mechanic": "compound",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "secondaryMuscles": [
+        "biceps",
+        "lats",
+        "middle back"
+      ],
+      "instructions": [
+        "Stand up straight while holding a barbell using a wide (higher than shoulder width) and overhand (palms facing your body) grip.",
+        "Bend knees slightly and bend over as you keep the natural arch of your back. Let the arms hang in front of you as they hold the bar. Once your torso is parallel to the floor, flare the elbows out and away from your body. Tip: Your torso and your arms should resemble the letter \"T\". Now you are ready to begin the exercise.",
+        "While keeping the upper arms perpendicular to the torso, pull the barbell up towards your upper chest as you squeeze the rear delts and you breathe out. Tip: When performed correctly, this exercise should resemble a bench press in reverse. Also, refrain from using your biceps to do the work. Focus on targeting the rear delts; the arms should only act as hooks.",
+        "Slowly go back to the initial position as you breathe in.",
+        "Repeat for the recommended amount of repetitions."
+      ],
+      "category": "strength",
+      "images": [
+        "Barbell_Rear_Delt_Row/0.jpg",
+        "Barbell_Rear_Delt_Row/1.jpg"
+      ],
+      "id": "Barbell_Rear_Delt_Row"
+    },
+    "isNew": true,
+    "nameRu": "Тяга штанги в наклоне на заднюю дельту",
+    "displayName": "Тяга штанги в наклоне на заднюю дельту",
+    "categoryRu": "Силовое",
+    "equipmentRu": "Штанга",
+    "primaryDisplayRu": [
+      "Задняя дельта"
+    ],
+    "secondaryDisplayRu": [
+      "Средняя трапеция",
+      "Ромбовидные",
+      "Сгибатели локтя",
+      "Разгибатели спины · стабилизация"
+    ],
+    "techniqueRu": null,
+    "reviewStatus": "editorial_reviewed_preview",
+    "focusRu": "Задняя дельта · горизонтальное отведение плеча",
+    "popularity": {
+      "value": null,
+      "status": "no_usage_data",
+      "labelRu": "Нет данных о частоте использования"
+    },
+    "imageReview": "edited_final_phase_visually_reviewed_for_mockup; initial_phase_original; not_pixel_identical",
+    "qualityFlags": [],
+    "displayGroup": "Плечи",
+    "nuanceRu": "Широкая траектория локтей и тяга к верхней части груди смещают акцент к задней дельте и мышцам лопатки. Локти у корпуса и тяга к поясу больше напоминают тягу на широчайшие.",
+    "techniqueStepsRu": [
+      "Возьмите штангу широким прямым хватом, слегка согните колени и наклонитесь от тазобедренных суставов.",
+      "Удерживайте спину устойчивой. Разведите локти и подтяните гриф к верхней части груди без рывка корпусом.",
+      "Плавно опустите штангу. Выбирайте вес, с которым положение корпуса и траектория локтей сохраняются."
+    ],
+    "levelRu": "Средний",
+    "mechanicRu": "Базовое",
+    "evidence": [
+      {
+        "title": "Recruitment of Shoulder Complex…, 2020 · варианты тяг",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/32940548/",
+        "kind": "EMG",
+        "scope": "Тяги на подвесных петлях; применение к штанге — интерпретация по направлению движения, а не прямой результат исследования штанги."
+      }
+    ],
+    "alternativesRu": [
+      "Разведения гантелей в наклоне",
+      "Обратная бабочка"
+    ],
+    "thumbnailRender": {
+      "atlas": "edited-preview-atlas.png",
+      "cellIndex": 2,
+      "override": null
+    }
+  },
+  {
+    "sourceId": "Incline_Hammer_Curls",
+    "appId": "fedb_Incline_Hammer_Curls",
+    "source": {
+      "name": "Incline Hammer Curls",
+      "force": "pull",
+      "level": "beginner",
+      "mechanic": "isolation",
+      "equipment": "dumbbell",
+      "primaryMuscles": [
+        "biceps"
+      ],
+      "secondaryMuscles": [],
+      "instructions": [
+        "Seat yourself on an incline bench with a dumbbell in each hand. You should pressed firmly against he back with your feet together. Allow the dumbbells to hang straight down at your side, holding them with a neutral grip. This will be your starting position.",
+        "Initiate the movement by flexing at the elbow, attempting to keep the upper arm stationary.",
+        "Continue to the top of the movement and pause, then slowly return to the start position."
+      ],
+      "category": "strength",
+      "images": [
+        "Incline_Hammer_Curls/0.jpg",
+        "Incline_Hammer_Curls/1.jpg"
+      ],
+      "id": "Incline_Hammer_Curls"
+    },
+    "isNew": true,
+    "nameRu": "Молотковые сгибания на наклонной скамье",
+    "displayName": "Молотковые сгибания на наклонной скамье",
+    "categoryRu": "Силовое",
+    "equipmentRu": "Гантели",
+    "primaryDisplayRu": [
+      "Плечевая мышца",
+      "Бицепс",
+      "Плечелучевая мышца"
+    ],
+    "secondaryDisplayRu": [
+      "Мышцы предплечья · удержание хвата"
+    ],
+    "techniqueRu": null,
+    "reviewStatus": "editorial_reviewed_preview",
+    "focusRu": "Сгибатели локтя · нейтральный хват",
+    "popularity": {
+      "value": null,
+      "status": "no_usage_data",
+      "labelRu": "Нет данных о частоте использования"
+    },
+    "imageReview": "edited_final_phase_visually_reviewed_for_mockup; initial_phase_original; not_pixel_identical",
+    "qualityFlags": [],
+    "displayGroup": "Бицепс и плечелучевая",
+    "nuanceRu": "Работают бицепс, плечевая и плечелучевая мышцы. Положение плеча за корпусом меняет длину двусуставного бицепса; это не изоляция одной его головки. В исходной базе вспомогательные мышцы не перечислены.",
+    "techniqueStepsRu": [
+      "Сядьте на наклонную скамью, прижмите спину и поставьте стопы устойчиво.",
+      "Опустите руки по бокам и держите гантели ладонями друг к другу.",
+      "Сгибайте локти без движения плеч вперёд, затем плавно опускайте вес. Сохраняйте нейтральное положение кистей."
+    ],
+    "levelRu": "Начальный",
+    "mechanicRu": "Изоляция",
+    "evidence": [],
+    "alternativesRu": [
+      "Молотковые сгибания стоя",
+      "Сгибания гантелей на наклонной скамье"
+    ],
+    "thumbnailRender": {
+      "atlas": "edited-preview-atlas.png",
+      "cellIndex": 3,
+      "override": null
+    }
+  },
+  {
+    "sourceId": "Incline_Barbell_Triceps_Extension",
+    "appId": "fedb_Incline_Barbell_Triceps_Extension",
+    "source": {
+      "name": "Incline Barbell Triceps Extension",
+      "force": "push",
+      "level": "intermediate",
+      "mechanic": "isolation",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Hold a barbell with an overhand grip (palms down) that is a little closer together than shoulder width.",
+        "Lie back on an incline bench set at any angle between 45-75-degrees.",
+        "Bring the bar overhead with your arms extended and elbows in. The arms should be in line with the torso above the head. This will be your starting position.",
+        "Now lower the bar in a semicircular motion behind your head until your forearms touch your biceps. Inhale as you perform this movement. Tip: Keep your upper arms stationary and close to your head at all times. Only the forearms should move.",
+        "Return to the starting position as you breathe out and you contract the triceps. Hold the contraction for a second.",
+        "Repeat for the recommended amount of repetitions."
+      ],
+      "category": "strength",
+      "images": [
+        "Incline_Barbell_Triceps_Extension/0.jpg",
+        "Incline_Barbell_Triceps_Extension/1.jpg"
+      ],
+      "id": "Incline_Barbell_Triceps_Extension"
+    },
+    "isNew": true,
+    "nameRu": "Французский жим штанги на наклонной скамье",
+    "displayName": "Французский жим штанги на наклонной скамье",
+    "categoryRu": "Силовое",
+    "equipmentRu": "Штанга",
+    "primaryDisplayRu": [
+      "Трицепс · все три головки"
+    ],
+    "secondaryDisplayRu": [
+      "Мышцы плечевого пояса · стабилизация"
+    ],
+    "techniqueRu": null,
+    "reviewStatus": "editorial_reviewed_preview",
+    "focusRu": "Длинная головка трицепса · работа в удлинённом положении",
+    "popularity": {
+      "value": null,
+      "status": "no_usage_data",
+      "labelRu": "Нет данных о частоте использования"
+    },
+    "imageReview": "edited_final_phase_visually_reviewed_for_mockup; initial_phase_original; not_pixel_identical",
+    "qualityFlags": [],
+    "displayGroup": "Трицепс",
+    "nuanceRu": "Поднятое плечо удлиняет длинную головку трицепса. Все три головки участвуют в разгибании локтя; длинная не изолируется. Данные о разгибаниях над головой не доказывают превосходства именно этой вариации.",
+    "techniqueStepsRu": [
+      "Установите спинку примерно под 45–75°. Лягте и удерживайте гриф узким удобным хватом.",
+      "Зафиксируйте положение плеч и согните локти, опуская гриф за голову в контролируемой амплитуде.",
+      "Разогните локти без рывка и движения плеч. Не превращайте упражнение в жим от груди."
+    ],
+    "levelRu": "Средний",
+    "mechanicRu": "Изоляция",
+    "evidence": [
+      {
+        "title": "Maeo et al., 2023 · положение плеча и рост трицепса",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/35819335/",
+        "kind": "training study",
+        "scope": "Исследовали разгибания на блоке над головой. Вывод о длине длинной головки применим к поднятому плечу; преимущество именно наклонного французского жима не измерялось."
+      }
+    ],
+    "alternativesRu": [
+      "Разгибание рук над головой на блоке",
+      "Французский жим лёжа"
+    ],
+    "thumbnailRender": {
+      "atlas": "edited-preview-atlas.png",
+      "cellIndex": 4,
+      "override": null
+    }
+  },
+  {
+    "sourceId": "Lying_Machine_Squat",
+    "appId": "fedb_Lying_Machine_Squat",
+    "source": {
+      "name": "Lying Machine Squat",
+      "force": "push",
+      "level": "intermediate",
+      "mechanic": "compound",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "quadriceps"
+      ],
+      "secondaryMuscles": [
+        "calves",
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Adjust the leg machine to a height that will allow you to get inside it with your knees bent and the thighs slightly below parallel.",
+        "Once you select the weight, position yourself inside the machine face up with the knees bent and thighs slightly below parallel to the platform. Make sure that the knees do not go past the toes. The angle created between the hamstrings and the calves should be one that is slightly less than 90 degrees (since your starting position requires you to start slightly below parallel). Your back and your head should be resting on the machine while your shoulders are pressed under the shoulder pads.",
+        "Place your hands by the handles and position your feet slightly pointing out at a shoulder width position. This will be your starting position.",
+        "While pressing with the balls of the feet as you breathe out, make your whole body erect as you squeeze the quads. Hold the contracted position for a second. Tip: Since you are starting below parallel, you can opt to use your hands to help you up by pressing on your thighs only on the first repetition.",
+        "Slowly squat down as you inhale but instead of going all the way down to the starting position, just stop once your thighs are parallel to the platform. The angle between your hamstrings and calves should be a 90-degree angle.",
+        "Repeat for the recommended amount of repetitions."
+      ],
+      "category": "strength",
+      "images": [
+        "Lying_Machine_Squat/0.jpg",
+        "Lying_Machine_Squat/1.jpg"
+      ],
+      "id": "Lying_Machine_Squat"
+    },
+    "isNew": true,
+    "nameRu": "Приседание лёжа в рычажном тренажёре",
+    "displayName": "Приседание лёжа в рычажном тренажёре",
+    "categoryRu": "Силовое",
+    "equipmentRu": "Тренажёр",
+    "primaryDisplayRu": [
+      "Квадрицепс"
+    ],
+    "secondaryDisplayRu": [
+      "Большая ягодичная",
+      "Большая приводящая · разгибание бедра"
+    ],
+    "techniqueRu": null,
+    "reviewStatus": "editorial_reviewed_preview",
+    "focusRu": "Разгибание колена · квадрицепс",
+    "popularity": {
+      "value": null,
+      "status": "no_usage_data",
+      "labelRu": "Нет данных о частоте использования"
+    },
+    "imageReview": "edited_final_phase_visually_reviewed_for_mockup; initial_phase_original; not_pixel_identical",
+    "qualityFlags": [],
+    "displayGroup": "Квадрицепс",
+    "nuanceRu": "Работают разгибатели колена и бедра. Глубина зависит от конструкции тренажёра и сохранения опоры таза. Универсальный запрет выхода коленей за носки из исходного текста не перенесён в карточку.",
+    "techniqueStepsRu": [
+      "Настройте плечевые упоры и страховочные ограничители. Прижмите спину и таз к опоре.",
+      "Поставьте стопы на платформу, возьмитесь за рукояти и разгибайте ноги, сохраняя опору всей стопой.",
+      "Согните колени и тазобедренные суставы в контролируемой амплитуде без отрыва таза. Не ударяйте коленями в разгибание."
+    ],
+    "levelRu": "Начальный",
+    "mechanicRu": "Базовое",
+    "evidence": [],
+    "alternativesRu": [
+      "Жим ногами",
+      "Гакк-приседание"
+    ],
+    "thumbnailRender": {
+      "atlas": "edited-preview-atlas.png",
+      "cellIndex": 5,
+      "override": null
+    }
+  },
+  {
+    "sourceId": "Hanging_Bar_Good_Morning",
+    "appId": "fedb_Hanging_Bar_Good_Morning",
+    "source": {
+      "name": "Hanging Bar Good Morning",
+      "force": "push",
+      "level": "intermediate",
+      "mechanic": "compound",
+      "equipment": "barbell",
+      "primaryMuscles": [
+        "hamstrings"
+      ],
+      "secondaryMuscles": [
+        "abdominals",
+        "glutes",
+        "lower back"
+      ],
+      "instructions": [
+        "Begin with a bar on a rack at about the same height as your stomach. Suspend the bar using chains or suspension straps.",
+        "Bend over underneath the bar and rack the bar across the rear of your shoulders as you would a power squat, not on top of your traps. At the proper height, you should be near parallel to the floor when bent over. Keep your back tight, shoulder blades pinched together, and your knees slightly bent. Keep your back arched and your cervical spine in proper alignment.",
+        "Begin the motion by extending through the hips with your glutes and hamstrings, and you are standing with the weight.",
+        "Slowly lower the weight back to the starting position, where it is supported by the chains."
+      ],
+      "category": "powerlifting",
+      "images": [
+        "Hanging_Bar_Good_Morning/0.jpg",
+        "Hanging_Bar_Good_Morning/1.jpg"
+      ],
+      "id": "Hanging_Bar_Good_Morning"
+    },
+    "isNew": true,
+    "nameRu": "Гуд-морнинг со штангой на цепях",
+    "displayName": "Гуд-морнинг со штангой на цепях",
+    "categoryRu": "Пауэрлифтинг",
+    "equipmentRu": "Штанга",
+    "primaryDisplayRu": [
+      "Задняя группа бедра · двусуставные мышцы",
+      "Большая ягодичная"
+    ],
+    "secondaryDisplayRu": [
+      "Разгибатели спины · стабилизация",
+      "Мышцы живота · стабилизация"
+    ],
+    "techniqueRu": null,
+    "reviewStatus": "editorial_reviewed_preview",
+    "focusRu": "Разгибание бедра · задняя поверхность бедра и ягодицы",
+    "popularity": {
+      "value": null,
+      "status": "no_usage_data",
+      "labelRu": "Нет данных о частоте использования"
+    },
+    "imageReview": "edited_final_phase_visually_reviewed_for_mockup; initial_phase_original; not_pixel_identical",
+    "qualityFlags": [],
+    "displayGroup": "Задняя поверхность бедра",
+    "nuanceRu": "Цепи задают нижнюю точку и снимают часть нагрузки, когда гриф на них опирается. Это технически сложная вариация для опытных. Разгибатели спины удерживают корпус; движение выполняется преимущественно в тазобедренных суставах.",
+    "techniqueStepsRu": [
+      "Закрепите гриф на цепях в силовой раме на высоте нижней точки наклона. Проверьте надёжность подвеса.",
+      "Подведите верхнюю часть спины под гриф и возьмитесь за него. Слегка согните колени, напрягите корпус.",
+      "Разгибая тазобедренные суставы, поднимитесь, затем медленно отведите таз назад до опоры грифа на цепи. Сохраняйте устойчивую спину."
+    ],
+    "levelRu": "Продвинутый",
+    "mechanicRu": "Базовое",
+    "evidence": [],
+    "alternativesRu": [
+      "Румынская тяга",
+      "Гуд-морнинг со штангой"
+    ],
+    "thumbnailRender": {
+      "atlas": "edited-preview-atlas.png",
+      "cellIndex": 6,
+      "override": "good-morning-edited.png"
+    }
+  },
+  {
+    "sourceId": "Thigh_Adductor",
+    "appId": "fedb_Thigh_Adductor",
+    "source": {
+      "name": "Thigh Adductor",
+      "force": "pull",
+      "level": "beginner",
+      "mechanic": "isolation",
+      "equipment": "machine",
+      "primaryMuscles": [
+        "adductors"
+      ],
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "To begin, sit down on the adductor machine and select a weight you are comfortable with. When your legs are positioned properly on the leg pads of the machine, grip the handles on each side. Your entire upper body (from the waist up) should be stationary. This is the starting position.",
+        "Slowly press against the machine with your legs to move them towards each other while exhaling.",
+        "Feel the contraction for a second and begin to move your legs back to the starting position while breathing in. Note: Remember to keep your upper body stationary and avoid fast jerking motions in order to prevent any injuries from occurring.",
+        "Repeat for the recommended amount of repetitions."
+      ],
+      "category": "strength",
+      "images": [
+        "Thigh_Adductor/0.jpg",
+        "Thigh_Adductor/1.jpg"
+      ],
+      "id": "Thigh_Adductor"
+    },
+    "isNew": true,
+    "nameRu": "Сведение бёдер в тренажёре",
+    "displayName": "Сведение бёдер в тренажёре",
+    "categoryRu": "Силовое",
+    "equipmentRu": "Тренажёр",
+    "primaryDisplayRu": [
+      "Большая, длинная и короткая приводящие",
+      "Тонкая и гребенчатая мышцы"
+    ],
+    "secondaryDisplayRu": [
+      "Мышцы корпуса · стабилизация"
+    ],
+    "techniqueRu": null,
+    "reviewStatus": "editorial_reviewed_preview",
+    "focusRu": "Приведение бедра · внутренняя поверхность",
+    "popularity": {
+      "value": null,
+      "status": "no_usage_data",
+      "labelRu": "Нет данных о частоте использования"
+    },
+    "imageReview": "edited_final_phase_visually_reviewed_for_mockup; initial_phase_original; not_pixel_identical",
+    "qualityFlags": [],
+    "displayGroup": "Приводящие бедра",
+    "nuanceRu": "Нагружаются приводящие мышцы, а не квадрицепс. Ширина стартового разведения определяется комфортной амплитудой. Упражнение укрепляет мышцы, но не обеспечивает локальное сжигание жира.",
+    "techniqueStepsRu": [
+      "Установите упоры по внутренней стороне бёдер. Выберите комфортную ширину разведения и возьмитесь за ручки.",
+      "Сведите бёдра без рывка, сохраняя неподвижное положение таза и корпуса.",
+      "Медленно разведите ноги обратно, контролируя растягивающую нагрузку."
+    ],
+    "levelRu": "Начальный",
+    "mechanicRu": "Изоляция",
+    "evidence": [],
+    "alternativesRu": [
+      "Приведение бедра на блоке",
+      "Приведение бедра с резинкой"
+    ],
+    "thumbnailRender": {
+      "atlas": "edited-preview-atlas.png",
+      "cellIndex": 8,
+      "override": null
+    }
+  },
+  {
+    "sourceId": "Cable_Reverse_Crunch",
+    "appId": "fedb_Cable_Reverse_Crunch",
+    "source": {
+      "name": "Cable Reverse Crunch",
+      "force": "pull",
+      "level": "beginner",
+      "mechanic": "isolation",
+      "equipment": "cable",
+      "primaryMuscles": [
+        "abdominals"
+      ],
+      "secondaryMuscles": [],
+      "instructions": [
+        "Connect an ankle strap attachment to a low pulley cable and position a mat on the floor in front of it.",
+        "Sit down with your feet toward the pulley and attach the cable to your ankles.",
+        "Lie down, elevate your legs and bend your knees at a 90-degree angle. Your legs and the cable should be aligned. If not, adjust the pulley up or down until they are.",
+        "With your hands behind your head, bring your knees inward to your torso and elevate your hips off the floor.",
+        "Pause for a moment and in a slow and controlled manner drop your hips and bring your legs back to the starting 90-degree angle. You should still have tension on your abs in the resting position.",
+        "Repeat the same movement to failure."
+      ],
+      "category": "strength",
+      "images": [
+        "Cable_Reverse_Crunch/0.jpg",
+        "Cable_Reverse_Crunch/1.jpg"
+      ],
+      "id": "Cable_Reverse_Crunch"
+    },
+    "isNew": true,
+    "nameRu": "Обратное скручивание с нижнего блока",
+    "displayName": "Обратное скручивание с нижнего блока",
+    "categoryRu": "Силовое",
+    "equipmentRu": "Блок",
+    "primaryDisplayRu": [
+      "Прямая мышца живота"
+    ],
+    "secondaryDisplayRu": [
+      "Косые мышцы · стабилизация",
+      "Сгибатели бедра"
+    ],
+    "techniqueRu": null,
+    "reviewStatus": "editorial_reviewed_preview",
+    "focusRu": "Прямая мышца живота · подкручивание таза",
+    "popularity": {
+      "value": null,
+      "status": "no_usage_data",
+      "labelRu": "Нет данных о частоте использования"
+    },
+    "imageReview": "edited_final_phase_visually_reviewed_for_mockup; initial_phase_original; not_pixel_identical",
+    "qualityFlags": [],
+    "displayGroup": "Пресс",
+    "nuanceRu": "Ключевой элемент — подкручивание таза с небольшим подъёмом крестца, а не только сгибание бедра. «Нижний пресс» не является отдельной мышцей. Сгибатели бедра также участвуют.",
+    "techniqueStepsRu": [
+      "Закрепите манжеты на голенях и подсоедините нижний блок. Лягте на коврик ногами к блоку и согните колени.",
+      "На выдохе приблизьте таз к рёбрам, слегка поднимая крестец без рывка и маха ногами.",
+      "Медленно опустите таз, удерживая контроль поясницы. Используйте вес, с которым сохраняется скручивание."
+    ],
+    "levelRu": "Средний",
+    "mechanicRu": "Изоляция",
+    "evidence": [],
+    "alternativesRu": [
+      "Обратные скручивания",
+      "Подъём коленей с подкручиванием таза"
+    ],
+    "thumbnailRender": {
+      "atlas": "edited-preview-atlas.png",
+      "cellIndex": 9,
+      "override": null
+    }
+  }
+]
