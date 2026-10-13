@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -273,51 +274,59 @@ fun WorkoutCountdown(
                         Text("1/$exerciseCount", color = Fc.Lime, style = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 13.sp))
                         Text(" упражнений", color = Fc.Muted, style = TextStyle(fontFamily = Sans, fontSize = 13.sp))
                     }
-                    GlowProgress(if (exerciseCount > 0) (.4f + .6f * progress) / exerciseCount else 0f, Modifier.fillMaxWidth(), height = 4.dp)
+                    // Workout progress, not the countdown: the first of N exercises.
+                    GlowProgress(if (exerciseCount > 0) 1f / exerciseCount else 0f, Modifier.fillMaxWidth(), height = 4.dp)
                 }
                 RoundIconButton(if (soundOn) "Выключить звук" else "Включить звук", if (soundOn) PackIcons.SOUND_ON else PackIcons.SOUND_OFF, onToggleSound)
             }
             BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
-                val ring = minOf(maxWidth - 40.dp, maxHeight * .52f, 320.dp)
-                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceEvenly) {
+                // Fixed geometry: the dial and the text block never move between 3, 2, 1 and GO.
+                val ring = minOf(maxWidth - 40.dp, maxHeight - 190.dp, 320.dp).coerceAtLeast(200.dp)
+                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(Modifier.weight(1f))
                     Box(Modifier.size(ring).graphicsLayer {
                         val kick = if (reduced) 0f else (if (go) .05f else .022f) * (1f - (local / 200f).coerceIn(0f, 1f))
                         scaleX = 1f + kick; scaleY = 1f + kick
                     }, contentAlignment = Alignment.Center) {
                         Canvas(Modifier.fillMaxSize()) { drawCountdownRing(progress, pulse, lime, dark) }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
+                        Box(Modifier.fillMaxSize().semantics { liveRegion = LiveRegionMode.Polite }, contentAlignment = Alignment.Center) {
                             Text(
                                 if (go) "GO" else "${3 - step}",
-                                color = Fc.Lime, textAlign = TextAlign.Center,
+                                color = Fc.Lime, textAlign = TextAlign.Center, maxLines = 1,
                                 style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold,
-                                    fontSize = if (go) 96.sp else 112.sp, lineHeight = 116.sp,
-                                    shadow = if (dark) Shadow(lime.copy(alpha = .35f + .4f * pulse), Offset.Zero, 28f + 40f * pulse) else null),
-                                modifier = Modifier.graphicsLayer { scaleX = numberScale; scaleY = numberScale; alpha = numberAlpha }
+                                    fontSize = if (go) 92.sp else 108.sp, lineHeight = 112.sp),
+                                modifier = Modifier.offset(y = -ring * .05f)
+                                    .graphicsLayer { scaleX = numberScale; scaleY = numberScale; alpha = numberAlpha }
                             )
-                            Text(if (go) "НАЧИНАЕМ" else "ПРИГОТОВЬТЕСЬ", color = Fc.Text,
-                                style = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 2.2.sp))
+                            Text(if (go) "НАЧИНАЕМ" else "ПРИГОТОВЬТЕСЬ", color = Fc.Text, maxLines = 1,
+                                style = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 13.sp, letterSpacing = 1.8.sp),
+                                modifier = Modifier.offset(y = ring * .2f))
                         }
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Spacer(Modifier.height(28.dp))
+                    Column(Modifier.height(150.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("ПЕРВОЕ УПРАЖНЕНИЕ", color = Fc.Muted,
                             style = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, letterSpacing = 2.sp))
                         Text(exerciseName, color = Fc.Text, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis,
                             style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 44.sp, lineHeight = 48.sp))
-                        if (subtitle.isNotBlank()) Text(subtitle, color = Fc.Muted, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp), textAlign = TextAlign.Center)
+                        if (subtitle.isNotBlank()) Text(subtitle, color = Fc.Muted, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp),
+                            textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
+                    Spacer(Modifier.weight(1f))
                 }
             }
-            Column(Modifier.padding(bottom = 28.dp, top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.padding(bottom = 28.dp, top = 8.dp).height(60.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(Modifier.height(34.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (go) Text("Старт!", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
                     else {
                         Text("Старт через ", color = Fc.Text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium))
-                        Text("$left", color = Fc.Lime, style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 26.sp))
+                        Text("$left", color = Fc.Lime, style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 30.sp))
                         Text(" сек", color = Fc.Text, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium))
                     }
                 }
-                Text("Нажмите, чтобы начать сразу", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                // At GO the tap no longer changes anything, so the hint fades out (its space stays).
+                Text("Нажмите, чтобы начать сразу", color = Fc.Muted, style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.graphicsLayer { alpha = if (go) 0f else 1f })
             }
         }
     }
@@ -334,8 +343,16 @@ private fun DrawScope.drawCountdownRing(progress: Float, pulse: Float, lime: Col
     val sweep = 360f * progress
     val topLeft = Offset(center.x - radius, center.y - radius)
     val arcSize = Size(radius * 2, radius * 2)
+    if (dark) {
+        // Light behind the digit: a soft radial bloom that swells on GO.
+        drawCircle(Brush.radialGradient(listOf(lime.copy(alpha = .10f + .14f * pulse), Color.Transparent), center, radius * .62f), radius * .62f, center)
+    }
     if (progress > .004f) {
-        if (dark) drawArc(lime.copy(alpha = .22f + .25f * pulse), -90f, sweep, false, topLeft, arcSize, style = Stroke(stroke * 2.2f, cap = StrokeCap.Round))
+        // Glow of the arc: widening strokes that fade out (same radius as the track, so it stays concentric).
+        if (dark) for (k in 4 downTo 1) {
+            drawArc(lime.copy(alpha = (.07f + .05f * pulse) * (1f - k / 5f)), -90f, sweep, false, topLeft, arcSize,
+                style = Stroke(stroke * (1f + k * .45f), cap = StrokeCap.Round))
+        }
         drawArc(lime, -90f, sweep, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
     }
     val tickOuter = radius - stroke * 1.4f
@@ -409,26 +426,26 @@ fun WorkoutCompleteHeader(
         translationY = if (reduced) 0f else (1f - k) * dist * density
     }
     Column(Modifier.fillMaxWidth().testTag("complete-header"), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.size(260.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(224.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 val c = Offset(size.width / 2, size.height / 2)
                 val base = 62.dp.toPx()
                 val ringK = progressOf(t, timing.ringsAtMs, 900)
                 if (dark) drawCircle(Brush.radialGradient(listOf(lime.copy(alpha = .12f * ringK), Color.Transparent), c, size.minDimension / 2), size.minDimension / 2, c)
-                listOf(1.32f, 1.62f, 1.94f).forEachIndexed { i, k ->
+                listOf(1.28f, 1.52f, 1.76f).forEachIndexed { i, k ->
                     drawCircle(lime.copy(alpha = (.30f - i * .08f) * ringK), base * k, c, style = Stroke(1.5.dp.toPx()))
                 }
                 if (!reduced) listOf(0, 150, 300).forEach { d ->
                     val p = progressOf(t, timing.ringsAtMs + d, 1200)
                     if (p > 0f && p < 1f) {
                         val s = .65f + .7f * easeOutCubic(p)
-                        drawCircle(lime.copy(alpha = .45f * (1f - p)), base * 1.45f * s, c, style = Stroke(2.dp.toPx()))
+                        drawCircle(lime.copy(alpha = .45f * (1f - p)), base * 1.3f * s, c, style = Stroke(2.dp.toPx()))
                     }
                 }
                 if (!reduced && dark && t < 1500) for (i in 0 until 14) {
                     val a = i * (2 * PI / 14).toFloat() + (i % 2) * .2f
                     val k = easeOutCubic(progressOf(t, 60 + (i % 3) * 40, 1200))
-                    val dist = base * 1.1f + k * (base * 1.1f + (i % 4) * 10.dp.toPx())
+                    val dist = base * 1.1f + k * (base * .7f + (i % 4) * 8.dp.toPx())
                     val p0 = Offset(c.x + cos(a) * dist, c.y + sin(a) * dist)
                     val len = (10f * (1f - k) + 3f).dp.toPx()
                     val p1 = Offset(p0.x + cos(a) * len, p0.y + sin(a) * len)

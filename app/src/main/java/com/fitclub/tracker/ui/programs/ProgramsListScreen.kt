@@ -438,7 +438,7 @@ private fun GestureHint() {
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         LineIcon("M19 12H5M11 6l-6 6 6 6", Fc.Muted, Modifier.size(20.dp))
-        Text("Смахните программу влево, чтобы удалить одну. Удерживайте — чтобы выбрать несколько.",
+        Text("Смахните программу влево, чтобы удалить одну. Удерживайте, чтобы выбрать несколько.",
             color = Fc.Muted, fontSize = 13.sp, lineHeight = 18.sp)
     }
 }

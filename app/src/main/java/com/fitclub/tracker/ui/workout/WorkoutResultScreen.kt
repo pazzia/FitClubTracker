@@ -151,7 +151,10 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
                 )
             }
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Actions appear once the completion animation has played (WORKOUT_COMPLETE_ANIMATION_FINISHED).
+                val actionsAlpha by androidx.compose.animation.core.animateFloatAsState(if (actionsReady) 1f else 0f,
+                    androidx.compose.animation.core.tween(com.fitclub.tracker.ui.theme.FcMotion.MEDIUM_MS), label = "result-actions")
+                Column(Modifier.graphicsLayer { alpha = actionsAlpha }, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     PillButton("Смотреть прогресс", onProgress, Modifier.testTag("result-progress"), icon = PackIcons.BARS, enabled = actionsReady)
                     PillButton("На главную", onClose, Modifier.testTag("result-home"), kind = PillKind.SECONDARY, icon = PackIcons.HOME, enabled = actionsReady, height = 52.dp)
                 }
@@ -170,7 +173,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
             StatRow(listOf(
                 StatItem(if (editing) minutes else log.durationMin.toString(), "минут", PackIcons.STOPWATCH),
                 StatItem((if (editing) editUnits else units).number((if (editing) editUnits else units).fromKg(volume.toFloat())), "${(if (editing) editUnits else units).label} объём", PackIcons.PLATES),
-                StatItem("$count", "подходов", PackIcons.DUMBBELL)
+                StatItem("$count", com.fitclub.tracker.ui.programs.pluralRu(count, "подход", "подхода", "подходов"), PackIcons.DUMBBELL)
             ))
         }
         }
@@ -189,7 +192,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
         item {
             FcCard(Modifier.fillMaxWidth()) {
                 Text("Общий тоннаж: ${(if (editing) editUnits else units).format(volume.toFloat())}", color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
-                Text("$count подходов · ${if (editing) minutes else log.durationMin.toString()} мин", color = Fc.Muted)
+                Text("$count ${com.fitclub.tracker.ui.programs.pluralRu(count, "подход", "подхода", "подходов")} · ${if (editing) minutes else log.durationMin.toString()} мин", color = Fc.Muted)
                 if (editing) OutlinedTextField(minutes, { minutes = it.filter(Char::isDigit) }, label = { Text("Длительность, мин") }, modifier = Modifier.fillMaxWidth())
             }
         }
@@ -237,7 +240,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
                                     ?: if (timed) "Первый результат на время в истории" else "Первый результат с повторениями в истории", color = Fc.Muted)
                             }
                         }
-                        Text("Время упражнения: ${seconds / 60} мин ${seconds % 60} сек", color = Fc.Muted)
+                        if (seconds > 0) Text("Время упражнения: ${seconds / 60} мин ${seconds % 60} сек", color = Fc.Muted)
                     }
                 }
             }
@@ -284,7 +287,7 @@ private fun ExerciseResultSheet(log: WorkoutLog, id: String, position: Int, exer
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val done = sets.filter { it.done }
-            listOf("${done.size}" to "подходов",
+            listOf("${done.size}" to com.fitclub.tracker.ui.programs.pluralRu(done.size, "подход", "подхода", "подходов"),
                 (if (timed) "${done.sumOf { it.reps }} с" else units.number(units.fromKg(done.filter { !it.assisted && !it.isTimed }.sumOf { com.fitclub.tracker.domain.setVolumeKg(it).toDouble() }.toFloat()))) to (if (timed) "под нагрузкой" else "${units.label} объём"),
                 "${seconds / 60}:${"%02d".format(seconds % 60)}" to "время").forEach { (value, label) ->
                 Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(Fc.Surface2).padding(12.dp)) {

@@ -161,7 +161,7 @@ fun ProgressScreen(onProfile: () -> Unit, onMeasure: (String?) -> Unit = {}, ini
                     Text(s.exercises[id]?.name ?: id, color = Fc.Text, style = MaterialTheme.typography.titleSmall)
                     Text(if (timed) "На время · секунды" else "С повторениями · ${units.label}", color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
                     Text(if (timed) "Самое долгое удержание: ${best.reps} сек." else "Самый тяжёлый подход: ${units.format(best.weightKg)} × ${best.reps}", color = Fc.Text, modifier = Modifier.padding(top = 6.dp))
-                    Text("${sets.size} подходов за выбранный период", color = Fc.Muted)
+                    Text("${sets.size} ${com.fitclub.tracker.ui.programs.pluralRu(sets.size, "подход", "подхода", "подходов")} за выбранный период", color = Fc.Muted)
                     TextButton(onClick = { selectedExercise = id }) { Text("История упражнения", color = Fc.Lime) }
                     if (selectedExercise == id && !timed) StrengthChart(com.fitclub.tracker.domain.weeklyOneRepMax(s.workouts, id, today, weeksBack), units)
                     if (selectedExercise == id) periodWorkouts.sortedBy { it.session.startedAt }.forEach { log ->
@@ -270,25 +270,29 @@ fun ProfileScreen(onBack: (() -> Unit)?, onMeasure: (String?) -> Unit = {}, onBo
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 // Avatar with the lime ring of the new design; initials stand in for a photo.
+                val named = st.name.isNotBlank() && st.name != "Мой профиль"
                 Box(Modifier.size(76.dp).border(2.dp, Fc.Lime, CircleShape).padding(5.dp).background(Fc.Surface2, CircleShape), contentAlignment = Alignment.Center) {
-                    Text(st.name.split(" ").filter { it.isNotBlank() }.take(2).map { it.first().uppercaseChar() }.joinToString("").ifBlank { "Я" },
+                    if (named) Text(st.name.split(" ").filter { it.isNotBlank() }.take(2).map { it.first().uppercaseChar() }.joinToString(""),
                         style = MaterialTheme.typography.headlineMedium, color = Fc.Text)
+                    else LineIcon(PackIcons.USER, Fc.Text, Modifier.size(30.dp), strokeWidth = 1.8f)
                 }
                 Column(Modifier.weight(1f)) {
-                    ScreenTitle(st.name)
-                    Text("${if (st.level == 1) "Новичок" else if (st.level == 2) "Продвинутый" else "Профи"}", color = Fc.Muted)
+                    ScreenTitle(if (named) st.name else "Профиль")
+                    Text(levelTitle(st.level), color = Fc.Muted)
                 }
             }
         }
         item {
             FcCard {
                 Text("О себе", style = MaterialTheme.typography.titleMedium, color = Fc.Text)
-                OutlinedTextField(st.name, { vm.update(st.copy(name = it)) }, label = { Text("Имя") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                // The stored default «Мой профиль» shows as an empty field with a hint.
+                OutlinedTextField(if (st.name == "Мой профиль") "" else st.name, { vm.update(st.copy(name = it)) }, label = { Text("Имя") },
+                    placeholder = { Text("Как вас зовут") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Text("Пол", color = Fc.Text, modifier = Modifier.padding(top = 10.dp)); Segmented(Sex.entries, st.sex, { vm.update(st.copy(sex = it)) }, { it.title })
                 Text("Уровень подготовки", color = Fc.Text, modifier = Modifier.padding(top = 12.dp))
                 // The level decides how much the set card shows; the switch in Settings can override it.
-                Segmented(listOf(1,2,3), st.level, { vm.update(st.copy(level = it, advancedSets = it > 1)) }, { if (it==1) "Новичок" else if (it==2) "Продв." else "Профи" })
-                Text("Пол выбирает фигуру в замерах и в справочнике. Новичку тренировка показывает только вес, повторы и «Готово».", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+                Segmented(listOf(1,2,3), st.level, { vm.update(st.copy(level = it, advancedSets = it > 1)) }, { levelTitle(it) })
+                Text("Пол выбирает фигуру в замерах и в справочнике. Новичку тренировка показывает только вес, повторы и «Подход выполнен».", color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
             }
         }
         item {
@@ -309,13 +313,9 @@ fun ProfileScreen(onBack: (() -> Unit)?, onMeasure: (String?) -> Unit = {}, onBo
         item {
             FcCard {
                 Text("Оформление", style = MaterialTheme.typography.titleMedium, color = Fc.Text)
-                listOf("Светлая", "Темная").forEach { name ->
-                    Row(Modifier.fillMaxWidth().clickable { vm.update(st.copy(theme = name)) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(14.dp).background(if (name == "Светлая") Color(0xFFF3F4EF) else Color(0xFF0A0C0D), CircleShape).border(1.dp, Fc.Line, CircleShape))
-                        Text(name, color = Fc.Text, modifier = Modifier.padding(start = 10.dp).weight(1f))
-                        if (st.theme == name) Icon(Icons.Filled.Check, null, tint = Fc.Lime)
-                    }
-                }
+                // One control for the theme; the stored values stay «Светлая» / «Темная».
+                Segmented(listOf("Темная", "Светлая"), st.theme, { vm.update(st.copy(theme = it)) }, { if (it == "Темная") "Тёмная" else it },
+                    modifier = Modifier.padding(top = 8.dp), selectedBg = Fc.Lime)
             }
         }
         item {
@@ -333,7 +333,7 @@ fun ProfileScreen(onBack: (() -> Unit)?, onMeasure: (String?) -> Unit = {}, onBo
                 ) {
                     Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text("Подробный ввод подходов", color = Fc.Text)
-                        Text("Разминка, дропсеты, суперсеты, RIR и помощь в подходе. Выключите, чтобы в тренировке остались только вес, повторы и «Готово». Техники из программы показываются всегда.",
+                        Text("Разминка, дропсеты, суперсеты, RIR и помощь в подходе. Выключите, чтобы в тренировке остались только вес, повторы и «Подход выполнен». Техники из программы показываются всегда.",
                             color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                     }
                     Switch(checked = st.advancedSets, onCheckedChange = null,
@@ -427,3 +427,6 @@ private fun SettingSwitch(title: String, note: String, value: Boolean, modifier:
             colors = SwitchDefaults.colors(checkedTrackColor = Fc.Lime, checkedThumbColor = Fc.OnAccent))
     }
 }
+
+/** Level names used in the profile header and the level picker. */
+internal fun levelTitle(level: Int) = when (level) { 1 -> "Новичок"; 2 -> "Опытный"; else -> "Профи" }

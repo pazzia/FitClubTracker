@@ -187,7 +187,7 @@ internal fun ProgramExercisePicker(catalog: List<ExerciseEntity>, already: Set<S
                 if (hidden > 0 && !reviewing) Text("Вне текущего поиска: $hidden", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                 Button(onClick = { onPick(validSelected) }, enabled = validSelected.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("picker-add")) {
-                    Text("Добавить ${validSelected.size} упражнений")
+                    Text("Добавить ${validSelected.size} ${com.fitclub.tracker.ui.programs.pluralRu(validSelected.size, "упражнение", "упражнения", "упражнений")}")
                 }
             }
         }

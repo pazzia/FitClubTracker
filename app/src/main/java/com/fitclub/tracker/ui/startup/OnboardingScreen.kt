@@ -145,7 +145,11 @@ private fun <T> Choices(options: List<Pair<T, String>>, selected: T, notes: Map<
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(title, color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(title, color = Fc.Text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    // The choice is marked by a check too, not by colour alone.
+                    if (on) com.fitclub.tracker.ui.components.LineIcon(com.fitclub.tracker.ui.components.LineIcons.CHECK, Fc.Lime, Modifier.size(20.dp), strokeWidth = 2.6f)
+                }
                 notes[value]?.let { Text(it, color = Fc.Muted, style = MaterialTheme.typography.bodySmall) }
             }
         }

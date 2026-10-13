@@ -172,7 +172,7 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                ActionButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу →", onChooseProgram)
+                ActionButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу →", onChooseProgram, outlined = true)
                 val program = programs.firstOrNull { it.id == draft.programId }
                 if (program != null && program.days.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
@@ -181,7 +181,7 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
                 }
             }
         }
-        item { Text("${draft.items.size} упражнений · ${draft.items.sumOf { it.sets }} подходов", color = Fc.Muted) }
+        item { Text("${draft.items.size} ${com.fitclub.tracker.ui.programs.pluralRu(draft.items.size, "упражнение", "упражнения", "упражнений")} · ${draft.items.sumOf { it.sets }} ${com.fitclub.tracker.ui.programs.pluralRu(draft.items.sumOf { it.sets }, "подход", "подхода", "подходов")}", color = Fc.Muted) }
         itemsIndexed(draft.items, key = { index, item -> "${item.exerciseId}-$index" }) { index, item ->
             val exercise = catalog[item.exerciseId]
             ItemCard(exercise?.name ?: item.exerciseId, exercise?.equipment.orEmpty(), item, Goal.GENERAL,

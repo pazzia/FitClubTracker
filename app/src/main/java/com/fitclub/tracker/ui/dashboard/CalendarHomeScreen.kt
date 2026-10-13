@@ -72,7 +72,8 @@ fun scheduleTime(minute: Int) = "%02d:%02d".format(Locale.US, minute / 60, minut
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfile: () -> Unit,
-    onEditPlan: (Long, Long) -> Unit = { date, _ -> onPlan(date) }, onResult: (Long) -> Unit = {}, initialEpoch: Long? = null) {
+    onEditPlan: (Long, Long) -> Unit = { date, _ -> onPlan(date) }, onResult: (Long) -> Unit = {}, initialEpoch: Long? = null,
+    onBack: (() -> Unit)? = null) {
     val vm = appViewModel { CalendarViewModel(it) }
     val state by vm.state.collectAsStateWithLifecycle()
     val units = LocalWeightUnits.current
@@ -98,6 +99,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
     val doneThisMonth = state.workouts.filter { it.completedSets > 0 }.count { YearMonth.from(LocalDate.ofEpochDay(it.session.epochDay)) == month }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (onBack != null) item { BackRow("Сегодня", onBack) }
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -152,7 +154,8 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                         }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("● План", color = Fc.Lime, style = MaterialTheme.typography.labelSmall)
+                    // Legend: a ring marks a plan, a filled dot a finished workout.
+                    Text("○ План", color = Fc.Lime, style = MaterialTheme.typography.labelSmall)
                     Text("● Выполнено: $doneThisMonth", color = Fc.Lime, style = MaterialTheme.typography.labelSmall)
                     TextButton(onClick = { monthValue = YearMonth.now().toString(); selectedEpoch = today.toEpochDay() }, contentPadding = PaddingValues(0.dp)) { Text("Сегодня", color = Fc.Muted, style = MaterialTheme.typography.labelSmall) }
                 }
@@ -183,7 +186,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                         Text(scheduleTime(plan.startMinute), color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
                     }
                     Text(plan.title, style = MaterialTheme.typography.headlineSmall, color = Fc.Text, modifier = Modifier.padding(top = 12.dp))
-                    Text("${plan.items.size} упражнений · ${plan.items.sumOf { it.sets }} подходов", color = Fc.Muted, modifier = Modifier.padding(vertical = 8.dp))
+                    Text("${plan.items.size} ${com.fitclub.tracker.ui.programs.pluralRu(plan.items.size, "упражнение", "упражнения", "упражнений")} · ${plan.items.sumOf { it.sets }} ${com.fitclub.tracker.ui.programs.pluralRu(plan.items.sumOf { it.sets }, "подход", "подхода", "подходов")}", color = Fc.Muted, modifier = Modifier.padding(vertical = 8.dp))
                     plan.items.take(3).forEach { item ->
                         Text(state.catalog[item.exerciseId]?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 3.dp))
                     }
@@ -202,7 +205,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                     Pill(log.status, Fc.LimeSoft, Fc.Lime)
                     Text(log.session.title.ifBlank { "Тренировка" },
                         color = Fc.Text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-                    Text("${log.completedSets} подходов · ${log.durationMin} мин", color = Fc.Muted, modifier = Modifier.padding(vertical = 8.dp))
+                    Text("${log.completedSets} ${com.fitclub.tracker.ui.programs.pluralRu(log.completedSets, "подход", "подхода", "подходов")} · ${log.durationMin} мин", color = Fc.Muted, modifier = Modifier.padding(vertical = 8.dp))
                     Text("Общий тоннаж: ${units.format(log.volumeKg)}", color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(12.dp))
                     ActionButton("Посмотреть результат", { onResult(log.session.id) }, outlined = true)
@@ -214,7 +217,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
         if (logs.isNotEmpty()) item {
             FcCard {
                 Text("Результат за этот день", color = Fc.Text, style = MaterialTheme.typography.titleMedium)
-                Text("${logs.sumOf { it.completedSets }} подходов · ${logs.sumOf { it.durationMin }} мин", color = Fc.Muted)
+                Text("${logs.sumOf { it.completedSets }} ${com.fitclub.tracker.ui.programs.pluralRu(logs.sumOf { it.completedSets }, "подход", "подхода", "подходов")} · ${logs.sumOf { it.durationMin }} мин", color = Fc.Muted)
                 Text("Общий тоннаж: ${units.format(logs.sumOf { it.volumeKg.toDouble() }.toFloat())}", color = Fc.Lime)
             }
         }

@@ -27,6 +27,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -407,7 +408,7 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
     if (plan == null) {
         Box(Modifier.fillMaxSize().background(Fc.Bg).padding(24.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("В этом дне пока нет упражнений", color = Fc.Text)
+                Text("В этот день пока нет упражнений", color = Fc.Text)
                 TextButton(onClick = onClose) { Text("Вернуться к плану", color = Fc.Lime) }
             }
         }
@@ -492,7 +493,7 @@ private fun TopBar(elapsed: Long, onPlan: () -> Unit, onFinish: () -> Unit, fini
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { NumberText(time(elapsed), 22.sp) }
         OutlinedButton(onClick = onFinish, enabled = !finishing, border = BorderStroke(1.dp, Fc.Line),
             modifier = Modifier.heightIn(min = 44.dp).testTag("finish-workout"),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) { Text("Завершить", style = MaterialTheme.typography.labelLarge) }
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) { Text("Закончить", style = MaterialTheme.typography.labelLarge) }
     }
 }
 
@@ -636,7 +637,7 @@ private fun ExerciseMode(vm: WorkoutViewModel, plan: ScheduledDraft, source: Wor
                     Column(Modifier.weight(1f)) {
                         Eyebrow("Упражнение ${index + 1} из ${plan.items.size}")
                         Text(exercise?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 2.dp))
-                        Text("${item.sets} × ${item.reps.label} · отдых ${restLabel(item.restSec)}", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                        Text("${item.sets} × ${item.reps.label}" + (if (item.restSec > 0) " · отдых ${restLabel(item.restSec)}" else ""), color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
@@ -719,7 +720,12 @@ private fun ExerciseMode(vm: WorkoutViewModel, plan: ScheduledDraft, source: Wor
             }
         }
         if (vm.error != null) Text(vm.error.orEmpty(), color = Fc.Danger, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
-        Column(Modifier.fillMaxWidth().background(Fc.Bg).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        val fadeBg = Fc.Bg
+        // A short fade above the actions, so the list does not end in a hard cut.
+        Column(Modifier.fillMaxWidth().drawBehind {
+            drawRect(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, fadeBg), startY = -24.dp.toPx(), endY = 0f),
+                topLeft = androidx.compose.ui.geometry.Offset(0f, -24.dp.toPx()), size = androidx.compose.ui.geometry.Size(size.width, 24.dp.toPx()))
+        }.background(Fc.Bg).padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (vm.rest > 0) RestBar(vm, onRest)
             if (!summary) {
                 val primary = current == -1
@@ -737,7 +743,7 @@ private fun ExerciseMode(vm: WorkoutViewModel, plan: ScheduledDraft, source: Wor
                 shape = PillShape,
                 colors = if (summary) ButtonDefaults.buttonColors(containerColor = Fc.Lime, contentColor = Fc.OnAccent)
                 else ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = Fc.Muted)) {
-                Text(if (lastItem) "Итог тренировки" else if (summary) "Следующее →" else "Пропустить →", style = MaterialTheme.typography.labelLarge)
+                Text(if (lastItem) "Итог тренировки" else if (summary) "Следующее →" else "Пропустить упражнение", style = MaterialTheme.typography.labelLarge)
             }
         }
     }
@@ -1204,7 +1210,7 @@ private fun RestOverlay(vm: WorkoutViewModel, plan: ScheduledDraft, source: Work
         }
         item?.let {
             Text(source.catalog[it.exerciseId]?.name ?: it.exerciseId, color = Fc.Muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
-            Text("выполнено ${rows.count { r -> r.done && !r.warmup }} из ${it.sets} подходов", color = Fc.Muted, style = MaterialTheme.typography.bodyMedium)
+            Text("выполнено подходов: ${rows.count { r -> r.done && !r.warmup }} из ${it.sets}", color = Fc.Muted, style = MaterialTheme.typography.bodyMedium)
         }
         Box(Modifier.padding(top = 24.dp).size(280.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {

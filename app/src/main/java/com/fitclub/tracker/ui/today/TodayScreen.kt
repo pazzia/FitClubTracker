@@ -197,8 +197,7 @@ fun TodayScreen(
                         onStart = { vm.quickStart(program, nextDay, onStart) }, onPlan = { onPlan(todayEpoch) })
                 }
                 s.loaded -> FcCard {
-                    Eyebrow("На сегодня тренировок нет")
-                    Text("Нет активной программы", style = MaterialTheme.typography.titleLarge, color = Fc.Text, modifier = Modifier.padding(top = 6.dp))
+                    Text("Нет активной программы", style = MaterialTheme.typography.headlineMedium, color = Fc.Text)
                     Text("Выберите программу — её дни будут чередоваться сами. Или соберите тренировку на сегодня вручную.",
                         color = Fc.Muted, modifier = Modifier.padding(top = 6.dp, bottom = 14.dp))
                     PrimaryButton("Выбрать программу", onPrograms)
@@ -213,7 +212,9 @@ fun TodayScreen(
             val goal = program?.freqPerWeek ?: 3
             StatRow(listOf(
                 StatItem("${weekStreak(s.workouts, today)} нед.", "серия", PackIcons.FLAME),
-                StatItem("${workoutsThisWeek(s.workouts, today)} / $goal", "за неделю", PackIcons.CALENDAR),
+                StatItem(if (program != null) "${workoutsThisWeek(s.workouts, today)} / $goal" else "${workoutsThisWeek(s.workouts, today)}",
+                    if (program != null) "за неделю" else pluralRu(workoutsThisWeek(s.workouts, today), "тренировка", "тренировки", "тренировок") + " за неделю",
+                    PackIcons.CALENDAR),
                 StatItem(compactVolume(volumeThisWeek(s.workouts, today), units), "объём", PackIcons.PLATES)
             ))
         }
@@ -327,35 +328,45 @@ private fun HeroCard(
                     Eyebrow(label, color = Fc.Lime, modifier = Modifier.weight(1f))
                     // A dark pill keeps «Изменить» readable over the photo.
                     TextButton(onClick = onEdit, colors = androidx.compose.material3.ButtonDefaults.textButtonColors(containerColor = Fc.Bg.copy(alpha = .72f)),
-                        contentPadding = PaddingValues(horizontal = 14.dp)) {
+                        contentPadding = PaddingValues(horizontal = 14.dp), modifier = Modifier.heightIn(min = 44.dp)) {
                         Text("Изменить", color = Fc.Text, style = MaterialTheme.typography.labelLarge)
                     }
                 }
-                Text(title, style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp, lineHeight = 36.sp), color = Fc.Text,
-                    modifier = Modifier.fillMaxWidth(if (photo != null) .62f else 1f), maxLines = 3, overflow = TextOverflow.Ellipsis)
-                if (week != null) Row(Modifier.padding(top = 12.dp).fillMaxWidth(.62f), verticalAlignment = Alignment.CenterVertically,
+                // «Фулбоди 3× · день A»: the program goes above, the day is the headline.
+                val parts = title.split(" · ", limit = 2)
+                val textWidth = if (photo != null) .58f else 1f
+                if (parts.size == 2) Text(parts[0], color = Fc.Muted, style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(textWidth))
+                Text((if (parts.size == 2) parts[1] else title).replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.displaySmall.copy(fontSize = 34.sp, lineHeight = 38.sp), color = Fc.Text,
+                    modifier = Modifier.fillMaxWidth(textWidth), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (week != null) Row(Modifier.padding(top = 12.dp).fillMaxWidth(if (photo != null) .58f else 1f), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     NumberText("${week.first}/${week.second}", 16.sp)
                     GlowProgress(week.first.toFloat() / week.second.coerceAtLeast(1), Modifier.weight(1f))
                 }
-                Text("${items.size} ${pluralRu(items.size, "упражнение", "упражнения", "упражнений")} · ${items.sumOf { it.sets }} ${pluralRu(items.sumOf { it.sets }, "подход", "подхода", "подходов")} · ≈ $minutes мин",
-                    color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp).fillMaxWidth(if (photo != null) .6f else 1f))
+                // Non-breaking spaces keep «12 подходов» and «≈ 27 мин» on one line.
+                Text("${items.size}\u00A0${pluralRu(items.size, "упражнение", "упражнения", "упражнений")} · ${items.sumOf { it.sets }}\u00A0${pluralRu(items.sumOf { it.sets }, "подход", "подхода", "подходов")} · ≈\u00A0$minutes\u00A0мин",
+                    color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp).fillMaxWidth(if (photo != null) .58f else 1f))
             }
         }
         Spacer(Modifier.height(14.dp))
+        // Plan on the right; the last result, when there is one, under the exercise name.
         items.take(3).forEach { item ->
             HorizontalDivider(color = Fc.Line2)
-            Row(Modifier.fillMaxWidth().heightIn(min = 42.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(s.catalog[item.exerciseId]?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                NumberText(lastResult(s.workouts, item, units) ?: "${item.sets} × ${item.reps.label}", 16.sp, color = Fc.Muted,
-                    modifier = Modifier.padding(start = 8.dp))
+            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(s.catalog[item.exerciseId]?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    lastResult(s.workouts, item, units)?.let { Text("в прошлый раз $it", color = Fc.Muted, style = MaterialTheme.typography.labelMedium) }
+                }
+                NumberText("${item.sets} × ${item.reps.label}", 16.sp, color = Fc.Muted, modifier = Modifier.padding(start = 8.dp))
             }
         }
-        val hasHistory = items.take(3).any { lastResult(s.workouts, it, units) != null }
-        if (items.size > 3 || hasHistory) {
+        if (items.size > 3) {
             HorizontalDivider(color = Fc.Line2)
-            Text(listOfNotNull(if (items.size > 3) "и ещё ${items.size - 3}" else null, if (hasHistory) "справа — прошлый результат" else null).joinToString(" · "),
+            val more = items.size - 3
+            Text("и ещё $more ${pluralRu(more, "упражнение", "упражнения", "упражнений")}",
                 color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
         }
         Spacer(Modifier.height(16.dp))
@@ -391,8 +402,8 @@ private fun lastResult(workouts: List<WorkoutLog>, item: ItemDraft, units: Weigh
     val set = previousWorkingSet(workouts, item.exerciseId, timed, 0) ?: return null
     return when {
         timed -> "${set.reps} с"
-        set.weightKg > 0f -> "${units.number(units.fromKg(set.weightKg))} × ${set.reps}"
-        else -> "× ${set.reps}"
+        set.weightKg > 0f -> "${units.number(units.fromKg(set.weightKg))} ${units.label} × ${set.reps}"
+        else -> "${set.reps} повт."
     }
 }
 

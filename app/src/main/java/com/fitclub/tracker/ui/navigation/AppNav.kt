@@ -156,7 +156,7 @@ fun AppRoot() {
             }
             composable(Routes.CALENDAR, arguments = listOf(navArgument("day") { type = NavType.LongType; defaultValue = -1L })) { entry ->
                 CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.openTab(Routes.PROFILE) }, onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onResult = { nav.navigate(Routes.result(it)) },
-                    initialEpoch = entry.arguments?.getLong("day")?.takeIf { it >= 0 })
+                    initialEpoch = entry.arguments?.getLong("day")?.takeIf { it >= 0 }, onBack = { nav.popBackStack() })
             }
             composable(Routes.PLANNER, arguments = listOf(navArgument("epochDay") { type = NavType.LongType }, navArgument("schedule") { type = NavType.LongType; defaultValue = 0L })) { entry ->
                 val selectedProgram by entry.savedStateHandle.getStateFlow("selectedProgramId", 0L).collectAsStateWithLifecycle()

@@ -281,7 +281,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                     d.days.forEachIndexed { i, dd ->
                         val on = i == day
                         Text(
-                            "День ${'A' + i} · ${dd.items.size}", style = MaterialTheme.typography.labelLarge,
+                            "День ${'A' + i} · ${dd.items.size} упр.", style = MaterialTheme.typography.labelLarge,
                             color = if (on) Fc.Lime else Fc.Text,
                             modifier = Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) Fc.LimeSoft else Fc.Surface)
                                 .semantics { selected = on }
@@ -312,11 +312,11 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (d.days[day].items.isEmpty()) Text("В этом дне пока нет упражнений.", style = MaterialTheme.typography.bodyMedium, color = Fc.Muted)
+                if (d.days[day].items.isEmpty()) Text("В этот день пока нет упражнений.", style = MaterialTheme.typography.bodyMedium, color = Fc.Muted)
                 ActionButton("+  Добавить упражнение", { picking = true }, outlined = true)
             }
         }
-        item { TextButton(onClick = { showTrainingSettings = !showTrainingSettings }, modifier = Modifier.fillMaxWidth()) { Text("Цель и частота ${if (showTrainingSettings) "−" else "+"}", color = Fc.Text) } }
+        item { ExpandRow("Цель и частота ${if (showTrainingSettings) "−" else "+"}") { showTrainingSettings = !showTrainingSettings } }
         if (showTrainingSettings) {
         item {
             Section("Цель тренировок") {
@@ -347,7 +347,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             }
         }
         }
-        item { TextButton(onClick = { showAppearance = !showAppearance }, modifier = Modifier.fillMaxWidth()) { Text("Оформление программы ${if (showAppearance) "−" else "+"}", color = Fc.Text) } }
+        item { ExpandRow("Оформление программы ${if (showAppearance) "−" else "+"}") { showAppearance = !showAppearance } }
         if (showAppearance) {
         item {
             Section("Цвет") {
@@ -383,7 +383,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             }
         }
         }
-        item { TextButton(onClick = { showAnalysis = !showAnalysis }, modifier = Modifier.fillMaxWidth()) { Text("Разбор программы ${if (showAnalysis) "−" else "+"}", color = Fc.Text) } }
+        item { ExpandRow("Разбор программы ${if (showAnalysis) "−" else "+"}") { showAnalysis = !showAnalysis } }
         if (showAnalysis) {
             item { Text("Вся программа", color = Fc.Text); FitDetails(fit, d.goal) }
             item { Text("Текущий день ${'A' + day}", color = Fc.Text); FitDetails(ProgramScorer.score(d.copy(days = listOf(d.days[day])), catalog), d.goal) }
@@ -589,3 +589,15 @@ internal fun ProgramDeleteDialog(name: String, onDismiss: () -> Unit, onConfirm:
 }
 
 
+
+/** Collapsible section header of the editor: a full-width surface row, label on the left. */
+@Composable
+private fun ExpandRow(label: String, onClick: () -> Unit) {
+    androidx.compose.foundation.layout.Row(
+        Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .clip(com.fitclub.tracker.ui.components.CardShape).background(Fc.Surface)
+            .border(1.dp, Fc.Line, com.fitclub.tracker.ui.components.CardShape)
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) { Text(label, color = Fc.Text, style = MaterialTheme.typography.titleSmall) }
+}

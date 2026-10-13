@@ -429,7 +429,7 @@ fun BodyScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val rows by vm.rows.collectAsStateWithLifecycle()
     androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize().background(Fc.Bg), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { com.fitclub.tracker.ui.components.BackRow("Личный кабинет", onBack) }
+        item { com.fitclub.tracker.ui.components.BackRow("Профиль", onBack) }
         item { BodyModelSection(settings.sex, rows, onMeasure = { onMeasure(it?.key) }) }
     }
 }
