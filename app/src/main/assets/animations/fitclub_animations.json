@@ -1,0 +1,418 @@
+{
+  "schemaVersion": "1.0",
+  "designSystemRef": "../design/design_tokens.json",
+  "animations": {
+    "workout_start": {
+      "id": "workout_start",
+      "type": "sequence",
+      "durationMs": 3600,
+      "context": {
+        "exerciseIndex": 1,
+        "exerciseCount": 12,
+        "exerciseName": "Скручивания",
+        "programName": "Пресс",
+        "programDay": 8
+      },
+      "layers": [
+        {
+          "id": "ambient_glow",
+          "type": "glow",
+          "color": "#C6FF3D",
+          "opacity": 0.12,
+          "radiusDp": 220,
+          "centerX": 0.5,
+          "centerY": 0.34
+        },
+        {
+          "id": "progress_ring",
+          "type": "circular_progress",
+          "centerX": 0.5,
+          "centerY": 0.34,
+          "radiusDp": 142,
+          "strokeDp": 16,
+          "trackColor": "#263039",
+          "progressColor": "#C6FF3D",
+          "glowColor": "#80C6FF3D",
+          "startAngleDeg": -90,
+          "roundCaps": true
+        },
+        {
+          "id": "ticks",
+          "type": "radial_ticks",
+          "centerX": 0.5,
+          "centerY": 0.34,
+          "radiusDp": 112,
+          "count": 48,
+          "majorEvery": 8,
+          "color": "#98A1A8",
+          "activeColor": "#C6FF3D"
+        },
+        {
+          "id": "countdown_number",
+          "type": "text",
+          "text": "3",
+          "font": "Oswald",
+          "fontWeight": 700,
+          "fontSizeSp": 112,
+          "color": "#C6FF3D",
+          "centerX": 0.5,
+          "centerY": 0.33
+        },
+        {
+          "id": "ready_text",
+          "type": "text",
+          "text": "ПРИГОТОВЬТЕСЬ",
+          "font": "Onest",
+          "fontWeight": 700,
+          "fontSizeSp": 14,
+          "letterSpacingEm": 0.16,
+          "color": "#F2F4EE",
+          "centerX": 0.5,
+          "centerY": 0.405
+        },
+        {
+          "id": "exercise_name",
+          "type": "text",
+          "binding": "context.exerciseName",
+          "font": "Oswald",
+          "fontWeight": 700,
+          "fontSizeSp": 52,
+          "color": "#F2F4EE",
+          "centerX": 0.5,
+          "centerY": 0.64
+        }
+      ],
+      "timeline": [
+        {
+          "atMs": 0,
+          "actions": [
+            {
+              "target": "countdown_number",
+              "property": "text",
+              "value": "3"
+            },
+            {
+              "target": "progress_ring",
+              "property": "progress",
+              "from": 0.0,
+              "to": 0.33,
+              "durationMs": 850,
+              "easing": "easeOutCubic"
+            },
+            {
+              "target": "countdown_number",
+              "property": "scale",
+              "from": 0.72,
+              "to": 1.0,
+              "durationMs": 320,
+              "easing": "overshoot"
+            }
+          ],
+          "haptic": "light"
+        },
+        {
+          "atMs": 900,
+          "actions": [
+            {
+              "target": "countdown_number",
+              "property": "text",
+              "value": "2"
+            },
+            {
+              "target": "progress_ring",
+              "property": "progress",
+              "from": 0.33,
+              "to": 0.66,
+              "durationMs": 850,
+              "easing": "easeOutCubic"
+            }
+          ],
+          "haptic": "light"
+        },
+        {
+          "atMs": 1800,
+          "actions": [
+            {
+              "target": "countdown_number",
+              "property": "text",
+              "value": "1"
+            },
+            {
+              "target": "progress_ring",
+              "property": "progress",
+              "from": 0.66,
+              "to": 1.0,
+              "durationMs": 850,
+              "easing": "easeOutCubic"
+            }
+          ],
+          "haptic": "medium"
+        },
+        {
+          "atMs": 2700,
+          "actions": [
+            {
+              "target": "countdown_number",
+              "property": "text",
+              "value": "GO"
+            },
+            {
+              "target": "ready_text",
+              "property": "text",
+              "value": "НАЧИНАЕМ"
+            },
+            {
+              "target": "ambient_glow",
+              "property": "opacity",
+              "from": 0.12,
+              "to": 0.4,
+              "durationMs": 200
+            }
+          ],
+          "haptic": "strong",
+          "sound": "workout_start"
+        },
+        {
+          "atMs": 3300,
+          "event": "WORKOUT_START_ANIMATION_FINISHED"
+        }
+      ],
+      "interaction": {
+        "tapAnywhere": {
+          "event": "SKIP_COUNTDOWN"
+        }
+      }
+    },
+    "workout_complete": {
+      "id": "workout_complete",
+      "type": "sequence",
+      "durationMs": 2600,
+      "context": {
+        "userName": "Дмитрий",
+        "programDay": 8,
+        "durationMinutes": 21,
+        "exerciseCount": 12,
+        "tonnageKg": 6420,
+        "streakDays": 12
+      },
+      "layers": [
+        {
+          "id": "success_rings",
+          "type": "concentric_rings",
+          "centerX": 0.5,
+          "centerY": 0.23,
+          "ringCount": 3,
+          "color": "#C6FF3D",
+          "opacity": 0.22
+        },
+        {
+          "id": "success_badge",
+          "type": "circle",
+          "centerX": 0.5,
+          "centerY": 0.23,
+          "radiusDp": 62,
+          "fill": "#C6FF3D",
+          "glowColor": "#A0C6FF3D",
+          "glowRadiusDp": 36
+        },
+        {
+          "id": "success_check",
+          "type": "icon",
+          "icon": "check",
+          "color": "#0A0C0D",
+          "sizeDp": 54,
+          "centerX": 0.5,
+          "centerY": 0.23
+        },
+        {
+          "id": "complete_title",
+          "type": "text_template",
+          "template": "Отличная работа,\\n{{userName}}",
+          "font": "Oswald",
+          "fontWeight": 700,
+          "fontSizeSp": 48,
+          "color": "#F2F4EE",
+          "centerX": 0.5,
+          "centerY": 0.43
+        },
+        {
+          "id": "stats",
+          "type": "stats_row",
+          "centerY": 0.59,
+          "items": [
+            {
+              "icon": "timer",
+              "valueTemplate": "{{durationMinutes}} мин",
+              "label": "ВРЕМЯ"
+            },
+            {
+              "icon": "dumbbell",
+              "valueTemplate": "{{exerciseCount}}",
+              "label": "УПРАЖНЕНИЙ"
+            },
+            {
+              "icon": "plates",
+              "valueTemplate": "{{tonnageKg:grouped}} кг",
+              "label": "ТОННАЖ"
+            }
+          ]
+        },
+        {
+          "id": "streak_card",
+          "type": "streak",
+          "title": "СЕРИЯ ПРОДЛЕНА",
+          "valueTemplate": "{{streakDays}} дней подряд",
+          "icon": "flame",
+          "centerY": 0.72
+        }
+      ],
+      "timeline": [
+        {
+          "atMs": 0,
+          "actions": [
+            {
+              "target": "success_badge",
+              "property": "scale",
+              "from": 0.1,
+              "to": 1.08,
+              "durationMs": 520,
+              "easing": "overshoot"
+            },
+            {
+              "target": "success_check",
+              "property": "scale",
+              "from": 0.0,
+              "to": 1.0,
+              "durationMs": 420,
+              "delayMs": 180,
+              "easing": "easeOutBack"
+            }
+          ],
+          "haptic": "success",
+          "sound": "workout_complete"
+        },
+        {
+          "atMs": 300,
+          "actions": [
+            {
+              "target": "success_rings",
+              "property": "scale",
+              "from": 0.65,
+              "to": 1.35,
+              "durationMs": 1200,
+              "easing": "easeOutCubic"
+            },
+            {
+              "target": "success_rings",
+              "property": "opacity",
+              "from": 0.45,
+              "to": 0.0,
+              "durationMs": 1200
+            }
+          ]
+        },
+        {
+          "atMs": 600,
+          "actions": [
+            {
+              "target": "complete_title",
+              "property": "translateYDp",
+              "from": 16,
+              "to": 0,
+              "durationMs": 420,
+              "easing": "easeOutCubic"
+            },
+            {
+              "target": "complete_title",
+              "property": "opacity",
+              "from": 0,
+              "to": 1,
+              "durationMs": 300
+            }
+          ]
+        },
+        {
+          "atMs": 1050,
+          "actions": [
+            {
+              "target": "stats",
+              "property": "opacity",
+              "from": 0,
+              "to": 1,
+              "durationMs": 350
+            },
+            {
+              "target": "stats",
+              "property": "translateYDp",
+              "from": 18,
+              "to": 0,
+              "durationMs": 400
+            }
+          ]
+        },
+        {
+          "atMs": 1450,
+          "actions": [
+            {
+              "target": "streak_card",
+              "property": "opacity",
+              "from": 0,
+              "to": 1,
+              "durationMs": 350
+            },
+            {
+              "target": "streak_card",
+              "property": "scale",
+              "from": 0.96,
+              "to": 1.0,
+              "durationMs": 350,
+              "easing": "easeOutBack"
+            }
+          ],
+          "haptic": "light"
+        },
+        {
+          "atMs": 2200,
+          "event": "WORKOUT_COMPLETE_ANIMATION_FINISHED"
+        }
+      ]
+    }
+  },
+  "runtime": {
+    "fps": 60,
+    "easing": {
+      "linear": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "easeOutCubic": [
+        0.215,
+        0.61,
+        0.355,
+        1
+      ],
+      "easeOutBack": [
+        0.34,
+        1.56,
+        0.64,
+        1
+      ],
+      "overshoot": [
+        0.175,
+        0.885,
+        0.32,
+        1.275
+      ]
+    },
+    "accessibility": {
+      "reduceMotion": {
+        "disableParticles": true,
+        "disableGlowAnimation": true,
+        "replaceScaleAnimationsWithFade": true,
+        "countdownStepDurationMs": 700
+      }
+    }
+  }
+}

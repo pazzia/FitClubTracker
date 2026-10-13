@@ -260,18 +260,25 @@ class ProfileViewModel(private val c: AppContainer) : ViewModel() {
 }
 
 @Composable
-fun ProfileScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit = {}, onBody: () -> Unit = {}) {
+fun ProfileScreen(onBack: (() -> Unit)?, onMeasure: (String?) -> Unit = {}, onBody: () -> Unit = {}) {
     val vm = appViewModel { ProfileViewModel(it) }
     val st by vm.settings.collectAsStateWithLifecycle()
     val measurements by vm.measurements.collectAsStateWithLifecycle()
     val workouts by vm.workouts.collectAsStateWithLifecycle()
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { BackRow("Личный кабинет", onBack) }
+        if (onBack != null) item { BackRow("Личный кабинет", onBack) }
         item {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                Box(Modifier.size(68.dp).background(Fc.Lime, CircleShape), contentAlignment = Alignment.Center) { Text(st.name.split(" ").filter { it.isNotBlank() }.take(2).map { it.first().uppercaseChar() }.joinToString("").ifBlank { "Я" }, style = MaterialTheme.typography.headlineSmall, color = Fc.OnAccent) }
-                Column { ScreenTitle(st.name); Text("${if (st.level == 1) "Новичок" else if (st.level == 2) "Продвинутый" else "Профи"}", color = Fc.Muted) }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Avatar with the lime ring of the new design; initials stand in for a photo.
+                Box(Modifier.size(76.dp).border(2.dp, Fc.Lime, CircleShape).padding(5.dp).background(Fc.Surface2, CircleShape), contentAlignment = Alignment.Center) {
+                    Text(st.name.split(" ").filter { it.isNotBlank() }.take(2).map { it.first().uppercaseChar() }.joinToString("").ifBlank { "Я" },
+                        style = MaterialTheme.typography.headlineMedium, color = Fc.Text)
+                }
+                Column(Modifier.weight(1f)) {
+                    ScreenTitle(st.name)
+                    Text("${if (st.level == 1) "Новичок" else if (st.level == 2) "Продвинутый" else "Профи"}", color = Fc.Muted)
+                }
             }
         }
         item {
@@ -349,6 +356,12 @@ fun ProfileScreen(onBack: () -> Unit, onMeasure: (String?) -> Unit = {}, onBody:
                         colors = SwitchDefaults.colors(checkedTrackColor = Fc.Lime, checkedThumbColor = Fc.OnAccent))
                 }
                 if (st.restSound) TextButton(onClick = { com.fitclub.tracker.ui.workout.RestSound.play() }, contentPadding = PaddingValues(0.dp)) { Text("Проверить звук", color = Fc.Lime) }
+                Spacer(Modifier.height(8.dp))
+                SettingSwitch("Отсчёт 3-2-1 перед тренировкой", "Перед первым упражнением — короткий отсчёт с вибрацией. Нажатие на экран начинает сразу.",
+                    st.startCountdown, Modifier.testTag("start-countdown")) { vm.update(st.copy(startCountdown = it)) }
+                Spacer(Modifier.height(8.dp))
+                SettingSwitch("Звуки старта и финиша", "Щелчок на «GO» и короткий сигнал, когда тренировка завершена.",
+                    st.workoutSounds, Modifier.testTag("workout-sounds")) { vm.update(st.copy(workoutSounds = it)) }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Fc.Line)
                 Text("Версия приложения: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", color = Fc.Text)
                 Text(if (BuildConfig.APPLICATION_ID.endsWith(".experimental")) "Тестовая сборка" else "Основная версия", color = Fc.Muted)
@@ -398,5 +411,20 @@ private fun VersionDetails() {
             clipboard.setText(androidx.compose.ui.text.AnnotatedString("FitClub\n" + lines.joinToString("\n") { "${it.first}: ${it.second}" }))
             copied = true
         }, contentPadding = PaddingValues(0.dp)) { Text(if (copied) "Скопировано" else "Скопировать информацию о сборке", color = Fc.Lime) }
+    }
+}
+
+@Composable
+private fun SettingSwitch(title: String, note: String, value: Boolean, modifier: Modifier = Modifier, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(value = value, role = Role.Switch, onValueChange = onChange),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(title, color = Fc.Text)
+            Text(note, color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+        }
+        Switch(checked = value, onCheckedChange = null,
+            colors = SwitchDefaults.colors(checkedTrackColor = Fc.Lime, checkedThumbColor = Fc.OnAccent))
     }
 }

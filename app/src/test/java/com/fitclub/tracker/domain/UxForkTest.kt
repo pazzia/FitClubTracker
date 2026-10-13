@@ -22,8 +22,9 @@ class UxForkTest {
     @Test fun releaseNotesShowOnlyWhatIsNewSinceTheLastSeenVersion() {
         assertTrue(ReleaseNotes.newer("0.10.0", "0.9.6"))
         assertFalse(ReleaseNotes.newer("0.9.6-test", "0.9.6"))
-        assertEquals(listOf("0.10.0"), ReleaseNotes.since("0.9.6-test").map { it.first })
-        assertEquals(listOf("0.10.0", "0.9.6", "0.9.5"), ReleaseNotes.since("0.9.4").map { it.first })
+        assertEquals(listOf("0.11.0", "0.10.0"), ReleaseNotes.since("0.9.6-test").map { it.first })
+        assertEquals(listOf("0.11.0"), ReleaseNotes.since("0.10.1").map { it.first })
+        assertEquals(listOf("0.11.0", "0.10.0", "0.9.6", "0.9.5"), ReleaseNotes.since("0.9.4").map { it.first })
         assertEquals(1, ReleaseNotes.since(null).size)
     }
 

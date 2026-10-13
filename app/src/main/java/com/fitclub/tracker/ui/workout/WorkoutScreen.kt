@@ -169,6 +169,10 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
     }
     var restored by mutableStateOf(false)
         private set
+    /** The workout continues a saved draft: no start countdown then. */
+    var resumed by mutableStateOf(false)
+        private set
+    fun setWorkoutSounds(on: Boolean) = c.profile.update(c.profile.settings.value.copy(workoutSounds = on))
     var draftUnitsKg by mutableStateOf(c.profile.settings.value.unitsKg)
         private set
     var startedAt = System.currentTimeMillis()
@@ -271,7 +275,7 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
     init {
         viewModelScope.launch {
             runCatching {
-                c.fitness.getActive(scheduleId)?.let { restore(it.snapshot) }
+                c.fitness.getActive(scheduleId)?.let { resumed = true; restore(it.snapshot) }
                 if (editedPlan == null) source.first { it.loaded }.plan?.let(::installPlan)
                 restored = true; startPersistence()
             }.onFailure { error = "Не удалось восстановить тренировку: ${it.message}" }
@@ -377,7 +381,8 @@ class WorkoutViewModel(private val c: AppContainer, private val scheduleId: Long
 }
 
 @Composable
-fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -> Unit, onFinished: (Long) -> Unit = { onClose() }) {
+fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -> Unit, onFinished: (Long) -> Unit = { onClose() },
+    countdown: Boolean = false) {
     val focus = LocalFocusManager.current
     val vm = appViewModel(key = "workout-$scheduleId") { WorkoutViewModel(it, scheduleId) }
     val source by vm.source.collectAsStateWithLifecycle()
@@ -406,6 +411,21 @@ fun WorkoutScreen(scheduleId: Long, onClose: () -> Unit, onTechnique: (String) -
                 TextButton(onClick = onClose) { Text("Вернуться к плану", color = Fc.Lime) }
             }
         }
+        return
+    }
+    val profile by vm.settings.collectAsStateWithLifecycle()
+    var countdownDone by rememberSaveable { mutableStateOf(false) }
+    if (countdown && !countdownDone && !vm.resumed && profile.startCountdown && plan.items.isNotEmpty() && !vm.inOverview) {
+        val first = plan.items[vm.exerciseIndex.coerceIn(0, plan.items.lastIndex)]
+        WorkoutCountdown(
+            exerciseName = source.catalog[first.exerciseId]?.name ?: first.exerciseId,
+            subtitle = plan.title,
+            exerciseCount = plan.items.size,
+            soundOn = profile.workoutSounds,
+            onToggleSound = { vm.setWorkoutSounds(!profile.workoutSounds) },
+            onBack = onClose,
+            onFinished = { countdownDone = true }
+        )
         return
     }
     if (confirmFinish) AlertDialog(
@@ -461,11 +481,13 @@ private fun vibrate(context: Context) {
 private fun TopBar(elapsed: Long, onPlan: () -> Unit, onFinish: () -> Unit, finishing: Boolean) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(
-            Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onPlan).padding(horizontal = 6.dp),
+            Modifier.heightIn(min = 44.dp).clip(PillShape).clickable(role = Role.Button, onClick = onPlan).padding(end = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LineIcon(LineIcons.BACK, Fc.Text)
-            Text("План", color = Fc.Text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 4.dp))
+            Box(Modifier.size(44.dp).clip(CircleShape).background(Fc.Surface).border(1.dp, Fc.Line, CircleShape), contentAlignment = Alignment.Center) {
+                LineIcon(LineIcons.BACK, Fc.Text, Modifier.size(20.dp))
+            }
+            Text("План", color = Fc.Text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 8.dp))
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { NumberText(time(elapsed), 22.sp) }
         OutlinedButton(onClick = onFinish, enabled = !finishing, border = BorderStroke(1.dp, Fc.Line),
@@ -478,10 +500,7 @@ private fun TopBar(elapsed: Long, onPlan: () -> Unit, onFinish: () -> Unit, fini
 private fun Segments(count: Int, completed: Map<Int, Boolean>, current: Int) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         repeat(count) { i ->
-            Box(Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(Fc.Line2)) {
-                val fill = if (completed[i] == true) 1f else if (i == current) .5f else 0f
-                if (fill > 0f) Box(Modifier.fillMaxWidth(fill).height(4.dp).background(Fc.Lime))
-            }
+            GlowProgress(if (completed[i] == true) 1f else if (i == current) .5f else 0f, Modifier.weight(1f), height = 4.dp)
         }
     }
 }
@@ -705,15 +724,17 @@ private fun ExerciseMode(vm: WorkoutViewModel, plan: ScheduledDraft, source: Wor
             if (!summary) {
                 val primary = current == -1
                 Button(onClick = { focus.clearFocus(); vm.completeExercise() }, enabled = !vm.finishing,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = if (primary) 60.dp else 48.dp).testTag("complete-exercise"), shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = if (primary) 60.dp else 48.dp)
+                        .glow(Fc.Lime, primary && !Fc.isLight, radius = 16.dp, alpha = .32f).testTag("complete-exercise"), shape = PillShape,
                     colors = ButtonDefaults.buttonColors(containerColor = if (primary) Fc.Lime else Fc.Surface2, contentColor = if (primary) Fc.OnAccent else Fc.Text)) {
                     Text("Завершить упражнение", style = MaterialTheme.typography.labelLarge)
                 }
             }
             val lastItem = index == plan.items.lastIndex
             Button(onClick = { focus.clearFocus(); if (!lastItem) vm.moveTo(index + 1) else onFinish() },
-                modifier = Modifier.fillMaxWidth().heightIn(min = if (summary) 60.dp else 44.dp).testTag("next-exercise"), enabled = !vm.finishing,
-                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = if (summary) 60.dp else 44.dp)
+                    .glow(Fc.Lime, summary && !Fc.isLight, radius = 16.dp, alpha = .32f).testTag("next-exercise"), enabled = !vm.finishing,
+                shape = PillShape,
                 colors = if (summary) ButtonDefaults.buttonColors(containerColor = Fc.Lime, contentColor = Fc.OnAccent)
                 else ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = Fc.Muted)) {
                 Text(if (lastItem) "Итог тренировки" else if (summary) "Следующее →" else "Пропустить →", style = MaterialTheme.typography.labelLarge)
@@ -945,11 +966,12 @@ private fun PartnerPicker(selected: String, planPartners: List<Pair<String, Stri
 private fun CurrentSet(rowIndex: Int, row: SetEntry, previous: String?, timed: Boolean, unitsKg: Boolean, canRemove: Boolean, label: String?,
     partnerName: String?, onChange: (SetEntry) -> Unit, onDone: () -> Unit, onRemove: () -> Unit, onTechnique: () -> Unit,
     advanced: Boolean = true, barKg: Float? = null) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = CardShape
     val technique = if (row.warmup) Technique.NORMAL else Technique.of(row.technique)
     val step = weightStep(unitsKg)
     val unit = if (unitsKg) "кг" else "фунт."
-    Column(Modifier.fillMaxWidth().clip(shape).background(Fc.Surface).border(1.5.dp, Fc.Lime, shape).padding(14.dp),
+    Column(Modifier.fillMaxWidth().glow(Fc.Lime, !Fc.isLight, radius = 22.dp, alpha = .14f, corner = 20.dp)
+        .clip(shape).background(Fc.Surface).border(1.5.dp, Fc.Lime, shape).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Column(Modifier.weight(1f)) {
@@ -1043,9 +1065,9 @@ private fun CurrentSet(rowIndex: Int, row: SetEntry, previous: String?, timed: B
             technique == Technique.SUPERSET && partnerName != null -> "Суперсет выполнен"
             else -> "Подход выполнен"
         }
-        Button(onClick = onDone, shape = RoundedCornerShape(18.dp),
+        Button(onClick = onDone, shape = PillShape,
             colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime, contentColor = Fc.OnAccent),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp).testTag("done-$rowIndex").semantics {
+            modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp).glow(Fc.Lime, !Fc.isLight, radius = 16.dp, alpha = .32f).testTag("done-$rowIndex").semantics {
                 toggleableState = ToggleableState.Off
                 stateDescription = "Не выполнен"
             }) {
@@ -1170,6 +1192,7 @@ private fun RestOverlay(vm: WorkoutViewModel, plan: ScheduledDraft, source: Work
     val units = if (vm.draftUnitsKg) "кг" else "фунт."
     val ember = Fc.Ember
     val track = Fc.Line2
+    val light = Fc.isLight
     Column(Modifier.fillMaxSize().background(Fc.Bg).pointerInput(Unit) { detectTapGestures { } }.padding(horizontal = 20.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -1191,6 +1214,7 @@ private fun RestOverlay(vm: WorkoutViewModel, plan: ScheduledDraft, source: Work
                 val topLeft = androidx.compose.ui.geometry.Offset(inset, inset)
                 drawArc(track, 0f, 360f, false, topLeft, arcSize, style = Stroke(stroke))
                 val fraction = if (vm.restTotal > 0) vm.rest.toFloat() / vm.restTotal else 0f
+                if (!light && fraction > 0f) drawArc(ember.copy(alpha = .22f), -90f, 360f * fraction, false, topLeft, arcSize, style = Stroke(stroke * 2.2f, cap = StrokeCap.Round))
                 drawArc(ember, -90f, 360f * fraction, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1201,7 +1225,7 @@ private fun RestOverlay(vm: WorkoutViewModel, plan: ScheduledDraft, source: Work
         }
         Row(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             listOf(-15, 15).forEach { delta ->
-                OutlinedButton(onClick = { vm.addRest(delta) }, border = BorderStroke(1.dp, Fc.Line), shape = RoundedCornerShape(18.dp),
+                OutlinedButton(onClick = { vm.addRest(delta) }, border = BorderStroke(1.dp, Fc.Line), shape = PillShape,
                     modifier = Modifier.weight(1f).heightIn(min = 56.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) {
                     NumberText(if (delta > 0) "+15 с" else "−15 с", 20.sp)
                 }

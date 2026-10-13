@@ -16,6 +16,10 @@ data class ProfileSettings(
     val restSound: Boolean = true,
     /** Techniques, RIR, warm-up and assistance in the set card; off = weight, reps and «Готово» only. */
     val advancedSets: Boolean = true,
+    /** 3-2-1-GO countdown before a new workout. */
+    val startCountdown: Boolean = true,
+    /** Short sounds when a workout starts and ends. */
+    val workoutSounds: Boolean = true,
     val theme: String = "Темная",
     val accent: Long = 0xFFC6FF3D
 )
@@ -32,6 +36,8 @@ class ProfileRepository(context: Context) {
         reminders = prefs.getBoolean("reminders", true),
         restSound = prefs.getBoolean("rest_sound", true),
         advancedSets = prefs.getBoolean("advanced_sets", true),
+        startCountdown = prefs.getBoolean("start_countdown", true),
+        workoutSounds = prefs.getBoolean("workout_sounds", true),
         theme = normalizedTheme(prefs.getString("theme", null)),
         accent = themeAccent(normalizedTheme(prefs.getString("theme", null)))
     )
@@ -42,7 +48,8 @@ class ProfileRepository(context: Context) {
         _settings.value = value
         prefs.edit().putString("name", value.name).putString("sex", value.sex.name)
             .putInt("level", value.level).putBoolean("kg", value.unitsKg)
-            .putBoolean("reminders", value.reminders).putBoolean("rest_sound", value.restSound).putBoolean("advanced_sets", value.advancedSets).putString("theme", value.theme)
+            .putBoolean("reminders", value.reminders).putBoolean("rest_sound", value.restSound).putBoolean("advanced_sets", value.advancedSets)
+            .putBoolean("start_countdown", value.startCountdown).putBoolean("workout_sounds", value.workoutSounds).putString("theme", value.theme)
             .putLong("accent", value.accent).apply()
     }
 }

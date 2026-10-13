@@ -69,6 +69,16 @@ import com.fitclub.tracker.ui.components.LineIcons
 import com.fitclub.tracker.ui.components.NumberText
 import com.fitclub.tracker.ui.components.Pill
 import com.fitclub.tracker.ui.components.PrimaryButton
+import com.fitclub.tracker.ui.components.PackIcons
+import com.fitclub.tracker.ui.components.PillShape
+import com.fitclub.tracker.ui.components.FilledIcon
+import com.fitclub.tracker.ui.components.GlowProgress
+import com.fitclub.tracker.ui.components.StatRow
+import com.fitclub.tracker.ui.components.StatItem
+import com.fitclub.tracker.ui.components.glow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.font.FontWeight
 import com.fitclub.tracker.ui.navigation.appViewModel
 import com.fitclub.tracker.ui.theme.Fc
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -145,19 +155,19 @@ fun TodayScreen(
     val nextDay = program?.let { nextProgramDay(it, s.workouts) }
     val doneToday = s.workouts.filter { it.session.epochDay == todayEpoch && it.completedSets > 0 }.maxByOrNull { it.session.startedAt }
 
-    LazyColumn(Modifier.fillMaxSize().testTag("today"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        item { Header(today, profile, onProfile) }
+    LazyColumn(Modifier.fillMaxSize().testTag("today"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        item { Header(today, profile, weekStreak(s.workouts, today), onProfile) }
         s.active.forEach { draft ->
             item(key = "active-${draft.scheduleId}") {
                 FcCard(border = Fc.Lime) {
                     Eyebrow("Незавершённая тренировка", color = Fc.Lime)
-                    Text(draft.title.ifBlank { "Тренировка" }, style = MaterialTheme.typography.titleLarge, color = Fc.Text,
-                        modifier = Modifier.padding(top = 6.dp, bottom = 12.dp))
-                    PrimaryButton("Продолжить тренировку", { onStart(draft.scheduleId) })
+                    Text(draft.title.ifBlank { "Тренировка" }, style = MaterialTheme.typography.headlineMedium, color = Fc.Text,
+                        modifier = Modifier.padding(top = 6.dp, bottom = 14.dp))
+                    PrimaryButton("Продолжить тренировку", { onStart(draft.scheduleId) }, icon = PackIcons.PLAY_FILL)
                 }
             }
         }
-        item { WeekStrip(today, s, program, onCalendar) }
         if (doneToday != null && todayPlan == null) item {
             FcCard(Modifier.fillMaxWidth().testTag("today-done")) {
                 Pill("Сегодня выполнено", Fc.LimeSoft, Fc.Lime)
@@ -173,7 +183,8 @@ fun TodayScreen(
                 todayPlan != null -> HeroCard(
                     label = "План на сегодня", title = todayPlan.title, items = todayPlan.items, s = s, units = units,
                     action = "Начать тренировку", enabled = true, onAction = { onStart(todayPlan.id) },
-                    onEdit = { onEditPlan(todayEpoch, todayPlan.id) }
+                    onEdit = { onEditPlan(todayEpoch, todayPlan.id) },
+                    week = program?.takeIf { it.id == todayPlan.programId }?.let { workoutsThisWeek(s.workouts, today) to it.freqPerWeek }
                 )
                 program != null && nextDay != null -> Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     val status = dayStatus(program, s.workouts, today)
@@ -197,30 +208,48 @@ fun TodayScreen(
             }
         }
         if (error != null) item { Text(error.orEmpty(), color = Fc.Danger) }
+        item { WeekStrip(today, s, program, onCalendar) }
         item {
             val goal = program?.freqPerWeek ?: 3
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Stat("Серия", "${weekStreak(s.workouts, today)} нед.", Modifier.weight(1f))
-                Stat("За неделю", "${workoutsThisWeek(s.workouts, today)} / $goal", Modifier.weight(1f))
-                Stat("Объём", compactVolume(volumeThisWeek(s.workouts, today), units), Modifier.weight(1f))
-            }
+            StatRow(listOf(
+                StatItem("${weekStreak(s.workouts, today)} нед.", "серия", PackIcons.FLAME),
+                StatItem("${workoutsThisWeek(s.workouts, today)} / $goal", "за неделю", PackIcons.CALENDAR),
+                StatItem(compactVolume(volumeThisWeek(s.workouts, today), units), "объём", PackIcons.PLATES)
+            ))
         }
     }
 }
 
 @Composable
-private fun Header(today: LocalDate, profile: ProfileSettings, onProfile: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale("ru"))).replaceFirstChar { it.uppercase() },
-                color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
-            Text("Сегодня", style = MaterialTheme.typography.displaySmall, color = Fc.Text)
+private fun Header(today: LocalDate, profile: ProfileSettings, streak: Int, onProfile: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Сегодня", style = MaterialTheme.typography.displaySmall.copy(fontSize = 40.sp, lineHeight = 44.sp), color = Fc.Text, modifier = Modifier.weight(1f))
+            // Avatar with the lime ring opens the profile.
+            Box(
+                Modifier.size(48.dp).clip(CircleShape).border(2.dp, Fc.Lime, CircleShape).padding(4.dp).clip(CircleShape).background(Fc.Surface2)
+                    .semantics { contentDescription = "Профиль" }.clickable(role = Role.Button, onClick = onProfile),
+                contentAlignment = Alignment.Center
+            ) { Text(initials(profile.name), color = Fc.Text, style = MaterialTheme.typography.titleMedium) }
         }
-        Box(
-            Modifier.size(44.dp).clip(CircleShape).background(Fc.Surface).border(1.dp, Fc.Line, CircleShape)
-                .semantics { contentDescription = "Профиль" }.clickable(role = Role.Button, onClick = onProfile),
-            contentAlignment = Alignment.Center
-        ) { Text(initials(profile.name), color = Fc.Text, style = MaterialTheme.typography.titleMedium) }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f)) {
+                val name = profile.name.takeIf { it.isNotBlank() && it != "Мой профиль" }
+                Text(name ?: today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale("ru"))).replaceFirstChar { it.uppercase() },
+                    color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+                Text(if (name != null) today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale("ru"))).replaceFirstChar { it.uppercase() }
+                    else "Хорошего дня для тренировки", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+            }
+            if (streak > 0) Row(
+                Modifier.heightIn(min = 40.dp).clip(PillShape).background(Fc.LimeSoft.copy(alpha = if (Fc.isLight) .35f else .5f))
+                    .border(1.dp, Fc.Lime.copy(alpha = .6f), PillShape).padding(start = 10.dp, end = 14.dp)
+                    .semantics(mergeDescendants = true) {},
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                FilledIcon(PackIcons.FLAME_FILL, Fc.Lime, Modifier.size(18.dp))
+                Text("$streak нед. подряд", color = Fc.Text, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+            }
+        }
     }
 }
 
@@ -229,12 +258,18 @@ private fun WeekStrip(today: LocalDate, s: TodayState, program: ProgramDraft?, o
     val monday = weekStart(today)
     val done = s.workouts.filter { it.completedSets > 0 }.map { it.session.epochDay }.toSet()
     val planned = s.plans.map { it.epochDay }.toSet()
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Eyebrow("Неделя · ${done.count { it in monday.toEpochDay()..monday.toEpochDay() + 6 }} из ${program?.freqPerWeek ?: 3}", Modifier.weight(1f))
-            TextButton(onClick = { onCalendar(today.toEpochDay()) }) { Text("Календарь", color = Fc.Text, style = MaterialTheme.typography.labelLarge) }
+            Column(Modifier.weight(1f)) {
+                Text("План недели", style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp, lineHeight = 28.sp), color = Fc.Text)
+                Eyebrow("Выполнено ${done.count { it in monday.toEpochDay()..monday.toEpochDay() + 6 }} из ${program?.freqPerWeek ?: 3}")
+            }
+            TextButton(onClick = { onCalendar(today.toEpochDay()) }) {
+                Text("Календарь", color = Fc.Lime, style = MaterialTheme.typography.labelLarge)
+                LineIcon(LineIcons.NEXT, Fc.Lime, Modifier.padding(start = 2.dp).size(16.dp))
+            }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             (0 until 7).forEach { offset ->
                 val date = monday.plusDays(offset.toLong())
                 val epoch = date.toEpochDay()
@@ -242,27 +277,26 @@ private fun WeekStrip(today: LocalDate, s: TodayState, program: ProgramDraft?, o
                 val isPlan = epoch in planned && !isDone
                 val isToday = date == today
                 val state = when { isDone -> "выполнено"; isPlan -> "запланировано"; else -> "без тренировки" }
+                val shape = RoundedCornerShape(14.dp)
+                val filled = isToday && (isDone || isPlan)
                 Column(
-                    Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
+                    Modifier.weight(1f).height(66.dp)
+                        .glow(Fc.Lime, filled && !Fc.isLight, radius = 12.dp, alpha = .35f, corner = 14.dp)
+                        .clip(shape)
+                        .background(if (filled) Fc.Lime else Fc.Surface)
+                        .border(if (isToday && !filled) 1.5.dp else 1.dp, if (isToday) Fc.Lime else Fc.Line, shape)
                         .semantics { contentDescription = "${weekdayLabels[offset]}, ${date.dayOfMonth}: $state" }
-                        .clickable(role = Role.Button) { onCalendar(epoch) }.padding(vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)
+                        .clickable(role = Role.Button) { onCalendar(epoch) },
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
                 ) {
-                    Text(weekdayLabels[offset], color = Fc.Muted, style = MaterialTheme.typography.labelSmall)
-                    val shape = CircleShape
-                    Box(
-                        Modifier.fillMaxWidth().widthIn(max = 40.dp).aspectRatio(1f).clip(shape)
-                            .then(when {
-                                isDone -> Modifier.background(Fc.Lime)
-                                isToday -> Modifier.border(2.dp, Fc.Text, shape)
-                                isPlan -> Modifier.dashedCircle(Fc.Lime)
-                                else -> Modifier
-                            }),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        NumberText("${date.dayOfMonth}", 16.sp, color = when {
-                            isDone -> Fc.OnAccent; isPlan -> Fc.Lime; isToday -> Fc.Text; else -> Fc.Muted
-                        })
+                    val fg = if (filled) Fc.OnAccent else if (isDone || isToday) Fc.Text else Fc.Muted
+                    Text(weekdayLabels[offset], color = fg, style = MaterialTheme.typography.labelMedium)
+                    Box(Modifier.padding(top = 6.dp).size(20.dp), contentAlignment = Alignment.Center) {
+                        when {
+                            isDone -> LineIcon(LineIcons.CHECK, if (filled) Fc.OnAccent else Fc.Lime, Modifier.size(18.dp), strokeWidth = 2.6f)
+                            isPlan -> LineIcon(PackIcons.DUMBBELL, if (filled) Fc.OnAccent else Fc.Lime, Modifier.size(18.dp), strokeWidth = 2.2f)
+                            else -> Box(Modifier.size(14.dp).border(1.5.dp, if (isToday) Fc.Lime else Fc.Dim, CircleShape))
+                        }
                     }
                 }
             }
@@ -278,22 +312,33 @@ private fun Modifier.dashedCircle(color: Color): Modifier = drawBehind {
 @Composable
 private fun HeroCard(
     label: String, title: String, items: List<ItemDraft>, s: TodayState, units: WeightUnits,
-    action: String, enabled: Boolean, onAction: () -> Unit, onEdit: () -> Unit
+    action: String, enabled: Boolean, onAction: () -> Unit, onEdit: () -> Unit, week: Pair<Int, Int>? = null
 ) {
+    val minutes = items.sumOf { it.sets * (45 + it.restSec) } / 60
+    val photo = items.firstNotNullOfOrNull { com.fitclub.tracker.data.seed.FreeExerciseCatalog.media[it.exerciseId]?.images?.firstOrNull() }
     FcCard(Modifier.fillMaxWidth().testTag("today-hero")) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Pill(label, Fc.LimeSoft, Fc.Lime, Modifier.weight(1f, fill = false))
-            Spacer(Modifier.weight(1f))
-            TextButton(onClick = onEdit) { Text("Изменить", color = Fc.Muted, style = MaterialTheme.typography.labelLarge) }
+        Box(Modifier.fillMaxWidth()) {
+            if (photo != null) HeroPhoto(photo, Modifier.align(Alignment.TopEnd).padding(top = 0.dp).fillMaxWidth(.5f).height(168.dp))
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Eyebrow(label, color = Fc.Lime, modifier = Modifier.weight(1f))
+                    TextButton(onClick = onEdit) { Text("Изменить", color = Fc.Muted, style = MaterialTheme.typography.labelLarge) }
+                }
+                Text(title, style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp, lineHeight = 36.sp), color = Fc.Text,
+                    modifier = Modifier.fillMaxWidth(if (photo != null) .62f else 1f), maxLines = 3, overflow = TextOverflow.Ellipsis)
+                if (week != null) Row(Modifier.padding(top = 12.dp).fillMaxWidth(.62f), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    NumberText("${week.first}/${week.second}", 16.sp)
+                    GlowProgress(week.first.toFloat() / week.second.coerceAtLeast(1), Modifier.weight(1f))
+                }
+                Text("${items.size} ${pluralRu(items.size, "упражнение", "упражнения", "упражнений")} · ${items.sumOf { it.sets }} ${pluralRu(items.sumOf { it.sets }, "подход", "подхода", "подходов")} · ≈ $minutes мин",
+                    color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp).fillMaxWidth(if (photo != null) .6f else 1f))
+            }
         }
-        Text(title, style = MaterialTheme.typography.displayMedium, color = Fc.Text, modifier = Modifier.padding(top = 4.dp))
-        val minutes = items.sumOf { it.sets * (45 + it.restSec) } / 60
-        FactsRow(listOf("${items.size}" to pluralRu(items.size, "упражнение", "упражнения", "упражнений"),
-            "${items.sumOf { it.sets }}" to pluralRu(items.sumOf { it.sets }, "подход", "подхода", "подходов"), "≈ $minutes" to "мин"),
-            Modifier.padding(top = 8.dp, bottom = 10.dp))
+        Spacer(Modifier.height(14.dp))
         items.take(3).forEach { item ->
             HorizontalDivider(color = Fc.Line2)
-            Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 42.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(s.catalog[item.exerciseId]?.name ?: item.exerciseId, color = Fc.Text, style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 NumberText(lastResult(s.workouts, item, units) ?: "${item.sets} × ${item.reps.label}", 16.sp, color = Fc.Muted,
@@ -306,8 +351,30 @@ private fun HeroCard(
             Text(listOfNotNull(if (items.size > 3) "и ещё ${items.size - 3}" else null, if (hasHistory) "справа — прошлый результат" else null).joinToString(" · "),
                 color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
         }
-        Spacer(Modifier.height(14.dp))
-        PrimaryButton(action, { if (enabled) onAction() }, Modifier.testTag("today-start"))
+        Spacer(Modifier.height(16.dp))
+        PrimaryButton(action, { if (enabled) onAction() }, Modifier.testTag("today-start"), icon = PackIcons.PLAY_FILL)
+    }
+}
+
+/** Program photo on the right of the hero card, fading into the card on its left edge. */
+@Composable
+private fun HeroPhoto(path: String, modifier: Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val bitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, path) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                context.assets.open(path).use { android.graphics.BitmapFactory.decodeStream(it, null, android.graphics.BitmapFactory.Options().apply { inSampleSize = 2 }) }
+            }.getOrNull()
+        }
+    }
+    val surface = Fc.Surface
+    bitmap?.let {
+        Box(modifier.clip(RoundedCornerShape(16.dp))) {
+            androidx.compose.foundation.Image(it.asImageBitmap(), null, Modifier.matchParentSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                alpha = if (Fc.isLight) 1f else .85f)
+            Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(surface, surface.copy(alpha = .55f), Color.Transparent))))
+            Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent, surface.copy(alpha = .9f)))))
+        }
     }
 }
 

@@ -35,6 +35,7 @@ import com.fitclub.tracker.ui.theme.Fc
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -63,7 +64,7 @@ class WorkoutResultViewModel(private val c: AppContainer) : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
+fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean = false, onProgress: () -> Unit = onClose) {
     val vm = appViewModel(key = "result-$sessionId") { WorkoutResultViewModel(it) }
     val settings by vm.settings.collectAsStateWithLifecycle()
     val loaded by vm.loaded.collectAsStateWithLifecycle()
@@ -121,7 +122,42 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
     val volume = if (editing) rows.filter { !it.first.isTimed && !it.second.assisted && it.second.done && validSet(it.second) }
         .sumOf { resultWeight(it.first, it.second, editUnits).toDouble() * it.second.reps.toInt() } else log.volumeKg.toDouble()
     val count = if (editing) rows.count { it.second.done } else log.completedSets
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    var actionsReady by rememberSaveable { mutableStateOf(false) }
+    LazyColumn(Modifier.fillMaxSize().testTag("result-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        if (celebrate && !editing) {
+            item {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    RoundIconButton("Закрыть", LineIcons.BACK, close)
+                }
+            }
+            item {
+                val today = java.time.LocalDate.now()
+                val monday = com.fitclub.tracker.domain.weekStart(today).toEpochDay()
+                val doneDays = workouts.filter { it.completedSets > 0 }.map { it.session.epochDay }.toSet()
+                val name = settings.name.takeIf { it.isNotBlank() && it != "Мой профиль" }?.split(" ")?.first()
+                val day = log.session.dayPosition
+                WorkoutCompleteHeader(
+                    name = name,
+                    subtitle = if (day != null && log.session.programId != null) "День ${'A' + day} программы закрыт" else log.session.title.ifBlank { "Тренировка" },
+                    minutes = log.durationMin,
+                    exercises = log.sets.filter { it.done }.map { it.exerciseId to it.exercisePosition }.distinct().size,
+                    volume = units.fromKg(log.volumeKg),
+                    volumeLabel = units.label,
+                    formatVolume = { v -> units.number(kotlin.math.round(v)) },
+                    streakWeeks = com.fitclub.tracker.domain.weekStreak(workouts, today).coerceAtLeast(1),
+                    weekDays = (0..6).map { monday + it in doneDays },
+                    soundOn = settings.workoutSounds,
+                    onFinished = { actionsReady = true }
+                )
+            }
+            item {
+                Column(Modifier.graphicsLayer { alpha = if (actionsReady) 1f else .35f }, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    PillButton("Смотреть прогресс", onProgress, Modifier.testTag("result-progress"), icon = PackIcons.BARS, enabled = actionsReady)
+                    PillButton("На главную", onClose, Modifier.testTag("result-home"), kind = PillKind.SECONDARY, icon = PackIcons.HOME, enabled = actionsReady, height = 52.dp)
+                }
+            }
+            item { SectionHeader("Подробности", Modifier.padding(top = 10.dp)) }
+        } else {
         item { BackRow("Назад", close) }
         item {
             Eyebrow(calendarDate(log.session.epochDay))
@@ -131,16 +167,12 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit) {
             log.session.plannedEpochDay?.takeIf { it != log.session.epochDay }?.let { Text("Была запланирована на ${calendarDate(it)}", color = Fc.Muted, modifier = Modifier.padding(top = 6.dp)) }
         }
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf((if (editing) minutes else log.durationMin.toString()) to "минут",
-                    (if (editing) editUnits else units).number((if (editing) editUnits else units).fromKg(volume.toFloat())) to "${(if (editing) editUnits else units).label} объём",
-                    "$count" to "подходов").forEach { (value, label) ->
-                    Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(Fc.Surface).padding(14.dp)) {
-                        NumberText(value, 28.sp)
-                        Text(label, color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            }
+            StatRow(listOf(
+                StatItem(if (editing) minutes else log.durationMin.toString(), "минут", PackIcons.STOPWATCH),
+                StatItem((if (editing) editUnits else units).number((if (editing) editUnits else units).fromKg(volume.toFloat())), "${(if (editing) editUnits else units).label} объём", PackIcons.PLATES),
+                StatItem("$count", "подходов", PackIcons.DUMBBELL)
+            ))
+        }
         }
         if (!editing) {
             val earlier = workouts.filter { it.session.startedAt < log.session.startedAt }.flatMap { it.sets }

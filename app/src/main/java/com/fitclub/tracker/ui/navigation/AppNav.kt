@@ -74,7 +74,10 @@ import com.fitclub.tracker.ui.programs.ProgramsScreen
 import com.fitclub.tracker.ui.theme.Fc
 import com.fitclub.tracker.ui.today.TodayScreen
 import com.fitclub.tracker.ui.components.LineIcon
-import com.fitclub.tracker.ui.components.LineIcons
+import com.fitclub.tracker.ui.components.PackIcons
+import com.fitclub.tracker.ui.components.ambientGlow
+import com.fitclub.tracker.ui.components.glow
+import androidx.compose.ui.graphics.Color
 
 @Composable
 inline fun <reified VM : ViewModel> appViewModel(key: String? = null, crossinline create: (AppContainer) -> VM): VM {
@@ -98,7 +101,7 @@ object Routes {
     const val WORKOUT = "workout/{schedule}"
     const val PICK_PROGRAM = "plan-programs/{epochDay}"
     const val PLANNER = "plan/{epochDay}?schedule={schedule}"
-    const val RESULT = "result/{session}"
+    const val RESULT = "result/{session}?celebrate={celebrate}"
     fun program(id: Long, add: String = "") = "program/$id?add=$add"
     fun group(g: MuscleGroup) = "library/${g.name}"
     fun exercise(id: String) = "exercise/$id"
@@ -110,17 +113,28 @@ object Routes {
     const val ATLAS_MUSCLE = "anatomy/muscle/{muscleId}"
     fun atlasGroup(id: String) = "anatomy/group/$id"
     fun atlasMuscle(id: String) = "anatomy/muscle/$id"
-    fun result(session: Long) = "result/$session"
+    fun result(session: Long, celebrate: Boolean = false) = "result/$session?celebrate=$celebrate"
 }
 
 private data class Tab(val route: String, val title: String, val icon: String, val prefixes: List<String>)
 
 private val tabs = listOf(
-    Tab(Routes.TODAY, "Сегодня", LineIcons.BOLT, listOf("today", "calendar")),
-    Tab(Routes.PROGRAMS, "Программы", LineIcons.LIST, listOf("programs", "program/")),
-    Tab(Routes.LIBRARY, "Справочник", LineIcons.BOOK, listOf("library", "exercise/", "anatomy")),
-    Tab(Routes.PROGRESS, "Прогресс", LineIcons.CHART, listOf("progress"))
+    Tab(Routes.TODAY, "Сегодня", PackIcons.HOME, listOf("today", "calendar")),
+    Tab(Routes.PROGRAMS, "Программы", PackIcons.DUMBBELL, listOf("programs", "program/")),
+    Tab(Routes.LIBRARY, "Справочник", PackIcons.BOOK_OPEN, listOf("library", "exercise/", "anatomy")),
+    Tab(Routes.PROGRESS, "Прогресс", PackIcons.BARS, listOf("progress")),
+    Tab(Routes.PROFILE, "Профиль", PackIcons.USER, listOf("profile", "body"))
 )
+
+/** Profile is a tab now: every «profile» shortcut switches to it instead of stacking a copy. */
+private fun NavHostController.openTab(route: String) {
+    if (route == Routes.TODAY && popBackStack(Routes.TODAY, inclusive = false)) return
+    navigate(route) {
+        popUpTo(graph.startDestinationId) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
 
 @Composable
 fun AppRoot() {
@@ -132,15 +146,16 @@ fun AppRoot() {
         containerColor = Fc.Bg,
         bottomBar = { BottomBar(nav) }
     ) { padding ->
-        NavHost(nav, startDestination = Routes.TODAY, modifier = Modifier.fillMaxSize().padding(padding)) {
+        NavHost(nav, startDestination = Routes.TODAY, modifier = Modifier.fillMaxSize()
+            .ambientGlow(!Fc.isLight, Fc.Lime).padding(padding)) {
             composable(Routes.TODAY) {
                 TodayScreen(onStart = { nav.navigate(Routes.workout(it)) }, onPlan = { nav.navigate(Routes.plan(it)) },
                     onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onCalendar = { nav.navigate(Routes.calendar(it)) },
-                    onPrograms = { nav.navigate(Routes.PROGRAMS) { launchSingleTop = true } }, onProfile = { nav.navigate(Routes.PROFILE) },
+                    onPrograms = { nav.navigate(Routes.PROGRAMS) { launchSingleTop = true } }, onProfile = { nav.openTab(Routes.PROFILE) },
                     onResult = { nav.navigate(Routes.result(it)) })
             }
             composable(Routes.CALENDAR, arguments = listOf(navArgument("day") { type = NavType.LongType; defaultValue = -1L })) { entry ->
-                CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.navigate(Routes.PROFILE) }, onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onResult = { nav.navigate(Routes.result(it)) },
+                CalendarHomeScreen(onPlan = { nav.navigate(Routes.plan(it)) }, onStart = { nav.navigate(Routes.workout(it)) }, onProfile = { nav.openTab(Routes.PROFILE) }, onEditPlan = { date, id -> nav.navigate(Routes.plan(date, id)) }, onResult = { nav.navigate(Routes.result(it)) },
                     initialEpoch = entry.arguments?.getLong("day")?.takeIf { it >= 0 })
             }
             composable(Routes.PLANNER, arguments = listOf(navArgument("epochDay") { type = NavType.LongType }, navArgument("schedule") { type = NavType.LongType; defaultValue = 0L })) { entry ->
@@ -157,11 +172,14 @@ fun AppRoot() {
                         nav.popBackStack()
                     })
             }
-            composable(Routes.RESULT, arguments = listOf(navArgument("session") { type = NavType.LongType })) { entry ->
-                WorkoutResultScreen(entry.arguments!!.getLong("session"), onClose = { nav.popBackStack() })
+            composable(Routes.RESULT, arguments = listOf(navArgument("session") { type = NavType.LongType },
+                navArgument("celebrate") { type = NavType.BoolType; defaultValue = false })) { entry ->
+                WorkoutResultScreen(entry.arguments!!.getLong("session"), onClose = { nav.popBackStack() },
+                    celebrate = entry.arguments?.getBoolean("celebrate") == true,
+                    onProgress = { nav.popBackStack(); nav.openTab(Routes.PROGRESS) })
             }
-            composable(Routes.PROGRESS) { ProgressScreen(onProfile = { nav.navigate(Routes.PROFILE) }, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } }) }
-            composable(Routes.PROFILE) { ProfileScreen(onBack = { nav.popBackStack() }, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } },
+            composable(Routes.PROGRESS) { ProgressScreen(onProfile = { nav.openTab(Routes.PROFILE) }, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } }) }
+            composable(Routes.PROFILE) { ProfileScreen(onBack = null, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } },
                 onBody = { nav.navigate(Routes.BODY) { launchSingleTop = true } }) }
             composable(Routes.BODY) { com.fitclub.tracker.ui.profile.BodyScreen(onBack = { nav.popBackStack() }, onMeasure = { nav.navigate(Routes.measure(it)) { launchSingleTop = true } }) }
             composable(Routes.MEASURE, arguments = listOf(navArgument("metric") { type = NavType.StringType; defaultValue = "" })) { entry ->
@@ -172,14 +190,15 @@ fun AppRoot() {
                     scheduleId = entry.arguments?.getLong("schedule") ?: 0L,
                     onClose = { nav.popBackStack() },
                     onTechnique = { nav.navigate(Routes.exercise(it) + "?training=true") },
-                    onFinished = { session -> nav.navigate(Routes.result(session)) { popUpTo(Routes.WORKOUT) { inclusive = true } } }
+                    onFinished = { session -> nav.navigate(Routes.result(session, celebrate = true)) { popUpTo(Routes.WORKOUT) { inclusive = true } } },
+                    countdown = true
                 )
             }
             composable(Routes.LIBRARY) {
                 LibraryHomeScreen(
                     onGroup = { nav.navigate(Routes.group(it)) },
                     onExercise = { nav.navigate(Routes.exercise(it)) },
-                    onProfile = { nav.navigate(Routes.PROFILE) },
+                    onProfile = { nav.openTab(Routes.PROFILE) },
                     onAnatomy = { nav.navigate(Routes.ATLAS) },
                     onAtlasMuscle = { nav.navigate(Routes.atlasMuscle(it)) }
                 )
@@ -230,9 +249,10 @@ private fun BottomBar(nav: NavHostController) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: ""
     if (route.startsWith("program/") || route.startsWith("result/") || route.startsWith("workout") || route.startsWith("plan/") || route.startsWith("plan-programs/") || runCatching { nav.getBackStackEntry(Routes.WORKOUT) }.getOrNull() != null) return
+    // Iron & Lime tab bar: a lime bar over the active tab, lime icon and label; the rest stay muted.
     Column(Modifier.background(Fc.Nav).navigationBarsPadding()) {
-        HorizontalDivider(color = Fc.Line2, thickness = 1.dp)
-        Row(Modifier.fillMaxWidth().height(72.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+        HorizontalDivider(color = Fc.Line, thickness = 1.dp)
+        Row(Modifier.fillMaxWidth().height(70.dp).padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
             tabs.forEach { tab ->
                 val on = tab.prefixes.any { route.startsWith(it) }
                 Column(
@@ -240,34 +260,26 @@ private fun BottomBar(nav: NavHostController) {
                         .weight(1f)
                         .fillMaxHeight()
                         .semantics { selected = on }
-                        .clickable(role = Role.Tab) {
-                            // Screens opened on top of Today (profile, calendar) must not come back as its saved state.
-                            if (tab.route == Routes.TODAY && nav.popBackStack(Routes.TODAY, inclusive = false)) return@clickable
-                            nav.navigate(tab.route) {
-                                popUpTo(nav.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                        .clickable(role = Role.Tab) { nav.openTab(tab.route) },
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
-                        Modifier
-                            .width(52.dp).height(30.dp)
-                            .clip(RoundedCornerShape(15.dp))
-                            .background(if (on) Fc.LimeSoft else Fc.Nav),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        LineIcon(tab.icon, if (on) Fc.Lime else Fc.Muted, Modifier.size(22.dp))
-                    }
-                    Text(
-                        tab.title, fontSize = 11.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (on) Fc.Lime else Fc.Muted, modifier = Modifier.padding(top = 4.dp)
+                        Modifier.width(36.dp).height(3.dp)
+                            .glow(Fc.Lime, on && !Fc.isLight, radius = 6.dp, alpha = .7f)
+                            .clip(RoundedCornerShape(bottomStart = 3.dp, bottomEnd = 3.dp))
+                            .background(if (on) Fc.Lime else Color.Transparent)
                     )
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            LineIcon(tab.icon, if (on) Fc.Lime else Fc.Muted, Modifier.size(24.dp), strokeWidth = 1.8f)
+                            Text(
+                                tab.title, fontSize = 11.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Medium, maxLines = 1,
+                                color = if (on) Fc.Lime else Fc.Muted, modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
-

@@ -16,12 +16,20 @@ import com.fitclub.tracker.FitApp
 import com.fitclub.tracker.StartupState
 import com.fitclub.tracker.ui.navigation.AppRoot
 import com.fitclub.tracker.ui.theme.Fc
+import com.fitclub.tracker.ui.components.glow
 import kotlinx.coroutines.delay
 
 object ReleaseNotes {
     const val VERSION = BuildConfig.VERSION_NAME
     /** Newest first. After an update only the versions since the last one seen are shown. */
     val history: List<Pair<String, List<String>>> = listOf(
+        "0.11.0" to listOf(
+            "Новый дизайн Iron & Lime: лаймовые кнопки-капсулы с мягким свечением, карточки 20dp, тёмный фон с подсветкой.",
+            "Экран «Сегодня» по новому макету: аватар, серия недель, карточка тренировки с фото и прогрессом, план недели плитками.",
+            "Перед тренировкой — отсчёт 3-2-1-GO с кольцом и вибрацией. Нажатие на экран начинает сразу; выключается в профиле.",
+            "После тренировки — анимированный итог: галочка, кольца, время, упражнения, тоннаж и серия.",
+            "Профиль стал пятой вкладкой нижнего меню."
+        ),
         "0.10.0" to listOf(
             "Первое знакомство: пол, единицы, опыт и сколько тренировок в неделю — программа подберётся сама.",
             "«Прогресс» разделён на «Силу», «Тело» и «Регулярность»; в «Силе» — график оценки 1ПМ по выбранному упражнению.",
@@ -100,7 +108,11 @@ fun StartupScreen(state: StartupState, minimumElapsed: Boolean, onContinue: () -
             }
         }
         Button(onClick = onContinue, enabled = state == StartupState.Ready && minimumElapsed,
-            modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime)) { Text("Продолжить") }
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                .glow(Fc.Lime, state == StartupState.Ready && minimumElapsed && !Fc.isLight),
+            colors = ButtonDefaults.buttonColors(containerColor = Fc.Lime, contentColor = Fc.OnAccent)) {
+            Text("Продолжить", style = MaterialTheme.typography.titleMedium)
+        }
     }
 }
 

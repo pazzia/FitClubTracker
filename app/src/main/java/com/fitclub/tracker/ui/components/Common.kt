@@ -48,6 +48,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -79,32 +81,37 @@ fun NumberText(text: String, size: TextUnit, modifier: Modifier = Modifier, colo
 
 @Composable
 fun BackRow(label: String, onClick: () -> Unit) {
+    // Round back button of the new design; the label names where «back» leads.
     Row(
         Modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(24.dp))
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(end = 8.dp),
+            .padding(end = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Fc.Text)
-        Text(label, style = MaterialTheme.typography.labelLarge, color = Fc.Text, modifier = Modifier.padding(start = 6.dp))
+        Box(Modifier.size(44.dp).clip(CircleShape).background(Fc.Surface).border(1.dp, Fc.Line, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Fc.Text, modifier = Modifier.size(20.dp))
+        }
+        Text(label, style = MaterialTheme.typography.labelLarge, color = Fc.Text, modifier = Modifier.padding(start = 10.dp))
     }
 }
 
 @Composable
 fun FcCard(
     modifier: Modifier = Modifier,
-    border: Color = Fc.Line2,
+    border: Color = Fc.Line,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(22.dp)
+    val shape = CardShape
+    val accent = border == Fc.Lime
     Column(
         modifier
+            .glow(Fc.Lime, accent && !Fc.isLight, radius = 20.dp, alpha = .16f, corner = 20.dp)
             .clip(shape)
             .background(Fc.Surface)
-            .border(if (border == Fc.Lime) 1.5.dp else 1.dp, border, shape)
+            .border(if (accent) 1.5.dp else 1.dp, border, shape)
             .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
             .padding(16.dp),
         content = content
@@ -122,12 +129,12 @@ fun Pill(text: String, bg: Color, fg: Color, modifier: Modifier = Modifier) {
 /** Selectable chip, at least 44dp tall. */
 @Composable
 fun FcChip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, trailing: String? = null) {
-    val shape = RoundedCornerShape(22.dp)
+    val shape = PillShape
     Row(
         modifier
             .heightIn(min = 44.dp)
             .clip(shape)
-            .then(if (selected) Modifier.background(Fc.Lime) else Modifier.border(1.dp, Fc.Line, shape))
+            .then(if (selected) Modifier.background(Fc.Lime) else Modifier.background(Fc.Surface).border(1.dp, Fc.Line, shape))
             .semantics { this.selected = selected }
             .clickable(role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 14.dp),
@@ -158,9 +165,9 @@ fun <T> Segmented(
         modifier
             .fillMaxWidth()
             .then(if (options.size > 3) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(PillShape)
             .background(Fc.Surface)
-            .border(1.dp, Fc.Line2, RoundedCornerShape(16.dp))
+            .border(1.dp, Fc.Line, PillShape)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -170,7 +177,7 @@ fun <T> Segmented(
                 Modifier
                     .then(if (options.size > 3) Modifier.width(96.dp) else Modifier.weight(1f))
                     .heightIn(min = height.coerceAtLeast(44.dp))
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(PillShape)
                     .background(if (on) selectedBg else Color.Transparent)
                     .semantics { this.selected = on }
                     .clickable(role = Role.RadioButton) { onSelect(opt) },
@@ -189,14 +196,17 @@ fun <T> Segmented(
 }
 
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Fc.Lime, textColor: Color = Fc.on(color)) {
+fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Fc.Lime, textColor: Color = Fc.on(color), icon: String? = null) {
+    // Lime pill with a soft glow: the one main action of a screen.
     Surface(
-        onClick = onClick, color = color, shape = RoundedCornerShape(18.dp),
-        modifier = modifier.fillMaxWidth().heightIn(min = 60.dp)
+        onClick = onClick, color = color, shape = PillShape,
+        modifier = modifier.fillMaxWidth().heightIn(min = 58.dp)
+            .glow(color, color == Fc.Lime && !Fc.isLight, radius = 18.dp, alpha = .34f)
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Row(Modifier.padding(horizontal = 18.dp, vertical = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) { FilledIcon(icon, textColor, Modifier.size(16.dp)); Spacer(Modifier.width(10.dp)) }
             Text(text, color = textColor, textAlign = TextAlign.Center,
-                style = TextStyle(fontFamily = Condensed, fontSize = 20.sp, letterSpacing = 0.5.sp))
+                style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 24.sp, letterSpacing = 0.3.sp))
         }
     }
 }
@@ -208,14 +218,14 @@ fun DashedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
         modifier
             .fillMaxWidth()
             .height(52.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(PillShape)
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Canvas(Modifier.matchParentSize()) {
             drawRoundRect(
                 color = line, style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(18.dp.toPx())
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.height / 2)
             )
         }
         Text(text, style = MaterialTheme.typography.labelLarge, color = Fc.Text)
@@ -230,7 +240,7 @@ fun CircleIconButton(description: String, onClick: () -> Unit, modifier: Modifie
         modifier
             .size(44.dp)
             .clip(CircleShape)
-            .then(if (filled) Modifier.background(Fc.Surface2) else Modifier.border(1.dp, Fc.Line, CircleShape))
+            .background(if (filled) Fc.Surface2 else Fc.Surface).border(1.dp, Fc.Line, CircleShape)
             .semantics { contentDescription = description }
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center
@@ -311,15 +321,16 @@ val DefaultBorder = BorderStroke(1.dp, Color(0xFF26262F))
 @Composable
 fun ActionButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier,
     outlined: Boolean = false, enabled: Boolean = true) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = PillShape
     val size = modifier.fillMaxWidth().heightIn(min = 56.dp)
     if (outlined) androidx.compose.material3.OutlinedButton(onClick = onClick, enabled = enabled,
         modifier = size, shape = shape, border = BorderStroke(1.dp, Fc.Line),
-        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) {
+        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = Fc.Surface, contentColor = Fc.Text)) {
         Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
-    } else androidx.compose.material3.Button(onClick = onClick, enabled = enabled, modifier = size, shape = shape,
+    } else androidx.compose.material3.Button(onClick = onClick, enabled = enabled,
+        modifier = size.glow(Fc.Lime, enabled && !Fc.isLight, radius = 16.dp, alpha = .30f), shape = shape,
         colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Fc.Lime, contentColor = Fc.OnAccent,
             disabledContainerColor = Fc.Surface2, disabledContentColor = Fc.Muted)) {
-        Text(text, style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp), textAlign = TextAlign.Center)
+        Text(text, style = MaterialTheme.typography.labelLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold), textAlign = TextAlign.Center)
     }
 }

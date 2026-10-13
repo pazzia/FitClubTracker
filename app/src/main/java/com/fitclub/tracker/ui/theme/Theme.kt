@@ -2,7 +2,9 @@
 
 package com.fitclub.tracker.ui.theme
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -16,6 +18,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fitclub.tracker.R
 
@@ -129,7 +132,8 @@ val NumberStyle = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Semi
 private val AppTypography = Typography(
     displayLarge = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 56.sp, lineHeight = 58.sp),
     displayMedium = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 44.sp, lineHeight = 46.sp),
-    displaySmall = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 36.sp),
+    // Screen titles: heavy condensed headline, as on the Iron & Lime key frames.
+    displaySmall = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 38.sp, lineHeight = 42.sp),
     headlineMedium = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 31.sp),
     headlineSmall = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 26.sp),
     titleLarge = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp),
@@ -142,6 +146,23 @@ private val AppTypography = Typography(
     labelMedium = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp),
     labelSmall = TextStyle(fontFamily = Sans, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, lineHeight = 14.sp)
 )
+
+/** Iron & Lime shapes: 20dp cards, rounded fields; actions are pills (see components). */
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(14.dp),
+    small = RoundedCornerShape(14.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp)
+)
+
+/** Motion tokens of the animation pack (design_tokens.json). */
+object FcMotion {
+    const val SHORT_MS = 180
+    const val MEDIUM_MS = 350
+    const val LONG_MS = 850
+    const val COUNTDOWN_STEP_MS = 900
+}
 
 @Composable
 fun FitClubTheme(accent: Long = 0xFFC6FF3D, lightTheme: Boolean = false, content: @Composable () -> Unit) {
@@ -160,7 +181,7 @@ fun FitClubTheme(accent: Long = 0xFFC6FF3D, lightTheme: Boolean = false, content
         error = p.danger, surfaceContainer = p.surface, surfaceContainerHigh = p.surface2, surfaceContainerHighest = p.surface2
     )
     CompositionLocalProvider(LocalPalette provides p) {
-        MaterialTheme(colorScheme = scheme, typography = AppTypography, content = content)
+        MaterialTheme(colorScheme = scheme, typography = AppTypography, shapes = AppShapes, content = content)
     }
 }
 
