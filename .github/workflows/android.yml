@@ -493,3 +493,25 @@ jobs:
 
 
 
+
+      # Design branches run on demand; their screens and test reports go to a draft release,
+      # which needs no artifact storage and can be read back by the reviewer.
+      - name: Publish design previews as a draft release
+        if: always() && github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/design/')
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist-preview
+          (cd app/build && zip -qr ../../dist-preview/ui-preview.zip ui-preview || true)
+          (cd app/build && zip -qr ../../dist-preview/test-results.zip test-results reports/tests || true)
+          for log in build-test.log build-apk.log build-photos.log; do
+            if [ -f "$log" ]; then tail -n 400 "$log" > "dist-preview/$log"; fi
+          done
+          ls dist-preview
+          gh release create "design-preview-${GITHUB_RUN_ID}" dist-preview/* \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
+            --title "Design preview ${GITHUB_REF_NAME} · run ${GITHUB_RUN_ID}" \
+            --notes "Скриншоты и отчёты тестов дизайн-ветки (${GITHUB_SHA::7})."
