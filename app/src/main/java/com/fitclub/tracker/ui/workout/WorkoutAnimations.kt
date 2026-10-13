@@ -70,6 +70,7 @@ import com.fitclub.tracker.ui.components.PackIcons
 import com.fitclub.tracker.ui.components.PillShape
 import com.fitclub.tracker.ui.components.RoundIconButton
 import com.fitclub.tracker.ui.components.rememberReducedMotion
+import com.fitclub.tracker.ui.components.glow
 import com.fitclub.tracker.ui.theme.Condensed
 import com.fitclub.tracker.ui.theme.Fc
 import com.fitclub.tracker.ui.theme.Sans
@@ -270,7 +271,7 @@ fun WorkoutCountdown(
                 ) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text("1/$exerciseCount", color = Fc.Lime, style = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 13.sp))
-                        Text(" " + exercisesWord(exerciseCount), color = Fc.Muted, style = TextStyle(fontFamily = Sans, fontSize = 13.sp))
+                        Text(" упражнений", color = Fc.Muted, style = TextStyle(fontFamily = Sans, fontSize = 13.sp))
                     }
                     GlowProgress(if (exerciseCount > 0) (.4f + .6f * progress) / exerciseCount else 0f, Modifier.fillMaxWidth(), height = 4.dp)
                 }
@@ -408,20 +409,20 @@ fun WorkoutCompleteHeader(
         translationY = if (reduced) 0f else (1f - k) * dist * density
     }
     Column(Modifier.fillMaxWidth().testTag("complete-header"), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.size(250.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(260.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 val c = Offset(size.width / 2, size.height / 2)
                 val base = 62.dp.toPx()
                 val ringK = progressOf(t, timing.ringsAtMs, 900)
-                if (dark) drawCircle(Brush.radialGradient(listOf(lime.copy(alpha = .20f * ringK), Color.Transparent), c, size.minDimension / 2), size.minDimension / 2, c)
-                listOf(1.5f, 1.86f, 2.24f).forEachIndexed { i, k ->
+                if (dark) drawCircle(Brush.radialGradient(listOf(lime.copy(alpha = .12f * ringK), Color.Transparent), c, size.minDimension / 2), size.minDimension / 2, c)
+                listOf(1.32f, 1.62f, 1.94f).forEachIndexed { i, k ->
                     drawCircle(lime.copy(alpha = (.30f - i * .08f) * ringK), base * k, c, style = Stroke(1.5.dp.toPx()))
                 }
                 if (!reduced) listOf(0, 150, 300).forEach { d ->
                     val p = progressOf(t, timing.ringsAtMs + d, 1200)
                     if (p > 0f && p < 1f) {
                         val s = .65f + .7f * easeOutCubic(p)
-                        drawCircle(lime.copy(alpha = .45f * (1f - p)), base * 1.6f * s, c, style = Stroke(2.dp.toPx()))
+                        drawCircle(lime.copy(alpha = .45f * (1f - p)), base * 1.45f * s, c, style = Stroke(2.dp.toPx()))
                     }
                 }
                 if (!reduced && dark && t < 1500) for (i in 0 until 14) {
@@ -443,11 +444,13 @@ fun WorkoutCompleteHeader(
             Box(
                 Modifier.size(124.dp)
                     .graphicsLayer { scaleX = badge; scaleY = badge; alpha = progressOf(t, 0, if (reduced) 300 else 120) }
-                    .drawBehind {
-                        if (dark) drawCircle(Brush.radialGradient(listOf(lime.copy(alpha = glowA), Color.Transparent), center, size.minDimension * .95f), size.minDimension * .95f)
-                    }
+                    .glow(lime, dark, radius = 34.dp, alpha = glowA * .8f)
                     .clip(CircleShape)
-                    .background(Brush.radialGradient(listOf(Color(0xFFE2FF8A), lime, Color(0xFFA9E61F)), Offset(140f, 120f), 420f))
+                    .background(lime)
+                    .drawBehind {
+                        drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = .28f), Color.Transparent),
+                            Offset(size.width * .38f, size.height * .32f), size.minDimension * .6f))
+                    }
                     .semantics { contentDescription = "Тренировка завершена" }
                     .clickable(role = Role.Button, onClickLabel = "Повторить анимацию") { playKey++; fired = 0L; onReplay() },
                 contentAlignment = Alignment.Center
@@ -523,7 +526,7 @@ fun WorkoutCompleteHeader(
                     Text("$shown", color = if (flip > 0f && flip < 1f) Fc.Lime else Fc.Text,
                         style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 36.sp),
                         modifier = Modifier.graphicsLayer { scaleX = numPop; scaleY = numPop; transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 1f) })
-                    Text(com.fitclub.tracker.ui.programs.pluralRu(streakWeeks, "неделя", "недели", "недель") + " подряд", color = Fc.Text,
+                    Text(com.fitclub.tracker.ui.programs.pluralRu(shown, "неделя", "недели", "недель") + " подряд", color = Fc.Text,
                         style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
                 }
             }

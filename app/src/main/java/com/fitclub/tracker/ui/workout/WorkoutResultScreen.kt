@@ -151,7 +151,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
                 )
             }
             item {
-                Column(Modifier.graphicsLayer { alpha = if (actionsReady) 1f else .35f }, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     PillButton("Смотреть прогресс", onProgress, Modifier.testTag("result-progress"), icon = PackIcons.BARS, enabled = actionsReady)
                     PillButton("На главную", onClose, Modifier.testTag("result-home"), kind = PillKind.SECONDARY, icon = PackIcons.HOME, enabled = actionsReady, height = 52.dp)
                 }
@@ -187,7 +187,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
             if (records.isNotEmpty()) item { RecordHero(records) }
         }
         item {
-            FcCard {
+            FcCard(Modifier.fillMaxWidth()) {
                 Text("Общий тоннаж: ${(if (editing) editUnits else units).format(volume.toFloat())}", color = Fc.Lime, style = MaterialTheme.typography.titleMedium)
                 Text("$count подходов · ${if (editing) minutes else log.durationMin.toString()} мин", color = Fc.Muted)
                 if (editing) OutlinedTextField(minutes, { minutes = it.filter(Char::isDigit) }, label = { Text("Длительность, мин") }, modifier = Modifier.fillMaxWidth())

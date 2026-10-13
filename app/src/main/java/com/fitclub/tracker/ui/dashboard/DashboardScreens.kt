@@ -104,7 +104,6 @@ fun ProgressScreen(onProfile: () -> Unit, onMeasure: (String?) -> Unit = {}, ini
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ScreenTitle("Прогресс", Modifier.weight(1f))
-                CircleIconButton("Профиль", onProfile, filled = true) { Icon(Icons.Filled.Person, null, tint = Fc.Text) }
             }
         }
         item { Segmented(ProgressSection.entries, section, { section = it }, { it.title }, selectedBg = Fc.Lime) }

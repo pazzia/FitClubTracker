@@ -104,9 +104,6 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                     Eyebrow("История и планы")
                     ScreenTitle("Календарь")
                 }
-                IconButton(onClick = onProfile, modifier = Modifier.background(Fc.Surface2, CircleShape)) {
-                    Icon(Icons.Filled.Person, "Личный кабинет", tint = Fc.Lime)
-                }
             }
         }
         item {

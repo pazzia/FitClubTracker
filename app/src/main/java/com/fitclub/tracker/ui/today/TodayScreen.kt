@@ -230,7 +230,10 @@ private fun Header(today: LocalDate, profile: ProfileSettings, streak: Int, onPr
                 Modifier.size(48.dp).clip(CircleShape).border(2.dp, Fc.Lime, CircleShape).padding(4.dp).clip(CircleShape).background(Fc.Surface2)
                     .semantics { contentDescription = "Профиль" }.clickable(role = Role.Button, onClick = onProfile),
                 contentAlignment = Alignment.Center
-            ) { Text(initials(profile.name), color = Fc.Text, style = MaterialTheme.typography.titleMedium) }
+            ) {
+                if (profile.name.isBlank() || profile.name == "Мой профиль") LineIcon(PackIcons.USER, Fc.Text, Modifier.size(22.dp), strokeWidth = 1.9f)
+                else Text(initials(profile.name), color = Fc.Text, style = MaterialTheme.typography.titleMedium)
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(Modifier.weight(1f)) {
@@ -322,7 +325,11 @@ private fun HeroCard(
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Eyebrow(label, color = Fc.Lime, modifier = Modifier.weight(1f))
-                    TextButton(onClick = onEdit) { Text("Изменить", color = Fc.Muted, style = MaterialTheme.typography.labelLarge) }
+                    // A dark pill keeps «Изменить» readable over the photo.
+                    TextButton(onClick = onEdit, colors = androidx.compose.material3.ButtonDefaults.textButtonColors(containerColor = Fc.Bg.copy(alpha = .72f)),
+                        contentPadding = PaddingValues(horizontal = 14.dp)) {
+                        Text("Изменить", color = Fc.Text, style = MaterialTheme.typography.labelLarge)
+                    }
                 }
                 Text(title, style = MaterialTheme.typography.displaySmall.copy(fontSize = 32.sp, lineHeight = 36.sp), color = Fc.Text,
                     modifier = Modifier.fillMaxWidth(if (photo != null) .62f else 1f), maxLines = 3, overflow = TextOverflow.Ellipsis)
@@ -425,10 +432,10 @@ private fun StatusCard(status: DayStatus, program: ProgramDraft, workouts: List<
         DayStatus.OPEN -> "На сегодня тренировок нет" to "По «${program.name}» на этой неделе осталось $left из ${program.freqPerWeek}." +
             (next?.let { " Ближайшая по плану — $it." } ?: "")
     }
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Fc.Surface).border(1.dp, Fc.Line2, RoundedCornerShape(24.dp)).padding(18.dp)
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Fc.Surface).border(1.dp, Fc.Line, RoundedCornerShape(20.dp)).padding(18.dp)
         .testTag("today-status"), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        Box(Modifier.size(48.dp).clip(CircleShape).background(Fc.Surface2), contentAlignment = Alignment.Center) {
-            LineIcon(if (status == DayStatus.WEEK_DONE) LineIcons.CHECK else "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z", Fc.Text)
+        Box(Modifier.size(48.dp).clip(CircleShape).background(Fc.LimeSoft).border(1.dp, Fc.Lime.copy(alpha = .4f), CircleShape), contentAlignment = Alignment.Center) {
+            LineIcon(if (status == DayStatus.WEEK_DONE) LineIcons.CHECK else "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z", Fc.Lime)
         }
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(title, color = Fc.Text, style = MaterialTheme.typography.headlineMedium)
@@ -441,9 +448,9 @@ private fun StatusCard(status: DayStatus, program: ProgramDraft, workouts: List<
 @Composable
 private fun SuggestionCard(eyebrow: String, title: String, items: List<ItemDraft>, s: TodayState, starting: Boolean, onStart: () -> Unit, onPlan: () -> Unit) {
     val line = Fc.Line
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).drawBehind {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).drawBehind {
         drawRoundRect(line, style = Stroke(1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 9f))),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(24.dp.toPx()))
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(20.dp.toPx()))
     }.padding(18.dp).testTag("today-suggestion"), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Eyebrow(eyebrow)
         Text(title, color = Fc.Text, style = MaterialTheme.typography.titleLarge)

@@ -59,20 +59,27 @@ val PillShape = RoundedCornerShape(percent = 50)
 val CardShape = RoundedCornerShape(20.dp)
 
 /**
- * Soft glow drawn behind the element with a blurred rounded rectangle. Only in the dark theme:
- * on a light background a glow reads as a smudge.
+ * Soft glow drawn behind the element: concentric rounded outlines that fade outwards (no blur
+ * filter, so it renders the same on every device and in screenshots). Dark theme only: on a light
+ * background a glow reads as a smudge.
  */
 fun Modifier.glow(color: Color, enabled: Boolean, radius: Dp = 18.dp, alpha: Float = .30f, corner: Dp = 999.dp, spread: Dp = 0.dp): Modifier =
     if (!enabled || alpha <= 0f) this else drawBehind {
-        val blur = radius.toPx()
-        val r = corner.toPx().coerceAtMost(size.minDimension / 2 + spread.toPx())
-        val s = spread.toPx()
-        drawIntoCanvas { canvas ->
-            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                this.color = color.copy(alpha = alpha.coerceIn(0f, 1f)).toArgb()
-                maskFilter = BlurMaskFilter(blur, BlurMaskFilter.Blur.NORMAL)
-            }
-            canvas.nativeCanvas.drawRoundRect(-s, -s, size.width + s, size.height + s, r, r, paint)
+        val steps = 10
+        val reach = radius.toPx()
+        val base = spread.toPx()
+        val r0 = corner.toPx().coerceAtMost(size.minDimension / 2)
+        for (i in steps downTo 1) {
+            val k = i / steps.toFloat()
+            val grow = base + reach * k
+            // Each ring adds a little light; together they fall off roughly like a gaussian.
+            val a = alpha * (1f - k) * (1f - k) * 2.2f / steps + alpha * .02f
+            drawRoundRect(
+                color.copy(alpha = a.coerceIn(0f, 1f)),
+                topLeft = Offset(-grow, -grow),
+                size = androidx.compose.ui.geometry.Size(size.width + grow * 2, size.height + grow * 2),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(r0 + grow)
+            )
         }
     }
 

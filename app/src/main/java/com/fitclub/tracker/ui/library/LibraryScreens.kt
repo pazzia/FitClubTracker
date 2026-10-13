@@ -71,7 +71,6 @@ fun LibraryHomeScreen(onGroup: (MuscleGroup) -> Unit, onExercise: (String) -> Un
                     ScreenTitle("Справочник")
                     Text("${all.size} упражнений в ${AnatomyGroupOrder.size} группах мышц", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                 }
-                CircleIconButton("Профиль", onProfile, filled = true) { Icon(Icons.Filled.Person, null, tint = Fc.Text) }
             }
         }
         item {
