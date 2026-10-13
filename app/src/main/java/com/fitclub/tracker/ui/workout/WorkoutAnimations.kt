@@ -456,6 +456,7 @@ fun WorkoutCompleteHeader(
                 contentAlignment = Alignment.Center
             ) {
                 val check = easeOutCubic(progressOf(t, 180, 420))
+                val checkColor = Fc.OnAccent
                 Canvas(Modifier.size(58.dp)) {
                     val path = androidx.compose.ui.graphics.Path().apply {
                         moveTo(size.width * .22f, size.height * .53f); lineTo(size.width * .42f, size.height * .72f); lineTo(size.width * .78f, size.height * .32f)
@@ -463,7 +464,7 @@ fun WorkoutCompleteHeader(
                     val measure = androidx.compose.ui.graphics.PathMeasure().apply { setPath(path, false) }
                     val part = androidx.compose.ui.graphics.Path()
                     measure.getSegment(0f, measure.length * (if (reduced) 1f else check), part, true)
-                    drawPath(part, Color(0xFF0A0C0D), style = Stroke(8.dp.toPx(), cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                    drawPath(part, checkColor, style = Stroke(8.dp.toPx(), cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
                 }
             }
         }

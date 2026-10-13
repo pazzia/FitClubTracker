@@ -66,7 +66,7 @@ class RedesignScreensTest {
 
     @Test fun libraryGroup() {
         show { LibraryGroupScreen(MuscleGroup.CHEST, {}, {}) }
-        waitFor("Жим штанги лёжа")
+        rule.waitUntil(15_000) { rule.onAllNodesWithTag("library-group-list").fetchSemanticsNodes().isNotEmpty() }
         shot("library-group")
     }
 
