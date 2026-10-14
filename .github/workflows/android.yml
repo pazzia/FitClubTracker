@@ -426,7 +426,8 @@ jobs:
       # Fork branches try out bigger changes: their test APK goes out as a pre-release, so it can be
       # installed beside the main app without touching it.
       - name: Publish fork APK as a pre-release
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/fork/')
+        # A manual run of a fork branch publishes too: pushes made by integrations do not always start a run.
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && startsWith(github.ref, 'refs/heads/fork/')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
