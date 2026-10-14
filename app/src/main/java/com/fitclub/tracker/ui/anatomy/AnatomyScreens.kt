@@ -72,7 +72,8 @@ private fun AssetImage(path: String, description: String?, modifier: Modifier, c
     }
     val image = bitmap
     if (image != null) Image(image, description, modifier, contentScale = contentScale)
-    else Box(modifier.background(Paper))
+    // While the illustration loads, a neutral surface instead of a bright paper flash in the dark theme.
+    else Box(modifier.background(Fc.Surface2))
 }
 
 @Composable
