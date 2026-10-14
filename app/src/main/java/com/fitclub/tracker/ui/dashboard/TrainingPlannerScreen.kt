@@ -172,7 +172,9 @@ fun TrainingPlannerScreen(epochDay: Long, onClose: () -> Unit, onStart: (Long) -
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                ActionButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу →", onChooseProgram, outlined = true)
+                ActionButton(programs.firstOrNull { it.id == draft.programId }?.let { "Программа: ${it.name} →" } ?: "Выбрать программу", onChooseProgram,
+                    // Primary while the plan is empty (saving is not possible yet), secondary once it has exercises.
+                    outlined = draft.items.isNotEmpty())
                 val program = programs.firstOrNull { it.id == draft.programId }
                 if (program != null && program.days.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))

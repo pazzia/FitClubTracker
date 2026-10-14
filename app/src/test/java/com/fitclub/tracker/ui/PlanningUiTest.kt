@@ -35,7 +35,7 @@ class PlanningUiTest {
         rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("+ Запланировать тренировку"))
         rule.onNodeWithText("+ Запланировать тренировку").performClick()
         waitFor("План тренировки")
-        rule.onNodeWithText("Выбрать программу →").performClick()
+        rule.onNodeWithText("Выбрать программу").performClick()
         waitFor("Выберите программу")
         waitFor("Фулбоди 3×")
         rule.onNodeWithText("Фулбоди 3×").performClick()

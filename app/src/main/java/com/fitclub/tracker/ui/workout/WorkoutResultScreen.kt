@@ -227,7 +227,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
                     } else {
                         val sets = log.sets.filter { it.exerciseId == id && it.exercisePosition == position && it.done }
                         sets.forEachIndexed { index, set ->
-                            Text("${index + 1}. ${units.format(set.weightKg)} × ${set.reps}${if (set.isTimed) " сек." else " повт."}${if (set.warmup) " · разминка" else ""}${if (set.assisted) " · помощь" else ""}${set.rir?.let { " · RIR $it" }.orEmpty()}", color = Fc.Text, modifier = Modifier.padding(vertical = 4.dp))
+                            Text("${index + 1}. ${units.format(set.weightKg)} × ${set.reps}${if (set.isTimed) " сек." else ""}${if (set.warmup) " · разминка" else ""}${if (set.assisted) " · помощь" else ""}${set.rir?.let { " · RIR $it" }.orEmpty()}", color = Fc.Text, modifier = Modifier.padding(vertical = 4.dp))
                         }
                         Text("Тоннаж: ${units.format(sets.filter { !it.isTimed && !it.assisted }.sumOf { (it.weightKg * it.reps).toDouble() }.toFloat())}", color = Fc.Lime)
                         val seconds = log.exercises.filter { it.exerciseId == id && (position == -1 || it.position == position) }.sumOf { it.durationMillis } / 1000

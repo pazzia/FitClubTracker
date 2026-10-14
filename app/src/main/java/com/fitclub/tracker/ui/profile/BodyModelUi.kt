@@ -311,7 +311,7 @@ private fun ChangeCard(metric: BodyMetric, series: List<Float?>, selected: Boole
             }
         }
         Row(Modifier.padding(top = 8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(change?.let { (if (it.delta > 0) "▲ " else if (it.delta < 0) "▼ " else "") + formatSignedMeasure(it.percent) + " %" } ?: "нет данных",
+            Text(change?.let { (if (it.delta > 0) "▲ " else if (it.delta < 0) "▼ " else "") + formatSignedMeasure(it.percent) + " %" } ?: "",
                 color = pctColor, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             val known = series.mapIndexedNotNull { i, v -> v?.let { i to it } }
             if (known.size > 1) Canvas(Modifier.weight(1f).height(22.dp)) {

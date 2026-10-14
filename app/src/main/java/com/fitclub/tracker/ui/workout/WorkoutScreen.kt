@@ -1174,7 +1174,7 @@ private fun RestBar(vm: WorkoutViewModel, onOpen: () -> Unit) {
                 .clickable(role = Role.Button, onClick = onOpen), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 LineIcon(LineIcons.TIMER, Fc.Ember)
                 Column {
-                    Text("Отдых · из ${time(vm.restTotal.toLong())}", color = Fc.Muted, style = MaterialTheme.typography.labelMedium)
+                    Text("Отдых", color = Fc.Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1)
                     NumberText(time(vm.rest.toLong()), 26.sp, color = Fc.Ember)
                 }
             }
