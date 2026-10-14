@@ -109,7 +109,7 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
             }
         }
         item {
-            FcCard {
+            FcCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = { monthValue = month.minusMonths(1).toString() }) { Text("‹", modifier = Modifier.semantics { contentDescription = "Предыдущий месяц" }, color = Fc.Text, style = MaterialTheme.typography.headlineSmall) }
                     Text(month.atDay(1).format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale("ru"))).replaceFirstChar { it.uppercase() },
@@ -145,7 +145,10 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                                     horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                     Text("$number", color = if (selected) Fc.OnAccent else if (hasPlan || done) Fc.Lime else Fc.Text,
                                         style = MaterialTheme.typography.bodyMedium, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Normal, maxLines = 1, softWrap = false)
-                                    if (done || hasPlan) Box(Modifier.padding(top = 3.dp).size(4.dp).background(if (selected) Fc.OnAccent else Fc.Lime, CircleShape))
+                                    // Same marks as the legend: a filled dot for a finished workout, a ring for a plan.
+                                    val mark = if (selected) Fc.OnAccent else Fc.Lime
+                                    if (done) Box(Modifier.padding(top = 3.dp).size(5.dp).background(mark, CircleShape))
+                                    else if (hasPlan) Box(Modifier.padding(top = 3.dp).size(6.dp).border(1.2.dp, mark, CircleShape))
                                 }
                             }
                         }

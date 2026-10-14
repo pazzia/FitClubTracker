@@ -174,6 +174,7 @@ class RedesignPreviewTest {
         rule.onNodeWithText("Сегодня").performClick()
         rule.onNodeWithText("Календарь").performClick()
         rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(1_500)
         settle("calendar")
     }
 }
