@@ -87,6 +87,9 @@ import com.fitclub.tracker.data.repo.ProgramIcons
 import com.fitclub.tracker.domain.FitResult
 import com.fitclub.tracker.domain.ProgramScorer
 import com.fitclub.tracker.ui.components.BackRow
+import com.fitclub.tracker.ui.components.LineIcon
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.graphics.graphicsLayer
 import com.fitclub.tracker.ui.components.DashedButton
 import com.fitclub.tracker.ui.components.FcCard
 import com.fitclub.tracker.ui.components.IconPaths
@@ -316,7 +319,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
                 ActionButton("+  Добавить упражнение", { picking = true }, outlined = true)
             }
         }
-        item { ExpandRow("Цель и частота ${if (showTrainingSettings) "−" else "+"}") { showTrainingSettings = !showTrainingSettings } }
+        item { ExpandRow("Цель и частота", showTrainingSettings, "section-goal") { showTrainingSettings = !showTrainingSettings } }
         if (showTrainingSettings) {
         item {
             Section("Цель тренировок") {
@@ -347,7 +350,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             }
         }
         }
-        item { ExpandRow("Оформление программы ${if (showAppearance) "−" else "+"}") { showAppearance = !showAppearance } }
+        item { ExpandRow("Оформление программы", showAppearance, "section-appearance") { showAppearance = !showAppearance } }
         if (showAppearance) {
         item {
             Section("Цвет") {
@@ -383,7 +386,7 @@ fun ProgramEditorScreen(programId: Long, onClose: () -> Unit, addExercise: Strin
             }
         }
         }
-        item { ExpandRow("Разбор программы ${if (showAnalysis) "−" else "+"}") { showAnalysis = !showAnalysis } }
+        item { ExpandRow("Разбор программы", showAnalysis, "section-analysis") { showAnalysis = !showAnalysis } }
         if (showAnalysis) {
             item { Text("Вся программа", color = Fc.Text); FitDetails(fit, d.goal) }
             item { Text("Текущий день ${'A' + day}", color = Fc.Text); FitDetails(ProgramScorer.score(d.copy(days = listOf(d.days[day])), catalog), d.goal) }
@@ -592,12 +595,18 @@ internal fun ProgramDeleteDialog(name: String, onDismiss: () -> Unit, onConfirm:
 
 /** Collapsible section header of the editor: a full-width surface row, label on the left. */
 @Composable
-private fun ExpandRow(label: String, onClick: () -> Unit) {
+private fun ExpandRow(label: String, open: Boolean, tag: String, onClick: () -> Unit) {
+    val turn by androidx.compose.animation.core.animateFloatAsState(if (open) 180f else 0f, label = "expand")
     androidx.compose.foundation.layout.Row(
         Modifier.fillMaxWidth().heightIn(min = 56.dp)
             .clip(com.fitclub.tracker.ui.components.CardShape).background(Fc.Surface)
             .border(1.dp, Fc.Line, com.fitclub.tracker.ui.components.CardShape)
-            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(horizontal = 16.dp),
+            .semantics { stateDescription = if (open) "Развёрнуто" else "Свёрнуто" }
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).testTag(tag).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
-    ) { Text(label, color = Fc.Text, style = MaterialTheme.typography.titleSmall) }
+    ) {
+        Text(label, color = Fc.Text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+        // Chevron turns over when the section is open.
+        LineIcon("M6 9l6 6 6-6", Fc.Muted, Modifier.size(18.dp).graphicsLayer { rotationZ = turn }, 2.2f)
+    }
 }

@@ -138,15 +138,22 @@ fun ProgressScreen(onProfile: () -> Unit, onMeasure: (String?) -> Unit = {}, ini
             }
         }
         item {
-            Eyebrow("По упражнениям")
             val allIds = s.workouts.flatMap { it.sets }.map { it.exerciseId }.distinct().sortedBy { s.exercises[it]?.name }
             var exerciseMenu by remember { mutableStateOf(false) }
+            // One header for the section: title on the left, the exercise filter on the right.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("По упражнениям", style = MaterialTheme.typography.headlineMedium.copy(fontSize = 22.sp, lineHeight = 26.sp), color = Fc.Text, modifier = Modifier.weight(1f))
             Box {
-                TextButton(onClick = { exerciseMenu = true }) { Text(if (selectedExercise.isBlank()) "Все упражнения" else s.exercises[selectedExercise]?.name ?: selectedExercise, color = Fc.Lime) }
+                TextButton(onClick = { exerciseMenu = true }) {
+                    Text(if (selectedExercise.isBlank()) "Все упражнения" else s.exercises[selectedExercise]?.name ?: selectedExercise, color = Fc.Lime, maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 180.dp))
+                    LineIcon("M6 9l6 6 6-6", Fc.Lime, Modifier.padding(start = 4.dp).size(14.dp), 2.4f)
+                }
                 DropdownMenu(expanded = exerciseMenu, onDismissRequest = { exerciseMenu = false }) {
                     DropdownMenuItem(text = { Text("Все упражнения") }, onClick = { selectedExercise = ""; exerciseMenu = false })
                     allIds.forEach { id -> DropdownMenuItem(text = { Text(s.exercises[id]?.name ?: id) }, onClick = { selectedExercise = id; exerciseMenu = false }) }
                 }
+            }
             }
             val periodWorkouts = s.workouts.filter { it.session.epochDay in weekDates.first().toEpochDay()..weekDates.last().plusDays(6).toEpochDay() }
             val byExercise = periodWorkouts.flatMap { it.sets }
@@ -356,7 +363,7 @@ fun ProfileScreen(onBack: (() -> Unit)?, onMeasure: (String?) -> Unit = {}, onBo
                 }
                 if (st.restSound) TextButton(onClick = { com.fitclub.tracker.ui.workout.RestSound.play() }, contentPadding = PaddingValues(0.dp)) { Text("Проверить звук", color = Fc.Lime) }
                 Spacer(Modifier.height(8.dp))
-                SettingSwitch("Отсчёт 3-2-1 перед тренировкой", "Перед первым упражнением — короткий отсчёт с вибрацией. Нажатие на экран начинает сразу.",
+                SettingSwitch("Отсчёт 3–2–1 перед тренировкой", "Перед первым упражнением — короткий отсчёт с вибрацией. Нажатие на экран начинает сразу.",
                     st.startCountdown, Modifier.testTag("start-countdown")) { vm.update(st.copy(startCountdown = it)) }
                 Spacer(Modifier.height(8.dp))
                 SettingSwitch("Звуки старта и финиша", "Щелчок на «GO» и короткий сигнал, когда тренировка завершена.",

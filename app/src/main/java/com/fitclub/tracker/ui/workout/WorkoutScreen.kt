@@ -486,14 +486,14 @@ private fun TopBar(elapsed: Long, onPlan: () -> Unit, onFinish: () -> Unit, fini
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(Modifier.size(44.dp).clip(CircleShape).background(Fc.Surface).border(1.dp, Fc.Line, CircleShape), contentAlignment = Alignment.Center) {
-                LineIcon(LineIcons.BACK, Fc.Text, Modifier.size(20.dp))
+                LineIcon(PackIcons.ARROW_BACK, Fc.Text, Modifier.size(20.dp))
             }
             Text("План", color = Fc.Text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 8.dp))
         }
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { NumberText(time(elapsed), 22.sp) }
         OutlinedButton(onClick = onFinish, enabled = !finishing, border = BorderStroke(1.dp, Fc.Line),
-            modifier = Modifier.heightIn(min = 44.dp).testTag("finish-workout"),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) { Text("Закончить", style = MaterialTheme.typography.labelLarge) }
+            modifier = Modifier.heightIn(min = 44.dp).testTag("finish-workout"), contentPadding = PaddingValues(horizontal = 14.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) { Text("Закончить тренировку", style = MaterialTheme.typography.labelLarge, maxLines = 1) }
     }
 }
 
@@ -1179,9 +1179,9 @@ private fun RestBar(vm: WorkoutViewModel, onOpen: () -> Unit) {
                 }
             }
             OutlinedButton(onClick = { vm.addRest(15) }, border = BorderStroke(1.dp, Fc.Line), modifier = Modifier.heightIn(min = 44.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) { Text("+15 с") }
-            Button(onClick = vm::stopRest, modifier = Modifier.heightIn(min = 44.dp), contentPadding = PaddingValues(horizontal = 12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Fc.Surface2, contentColor = Fc.Text)) { Text("Пропустить") }
+                contentPadding = PaddingValues(horizontal = 10.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Fc.Text)) { Text("+15 с") }
+            Button(onClick = vm::stopRest, modifier = Modifier.heightIn(min = 44.dp), contentPadding = PaddingValues(horizontal = 10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Fc.Surface2, contentColor = Fc.Text)) { Text("Пропустить отдых", textAlign = TextAlign.Center) }
         }
         LinearProgressIndicator(progress = { if (vm.restTotal > 0) vm.rest.toFloat() / vm.restTotal else 0f },
             modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)), color = Fc.Ember, trackColor = Fc.Line2)

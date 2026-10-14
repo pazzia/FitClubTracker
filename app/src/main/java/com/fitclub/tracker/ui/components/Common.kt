@@ -156,7 +156,7 @@ fun <T> Segmented(
     label: (T) -> String,
     modifier: Modifier = Modifier,
     height: Dp = 44.dp,
-    selectedBg: Color = Fc.Text,
+    selectedBg: Color = Fc.Lime,
     selectedFg: Color = Fc.on(selectedBg),
     leading: @Composable RowScope.(T, Boolean) -> Unit = { _, _ -> },
     trailing: @Composable RowScope.(T, Boolean) -> Unit = { _, _ -> }

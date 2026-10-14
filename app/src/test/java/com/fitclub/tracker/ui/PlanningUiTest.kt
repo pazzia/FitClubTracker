@@ -63,7 +63,8 @@ class PlanningUiTest {
         // The body atlas now opens the library; the group cards are further down.
         rule.onAllNodes(hasScrollToIndexAction()).onFirst().performScrollToNode(hasContentDescription("Грудь, женский атлас"))
         rule.onNodeWithContentDescription("Грудь, женский атлас").performClick()
-        waitFor("${ExerciseSeed.all.count { it.group == MuscleGroup.CHEST }} упражнений")
+        val chest = ExerciseSeed.all.count { it.group == MuscleGroup.CHEST }
+        waitFor("$chest ${com.fitclub.tracker.ui.programs.pluralRu(chest, "упражнение", "упражнения", "упражнений")}")
         rule.onNodeWithTag("library-group-list").performScrollToNode(hasText("Жим штанги лёжа"))
         rule.onNodeWithText("Жим штанги лёжа").performClick()
         rule.onNodeWithTag("exercise-detail-list").performScrollToNode(hasContentDescription("Грудь, женский атлас"))

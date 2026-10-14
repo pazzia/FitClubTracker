@@ -264,7 +264,7 @@ fun WorkoutCountdown(
         if (!reduced && dark) Sparks(t, pulse)
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                RoundIconButton("Назад", com.fitclub.tracker.ui.components.LineIcons.BACK, onBack)
+                RoundIconButton("Назад", PackIcons.ARROW_BACK, onBack)
                 Column(
                     Modifier.weight(1f).heightIn(min = 44.dp).clip(PillShape).background(Fc.Surface.copy(alpha = .8f)).border(1.dp, Fc.Line, PillShape)
                         .padding(horizontal = 18.dp, vertical = 6.dp),
@@ -539,7 +539,8 @@ fun WorkoutCompleteHeader(
                 Text(if (streakWeeks > 1) "СЕРИЯ ПРОДЛЕНА" else "СЕРИЯ НАЧАТА", color = Fc.Muted,
                     style = TextStyle(fontFamily = Sans, fontWeight = FontWeight.Bold, fontSize = 11.sp, letterSpacing = 1.6.sp))
                 Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val shown = if (flip >= 1f || reduced) streakWeeks else (streakWeeks - 1).coerceAtLeast(0)
+                    // The streak grows by one at the flip; a first week starts at 1, never «0 недель».
+                    val shown = if (flip >= 1f || reduced || streakWeeks <= 1) streakWeeks else streakWeeks - 1
                     val numPop = if (reduced) 1f else 1f + .25f * sin(PI * flip).toFloat()
                     Text("$shown", color = if (flip > 0f && flip < 1f) Fc.Lime else Fc.Text,
                         style = TextStyle(fontFamily = Condensed, fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 36.sp),
@@ -548,14 +549,18 @@ fun WorkoutCompleteHeader(
                         style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.semantics {
+            // This week, Monday to Sunday: a lit dot is a day with a workout, initials say which day.
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.semantics {
                 contentDescription = "На этой неделе тренировок: ${weekDays.count { it }} из 7"
             }) {
                 weekDays.forEachIndexed { i, on ->
                     val last = i == weekDays.indexOfLast { it }
                     val lit = on && (!last || flip > 0f || reduced)
                     val s = if (last && !reduced) 1f + .6f * sin(PI * flip).toFloat() else 1f
-                    Box(Modifier.size(8.dp).graphicsLayer { scaleX = s; scaleY = s }.clip(CircleShape).background(if (lit) Fc.Lime else Fc.Line))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Box(Modifier.size(8.dp).graphicsLayer { scaleX = s; scaleY = s }.clip(CircleShape).background(if (lit) Fc.Lime else Fc.Line))
+                        Text("ПВСЧПСВ"[i].toString(), color = if (lit) Fc.Text else Fc.Dim, style = TextStyle(fontFamily = Sans, fontSize = 9.sp, lineHeight = 10.sp))
+                    }
                 }
             }
         }

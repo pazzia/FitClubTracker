@@ -213,9 +213,9 @@ fun TodayScreen(
             StatRow(listOf(
                 StatItem("${weekStreak(s.workouts, today)} нед.", "серия", PackIcons.FLAME),
                 StatItem(if (program != null) "${workoutsThisWeek(s.workouts, today)} / $goal" else "${workoutsThisWeek(s.workouts, today)}",
-                    if (program != null) "за неделю" else pluralRu(workoutsThisWeek(s.workouts, today), "тренировка", "тренировки", "тренировок") + " за неделю",
+                    "за неделю",
                     PackIcons.CALENDAR),
-                StatItem(compactVolume(volumeThisWeek(s.workouts, today), units), "объём", PackIcons.PLATES)
+                StatItem(compactVolume(volumeThisWeek(s.workouts, today), units), "тоннаж", PackIcons.PLATES)
             ))
         }
     }
@@ -245,8 +245,8 @@ private fun Header(today: LocalDate, profile: ProfileSettings, streak: Int, onPr
                     else "Хорошего дня для тренировки", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
             }
             if (streak > 0) Row(
-                Modifier.heightIn(min = 40.dp).clip(PillShape).background(Fc.LimeSoft.copy(alpha = if (Fc.isLight) .35f else .5f))
-                    .border(1.dp, Fc.Lime.copy(alpha = .6f), PillShape).padding(start = 10.dp, end = 14.dp)
+                Modifier.heightIn(min = 40.dp).clip(PillShape).background(Fc.Surface)
+                    .border(1.dp, Fc.Lime.copy(alpha = .7f), PillShape).padding(start = 10.dp, end = 14.dp)
                     .semantics(mergeDescendants = true) {},
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -299,7 +299,8 @@ private fun WeekStrip(today: LocalDate, s: TodayState, program: ProgramDraft?, o
                         when {
                             isDone -> LineIcon(LineIcons.CHECK, if (filled) Fc.OnAccent else Fc.Lime, Modifier.size(18.dp), strokeWidth = 2.6f)
                             isPlan -> LineIcon(PackIcons.DUMBBELL, if (filled) Fc.OnAccent else Fc.Lime, Modifier.size(18.dp), strokeWidth = 2.2f)
-                            else -> Box(Modifier.size(14.dp).border(1.5.dp, if (isToday) Fc.Lime else Fc.Dim, CircleShape))
+                            // Nothing planned: a small dot keeps the rhythm without looking like a plan.
+                            else -> Box(Modifier.size(5.dp).clip(CircleShape).background(if (isToday) Fc.Lime else Fc.Line))
                         }
                     }
                 }
@@ -346,7 +347,7 @@ private fun HeroCard(
                     GlowProgress(week.first.toFloat() / week.second.coerceAtLeast(1), Modifier.weight(1f))
                 }
                 // Non-breaking spaces keep «12 подходов» and «≈ 27 мин» on one line.
-                Text("${items.size}\u00A0${pluralRu(items.size, "упражнение", "упражнения", "упражнений")} · ${items.sumOf { it.sets }}\u00A0${pluralRu(items.sumOf { it.sets }, "подход", "подхода", "подходов")} · ≈\u00A0$minutes\u00A0мин",
+                Text("${items.size}\u00A0${pluralRu(items.size, "упражнение", "упражнения", "упражнений")} ·\u00A0${items.sumOf { it.sets }}\u00A0${pluralRu(items.sumOf { it.sets }, "подход", "подхода", "подходов")}\n≈\u00A0$minutes\u00A0мин",
                     color = Fc.Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 10.dp).fillMaxWidth(if (photo != null) .58f else 1f))
             }
         }
@@ -390,7 +391,7 @@ private fun HeroPhoto(path: String, modifier: Modifier) {
         Box(modifier.clip(RoundedCornerShape(16.dp))) {
             androidx.compose.foundation.Image(it.asImageBitmap(), null, Modifier.matchParentSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                 alpha = if (Fc.isLight) 1f else .85f)
-            Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(surface, surface.copy(alpha = .55f), Color.Transparent))))
+            Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(surface, surface.copy(alpha = .8f), surface.copy(alpha = .25f), Color.Transparent))))
             Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent, surface.copy(alpha = .9f)))))
         }
     }

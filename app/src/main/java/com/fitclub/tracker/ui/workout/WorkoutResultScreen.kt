@@ -127,7 +127,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
         if (celebrate && !editing) {
             item {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    RoundIconButton("Закрыть", LineIcons.BACK, close)
+                    RoundIconButton("Закрыть", PackIcons.ARROW_BACK, close)
                 }
             }
             item {
@@ -143,7 +143,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
                     exercises = log.sets.filter { it.done }.map { it.exerciseId to it.exercisePosition }.distinct().size,
                     volume = units.fromKg(log.volumeKg),
                     volumeLabel = units.label,
-                    formatVolume = { v -> units.number(kotlin.math.round(v)) },
+                    formatVolume = { v -> groupThousands(units.number(kotlin.math.round(v))) },
                     streakWeeks = com.fitclub.tracker.domain.weekStreak(workouts, today).coerceAtLeast(1),
                     weekDays = (0..6).map { monday + it in doneDays },
                     soundOn = settings.workoutSounds,
@@ -170,9 +170,10 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
             log.session.plannedEpochDay?.takeIf { it != log.session.epochDay }?.let { Text("Была запланирована на ${calendarDate(it)}", color = Fc.Muted, modifier = Modifier.padding(top = 6.dp)) }
         }
         item {
+            val shownUnits = if (editing) editUnits else units
             StatRow(listOf(
-                StatItem(if (editing) minutes else log.durationMin.toString(), "минут", PackIcons.STOPWATCH),
-                StatItem((if (editing) editUnits else units).number((if (editing) editUnits else units).fromKg(volume.toFloat())), "${(if (editing) editUnits else units).label} объём", PackIcons.PLATES),
+                StatItem("${if (editing) minutes else log.durationMin.toString()} мин", "время", PackIcons.STOPWATCH),
+                StatItem(groupThousands(shownUnits.number(shownUnits.fromKg(volume.toFloat()))) + " " + shownUnits.label, "тоннаж", PackIcons.PLATES),
                 StatItem("$count", com.fitclub.tracker.ui.programs.pluralRu(count, "подход", "подхода", "подходов"), PackIcons.DUMBBELL)
             ))
         }
@@ -250,7 +251,7 @@ fun WorkoutResultScreen(sessionId: Long, onClose: () -> Unit, celebrate: Boolean
             item { Text("Единицы ввода: ${editUnits.label}", color = Fc.Muted) }
             item { ActionButton("+ Добавить упражнение", { picker = true }, outlined = true) }
             item { ActionButton(if (vm.saving) "Сохраняю…" else "Сохранить изменения", { vm.save(log, rows.toList(), minutes.toInt(), editUnits) { editing = false } }, enabled = valid && !vm.saving) }
-        } else item { ActionButton("Редактировать результат", ::beginEditing) }
+        } else item { ActionButton("Редактировать результат", ::beginEditing, outlined = true) }
         if (vm.error != null) item { Text(vm.error.orEmpty(), color = Fc.Pink) }
     }
 }
@@ -391,4 +392,14 @@ private fun RecordHero(records: List<Triple<String, String, String>>) {
             }
         }
     }
+}
+
+/** «6420» → «6 420» with a narrow no-break space, as on the completion key frame. */
+internal fun groupThousands(number: String): String {
+    val sign = if (number.startsWith("-")) "-" else ""
+    val body = number.removePrefix("-")
+    val cut = body.indexOfFirst { it == ',' || it == '.' }.let { if (it < 0) body.length else it }
+    val whole = body.substring(0, cut)
+    if (whole.length < 4 || !whole.all(Char::isDigit)) return number
+    return sign + whole.reversed().chunked(3).joinToString("\u202F").reversed() + body.substring(cut)
 }

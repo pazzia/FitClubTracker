@@ -147,8 +147,10 @@ fun CalendarHomeScreen(onPlan: (Long) -> Unit, onStart: (Long) -> Unit, onProfil
                                         style = MaterialTheme.typography.bodyMedium, fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Normal, maxLines = 1, softWrap = false)
                                     // Same marks as the legend: a filled dot for a finished workout, a ring for a plan.
                                     val mark = if (selected) Fc.OnAccent else Fc.Lime
-                                    if (done) Box(Modifier.padding(top = 3.dp).size(5.dp).background(mark, CircleShape))
-                                    else if (hasPlan) Box(Modifier.padding(top = 3.dp).size(6.dp).border(1.2.dp, mark, CircleShape))
+                                    if (done || hasPlan) Row(Modifier.padding(top = 3.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        if (done) Box(Modifier.size(5.dp).background(mark, CircleShape))
+                                        if (hasPlan) Box(Modifier.size(6.dp).border(1.2.dp, mark, CircleShape))
+                                    }
                                 }
                             }
                         }

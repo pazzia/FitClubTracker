@@ -226,6 +226,7 @@ fun RoundIconButton(description: String, icon: String, onClick: () -> Unit, modi
 
 /** Extra glyphs of the pack (24×24 stroke paths). */
 object PackIcons {
+    const val ARROW_BACK = "M19 12H5M11 18l-6-6 6-6"
     const val HOME = "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"
     const val DUMBBELL = "M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"
     const val BOOK_OPEN = "M12 6.5C10 5 7 4.5 3 5v14c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5zM12 6.5V20"
@@ -236,7 +237,7 @@ object PackIcons {
     const val FLAME_FILL = "M12 2c1 3.5 5 6 5 11a5 5 0 0 1-10 0c0-2.2 1-3.8 2.2-5 .2 1.6.9 2.6 1.8 3.2C11 8.5 11 5 12 2z"
     const val PLAY_FILL = "M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"
     const val STOPWATCH = "M12 7a7 7 0 1 0 .01 0zM12 10v4M9.5 2.5h5M12 2.5V5"
-    const val PLATES = "M7 6v12M4 8.5v7M17 6v12M20 8.5v7M7 12h10"
+    const val PLATES = "M12 3a9 9 0 1 0 .01 0zM12 9.5a2.5 2.5 0 1 0 .01 0zM12 6.5a5.5 5.5 0 0 1 5.2 3.7"
     const val SHARE = "M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"
     const val SOUND_ON = "M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"
     const val SOUND_OFF = "M11 5 6 9H3v6h3l5 4zM16 9l5 6M21 9l-5 6"

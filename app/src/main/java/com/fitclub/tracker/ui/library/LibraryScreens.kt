@@ -175,9 +175,9 @@ fun LibraryGroupScreen(group: MuscleGroup, onBack: () -> Unit, onExercise: (Stri
                 Column(Modifier.weight(1f).fillMaxHeight().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Eyebrow("Группа мышц")
                     ScreenTitle(group.title)
-                    Text("${inGroup.size} упражнений", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
+                    Text("${inGroup.size} ${com.fitclub.tracker.ui.programs.pluralRu(inGroup.size, "упражнение", "упражнения", "упражнений")}", color = Fc.Muted, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.weight(1f))
-                    Pill(if (group == MuscleGroup.QUADS) "4 головки" else "${group.regions.size} зон", Fc.LimeSoft, Fc.Lime)
+                    Pill(if (group == MuscleGroup.QUADS) "4 головки" else "${group.regions.size} ${com.fitclub.tracker.ui.programs.pluralRu(group.regions.size, "зона", "зоны", "зон")}", Fc.LimeSoft, Fc.Lime)
                 }
                 GroupImage(profile.sex, group, Modifier.weight(0.8f).height(160.dp), scale = ContentScale.Fit, alignment = Alignment.BottomCenter)
             }

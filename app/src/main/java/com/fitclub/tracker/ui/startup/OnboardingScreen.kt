@@ -97,7 +97,7 @@ fun OnboardingScreen(app: FitApp, onDone: () -> Unit) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when (step) {
                 0 -> {
-                    Question("Кого показывать на фигурах?", "Фигура нужна для замеров тела и атласа мышц.")
+                    Question("Кого показывать на\u00A0фигурах?", "Фигура нужна для замеров тела и атласа мышц.")
                     Choices(listOf(Sex.MALE to "Мужчина", Sex.FEMALE to "Женщина"), sex) { sex = it }
                     Text("Единицы веса", color = Fc.Text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
                     Choices(listOf(true to "Килограммы", false to "Фунты"), unitsKg) { unitsKg = it }
