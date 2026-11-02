@@ -8,3 +8,8 @@ captures/
 __pycache__/
 *.pyc
 app/src/main/assets/free_exercise_db/*/*.jpg
+
+# Claude Code: local state and throwaway UX screenshot tests
+.claude/state/
+.claude/settings.local.json
+app/src/test/java/com/fitclub/tracker/ui/uxcheck/
