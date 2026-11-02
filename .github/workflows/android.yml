@@ -126,6 +126,12 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      # Pin Python: ubuntu-latest moved its system python3 to 3.14, which has no
+      # Pillow 11.0.0 wheel, so `pip install Pillow==11.0.0` tried a source build and failed.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       # Usual path: download all eight verified shards from the reference run in this one job.
       - name: Check compatibility with previously verified contours
         id: reuse
